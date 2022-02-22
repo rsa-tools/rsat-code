@@ -1,6 +1,6 @@
 #Begin by importing the Requests module
 import requests, sys
- 
+
 #State the base URL
 server = "http://rsat-tagc.univ-mrs.fr/rest.wsgi"
 #The endpoint indicates which RSAT resource you are interested in
@@ -8,7 +8,7 @@ ext = "/oligo-analysis/" ##Calculates oligomer frequencies in a set of sequences
 
 #Write the parameters specifying details of how you want to interact with the resource. For default option write None
 data =  {
-        "i_string" : " ", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
+        "i_string" : "", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
         "i_string_type" : "url", ##Type of information provided by the input string. Supported values: url: URL (Web address) to the input file; piping: result file from other tool; text: input content
         "mask" : None, ##String. Mask lower or uppercases, respecively, i.e. replace selected case by N characters. Supported: upper, lower
         "format" : "fasta", ##String. Input sequence format. Various standards are supported - fasta, wconsensus, IG, filelist, raw
@@ -70,16 +70,15 @@ data =  {
         "uth_ms_E" : None, ##Number. Upper threshold on some parameters.
         "uth_ms_sig" : None, ##Number. Upper threshold on some parameters.
         "uth_ratio" : None, ##Number. Upper threshold on some parameters.
-        "uth_rank" : None, ##Number. Upper threshold on some parameters. 
-} 
+        "uth_rank" : None, ##Number. Upper threshold on some parameters.
+}
 r = requests.get(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"}) ##Default value : text/plain
 #r = requests.post(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"})
- 
+
 if not r.ok:
   r.raise_for_status()
   sys.exit()
 
- 
+
 print(r.text)
 # print (repr(r.json))
- 

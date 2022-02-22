@@ -1,6 +1,6 @@
 #Begin by importing the Requests module
 import requests, sys
- 
+
 #State the base URL
 server = "http://rsat-tagc.univ-mrs.fr/rest.wsgi"
 #The endpoint indicates which RSAT resource you are interested in
@@ -8,7 +8,7 @@ ext = "/position-analysis/" ##Calculates the positional distribution of oligonuc
 
 #Write the parameters specifying details of how you want to interact with the resource. For default option write None
 data =  {
-        "i_string" : " ", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
+        "i_string" : "", ##Input string specifying the query. The value can be the query content, the URL of a file available on some Web server, the internal path of the result file returned by another tool of this RSAT server (piping for workflows).
         "i_string_type" : "url", ##Type of information provided by the input string. Supported values: url: URL (Web address) to the input file; piping: result file from other tool; text: input content
         "seqtype" : None, ##String. Input sequence type. Supported: dna, any.
         "last" : None, ##Integer. Stop after N sequences (for quick testing)
@@ -36,7 +36,7 @@ data =  {
         "sc" : None, ##String. Score column. (only valid whith the option -pl)
         "minpos" : None, ##Integer. Minimal position to take into account for the chi-square calculation This value must be a multiple of the window interval.
         "maxpos" : None, ##Integer. Maximal position to take into account for the chi-square calculation This value must be a multiple of the window interval.
-        "max_asmb_per_cluster" : None, ##Integer. 
+        "max_asmb_per_cluster" : None, ##Integer.
         "nocheck" : None, ##Boolean. Do not check the applicability condition on the chi-square.
         "nofilter" : None, ##Boolean. Do not discard oligos which do not fit the condition of applicability
         "header" : None, ##String. Information to display in column headers of the distributions. Available values : mid, midfloor, min, max, interval
@@ -49,11 +49,14 @@ data =  {
         "lth_chi" : None, ##Number. Lower threshold on chi2
         "lth_sig" : None, ##Number. Lower threshold on significance
         "lth_occ" : None, ##Integer. Lower threshold on occurrences
-        "uth_rank" : None, ##Integer. Upper threshold on rank
-} 
+        "uth_rank" : None ##Integer. Upper threshold on rank
+}
 r = requests.get(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"}) ##Default value : text/plain
 #r = requests.post(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"})
- 
+
 if not r.ok:
   r.raise_for_status()
   sys.exit()
+
+
+print(r.text)
