@@ -312,7 +312,7 @@
 
                          <a class="menu_item" href="publications.cgi" >Publications</a>
                          <a class="menu_item" href="credits.php" >Credits</a>
-                         <a class="menu_item" href="http://teaching.rsat.eu/download-request_form.cgi" >Download</a>
+                         <a class="menu_item" href="https://github.com/rsa-tools/" >Download</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT-motif&file=motif_databases/" >Motif databases</a>
                          <a class="menu_item_last" href="htmllink.cgi?title=RSAT-Data&file=data/" >Data</a>
 

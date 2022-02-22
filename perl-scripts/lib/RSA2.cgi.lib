@@ -150,10 +150,7 @@ sub PrintOrthoSelectionSection {
   #&OrganismPopUp(@supported_orthologs);
   &OrganismPopUp('supported' => 'orthologs');
 
-  ## Choice of the organism
-  print "<b>Query </b>";
-  #&OrganismPopUp(@supported_orthologs);
-  &OrganismPopUp('supported' => 'orthologs');
+
   ################################################################
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
