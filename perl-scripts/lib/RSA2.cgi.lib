@@ -1153,7 +1153,7 @@ sub OrganismPopUpString{
         $supported_param .= "&supported=$supported";
     }
 
-    &check_prokaryote_server();
+    ## &check_prokaryote_server(); #No longer an informative message
 
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
