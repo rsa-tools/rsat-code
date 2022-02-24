@@ -77,10 +77,10 @@ print "<p>";
 
 my $supported_variation_organims_file= `cut -f16 data/supported_organisms.tab | sort -u | head -n1`;
 if ($supported_variation_organims_file== 1){
-    
+
     print "<B>Input a list of dbSNP variation IDs (rsID), a set of variants in varBed format, or genomic regions in bed format</B>&nbsp;";
 
-    
+
     print "<BR>\n";
     print "<UL>\n";
     if ($variants_file = $query->param('variants_file')) {
@@ -95,7 +95,7 @@ if ($supported_variation_organims_file== 1){
 	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
 	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
 	print $variantsChoiceString ;
-	
+
     }else{
 
 	print $query->textarea(-name=>'input', -id=>'input',
@@ -132,8 +132,8 @@ if ($supported_variation_organims_file== 1){
 }
 else {
     print "<B>Input  a set of variants in varBed format</B>&nbsp;";
-    
-    
+
+
     print "<BR>\n";
     print "<UL>\n";
     if ($variants_file = $query->param('variants_file')) {
@@ -148,7 +148,7 @@ else {
 	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_format' VALUE='$variants_format'>\n";
 	$variantsChoiceString .=  "<INPUT type='hidden' NAME='variants_file' VALUE='$variants_file'>\n";
 	print $variantsChoiceString ;
-	
+
     }else{
 
 	print $query->textarea(-name=>'input', -id=>'input',
@@ -246,6 +246,7 @@ function setDemo(demo_rsat_var){
     $("#input").val(demo_rsat_var);
     $("#input_type").val("varBed");
     $("#mml").val("30");
+    $("#source").val("metazoa");
 }
 </script>';
 print '<button type="button" onclick="setDemo('. "'$demo_rsat_var'" .')">DEMO</button>';
@@ -260,6 +261,13 @@ print "<TD><B><A HREF='mailto:Jacques.van-Helden\@univ-amu.fr'>MAIL</A></B></TD>
 print "</TR></TABLE></UL></UL>\n";
 
 print "<br><br><font size=1 color=\"grey\" ><small>AMR and WS are supported by a PAPIIT-UNAM (IA206517) grant.</small></font>";
+
+### Field used to pass taxon for DEMO using human genome
+### NOTE WSG: This should be temporal, when a system for taxon-specific demos become available
+print "<div style='visibility: hidden'>\n";
+print $query->textfield(-name=>'source', -id=>'source',
+			    -default=>"");
+print "</div>\n";
 
 print $query->end_html;
 

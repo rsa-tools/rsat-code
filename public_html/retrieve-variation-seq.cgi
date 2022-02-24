@@ -56,9 +56,19 @@ if(!($organism eq "")){
     #$organism_name = $supported_organism{$organism}->{'name'};
     #$assembly = $supported_organism{$organism}->{'genome_assembly'};
 
+    ## Pass genome taxon
     if ($ENV{plant_server} == 1){
       $parameters .= " -source plants ";
     }
+    
+    ## When using the human demo replace with 'metazoa', source will be empty
+    ## NOTE WSG. This is temporal
+    if ( $query->param('source') == "metazoa"){
+      if ($parameters =~ m/source/){
+        $parameters=~s/source .+ /source metazoa /g;
+      }
+    }
+
 #
 #        @org_name_split=split(/\./,$organism_name) ;
 #        $species=$org_name_split[0] ;
