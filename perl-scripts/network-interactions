@@ -444,7 +444,7 @@ package main;
 
   if($main::databases eq ""){ # default option
     #print("Entered default option of dbs\n");
-    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2020/nonredundant/JASPAR2020_CORE_vertebrates_non-redundant_pfms.tf";
+    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2022/JASPAR_2022_CORE_+_UNVALIDATED_vertebrates.tf";
     #$matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
     #print($matfiles_path[0]."\n");
   } else {
