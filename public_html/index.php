@@ -244,7 +244,7 @@
           <td>
 	    <a href="http://teaching.rsat.eu" target="_blank" >
 	      <img src="images/logo_teaching.jpg" height='100' border='0' alt="teaching"></a><br>
-	    maintained by <a target='_blank' href="http://tagc.univ-mrs.fr/">TAGC - Universit&eacute; Aix Marseilles, France  </a>
+	    maintained by <a target='_blank' href="http://rsat.france-bioinformatique.fr/rsat/">Institut Fran&ccedil;ais de Bioinformatique (IFB), France</a>
 	  </td>
 	  
 

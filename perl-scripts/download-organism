@@ -380,7 +380,8 @@ package main;
       $cmd .= " --exclude-directories=jobs";
       $cmd .= " --directory-prefix=".$local_genomes_dir;
       $cmd .= " --no-host-directories --cut-dirs=4";
-      $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
+      $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org;
+      $cmd =~ s|//data|/data|g;
 
     } elsif ($get_command eq "rsync") {
       my $rsync_opt = " -e ssh -ruptl -z ";

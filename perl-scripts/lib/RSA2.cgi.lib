@@ -150,10 +150,7 @@ sub PrintOrthoSelectionSection {
   #&OrganismPopUp(@supported_orthologs);
   &OrganismPopUp('supported' => 'orthologs');
 
-  ## Choice of the organism
-  print "<b>Query </b>";
-  #&OrganismPopUp(@supported_orthologs);
-  &OrganismPopUp('supported' => 'orthologs');
+
   ################################################################
   ### gene queries
   print "<B><A class='iframe' HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
@@ -1156,7 +1153,7 @@ sub OrganismPopUpString{
         $supported_param .= "&supported=$supported";
     }
 
-    &check_prokaryote_server();
+    ## &check_prokaryote_server(); #No longer an informative message
 
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
