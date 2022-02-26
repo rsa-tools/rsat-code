@@ -90,8 +90,8 @@ RSAT_BIN=${RSAT}/bin
 ##
 ## This variable defines the address of the Web services, which will
 ## be used to generate a stub. This stub will be used (under others)
-## by the Web interface of retrieve-ensembl-seq, and by the NeAT
-## tools. It is thus important to specify it correctly and test it.
+## by the Web interface of retrieve-ensembl-seq.
+## It is thus important to specify it correctly and test it.
 ##
 ## By default, the web services are running on the host machine
 ## itself. We thus set it to http://localhost/rsat/. This means that

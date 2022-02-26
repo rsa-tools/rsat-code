@@ -36,14 +36,6 @@ else
 fi
 
 ################################################################
-## Class path for metabolic pathway analysis tools
-if  [ ${CLASSPATH} ]; then
-       export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
-else
-       export CLASSPATH=.:${RSAT}/java/lib/NeAT_javatools.jar
-fi
-
-################################################################
 ## Use ssh as remote shell for CVS (required to install Ensembl API)
 export CVS_RSH=ssh
 
@@ -63,8 +55,3 @@ export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEM
 export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
 export PERL5LIB=${RSAT}/ext_lib/biomart-perl/lib/::${PERL5LIB}
 
-
-################################################################
-## Python libraries
-## (required for external tool CEAS)
-export PYTHONPATH=$PYTHONPATH:${RSAT}/ext_lib/python2.7/site-packages
