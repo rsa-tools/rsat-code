@@ -230,7 +230,7 @@ package main;
         while(<COMMON>) {
             if(/^(\S+)\s+(\S+)/) {
                 $common_chr{$1} = $2;          
-                &RSAT::message::Info("\tAccepted common chr name: ".$1." => ". $2);
+                &RSAT::message::Info("\tAccepted common chr name: ".$1." => ". $2) if ($main::verbose >= 3);
             }
         }
         close(COMMON);
