@@ -192,7 +192,7 @@ print '
      </div>
    </div>
  </div>
- 
+
 </div>
 
  <!-- ################################################################-->
@@ -271,7 +271,7 @@ print '
  <div class="panel-body"> <br>';
 
 my %args = ();
-#$args{space} = 1;
+$args{split} = 1; # split table to select motif dbs so that it fits in new cgi form
 
 print &MotifSelection(%args);
 
