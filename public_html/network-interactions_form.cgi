@@ -192,19 +192,7 @@ print '
      </div>
    </div>
  </div>
-  <!-- Directory Name -->
- <!--<div class="panel panel-danger">
-   <div class="panel-heading"> Directory Name
-     <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Directory Name" data-original-title=""></i>
-   </div>
 
-   <div class="panel-body">
-     <div class="form-group">';
-       print $query->textfield(-id=>'dir_name',-name=>'dir_name', -class=>'form-control',-placeholder=>'Provide a directory name for analysis output ', -required=>'true',
-        -default=>$default{dir_name}) .'
-      </div>
-   </div>
- </div> -->
 </div>
 
  <!-- ################################################################-->
@@ -234,16 +222,12 @@ print '
 
        <div class="panel panel-warning">
 
-          <div class="panel-heading">Motif Collection 2
-            <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
+          <div class="panel-heading">Matrix (or matrices)
+            <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the matrixes to scan for your TFs, you can either paste the matrices in the text box or upload a file from your computer. Use transfac format." data-original-title=""></i>
           </div>
 
-          <div class="panel-body">
-            <div class="form-group">';
-               print $query->textfield(-id=>'collection_2_label', -name=>'collection_2_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
-                 -default=>$default{collection_2_label});
-            print '</div>';
-               &MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>2);
+          <div class="panel-body">';
+               &MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>1);
           print '</div></div>
 
 
@@ -287,7 +271,7 @@ print '
  <div class="panel-body"> <br>';
 
 my %args = ();
-#$args{space} = 1;
+$args{split} = 1; # split table to select motif dbs so that it fits in new cgi form
 
 print &MotifSelection(%args);
 

@@ -218,10 +218,17 @@ if($matscan_pval){
 }
 
 ## Add motif database
-#if ($query->param('genome_v')) {
-#    ($database) = split " ", $query->param('genome_v'); ### take the first word
-#    $parameters .= " -database ".$genome_v;
-#}
+## check if user matrix has been provided
+if ($query->param('uploaded_file_matrix1') || ($query->param('matrix1') =~ /\S/)) {
+
+  ## Matrix input format
+  local $query_matrix_1_format = lc($query->param('matrix_format1'));
+
+  #### Query matrix file
+  local $matrix_file_1 = &GetMatrixFile($output_dir."/IntermediateFiles/user_matrices1.".$query_matrix_1_format,1);
+
+  $parameters .= " -m_format ".$query_matrix_1_format." -m ".$matrix_file_1;
+}
 
 ################################################################
 ## Output dir
