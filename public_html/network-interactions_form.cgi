@@ -144,7 +144,7 @@ print '
     <div class="panel-body">
       <div class="form-group">';
 
-        print "Specify TFs below\n\n";
+        print "Specify TFs below\n<br>";
         print $query->textarea(-id=>"tf_selection", -name=>"tf_selection", -default=>$default{tfs_selection}, -rows=>5, -columns=>60, class=>"form-control");
 
         ### option to upload a file with the gene list from the client machine
@@ -155,14 +155,14 @@ print '
 
   <!-- Regulatory Sequences -->
   <div class="panel panel-danger">
-    <div class="panel-heading"> Regulatory Sequences BED File
+    <div class="panel-heading"> Regulatory Sequences
       <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Regulatory sequences encoded as genomic coordinates in BED format, with the fourth column specifying the corresponding genes, including TFs. You can either paste the genomic coordinates in the text box or upload it from your computer."></i>
     </div>
 
     <div class="panel-body">
       <div class="form-group">';
 
-        print " Specify BED file below\n\n";
+        print " Specify BED file below\n<br>";
         print $query->textarea(-id=>"cre_selection", -name=>"cre_selection", -default=>$default{cre_selection}, -rows=>5, -columns=>60, class=>"form-control");
 
         ### option to upload a file with the gene list from the client machine
@@ -178,12 +178,12 @@ print '
 
  <!-- Genome asembly -->
  <div class="panel panel-danger">
-   <div class="panel-heading">Genome
+   <div class="panel-heading">Genome Assembly
      <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Genome assembly version corresponding to the coordinates in the Regulatory sequences BED file."></i>
    </div>
 
    <div class="panel-body">
-     Select a genome version<br>
+     Select a genome assembly<br>
      <div class="form-group">';
 
      print &UCSCGenomePopUpSelectable('genome_v', 'genome_v');
@@ -232,8 +232,6 @@ print '
     </div>
    </div>
 
-   <div id="collapseOne" class="collapse" role="tabpanel" aria-labelledby="headingOne" data-parent="#accordion">
-     <div class="card-body">
        <div class="panel panel-warning">
 
           <div class="panel-heading">Motif Collection 2
@@ -247,8 +245,6 @@ print '
             print '</div>';
                &MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>2);
           print '</div></div>
-     </div>
-   </div>
 
 
  </div>
@@ -260,8 +256,9 @@ print '
  <div class="bhoechie-tab-content">
 
  <div class="panel panel-warning">
- <div class="panel-heading"><em>matrix-scan</em> parameters</div>
+ <div class="panel-heading"><em>matrix-scan</em> parameters
   <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="By default, score is 5. You may add a p-value threshold and/or change the score and both will be applied to the scanning results."></i>
+ </div>
  <div class="panel-body"> <br>';
 
 print " Score lower threshold \n";
