@@ -328,6 +328,10 @@ package main;
       }
     }
   }
+  if($main::matrices){
+    ## Check provided matrices are ok
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($main::used_outfile{used_matrixes}, "transfac", ());
+  }
 
   if ($main::output_dir eq "") {
     $main::output_dir = "network-interactions_".$date;
@@ -371,16 +375,18 @@ package main;
   $main::outfile{GRN_direct_interactions} = $basename."GRN_direct_interactions_".$date.".tsv";
   $main::outfile{GRN_indirect_interactions} = $basename."GRN_indirect_interactions_".$date.".tsv";
 
-  #if ( $main::html == 1 );
-  # html summary file
-  $main::outfile{summary} = $basename."SUMMARY_".$date.".html";
-  ## Archive to facilitate transfer of all the results in a zip file
-  $main::outfile{archive} = $out_path."network-interactions_archive_".$date.".zip";
-
-  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
-
   # main error file
   $main::outfile{err_log} = $basename."_errors.txt";
+
+  if ( $main::html == 1 ){
+    # html summary file
+    $main::outfile{summary} = $basename."SUMMARY_".$date.".html";
+    ## Archive to facilitate transfer of all the results in a zip file
+    $main::outfile{archive} = $out_path."network-interactions_archive_".$date.".zip";
+
+    &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
+  }
+
   $main::err = &OpenOutputFile($main::outfile{err_log});
   &Verbose($main::err) if ($main::verbose >= 1);
 
@@ -1632,6 +1638,7 @@ sub tableToHTML {
     # add row tags
     $row =~ s/^/<td>/;
     $row =~ s/\t/<\/td><td>/g;
+    $row = &wrapPositionsCol($row);
     $row =~ s/$/<\/td>/;
     # add column tags
     $table_html .= "
@@ -1713,7 +1720,7 @@ sub indirectTableToHTML {
         # interaction details
         if ($interaction_details eq ""){
           $interaction_details .= '
-          <td><table>'
+          <td><table style="font-size:12px;">'
         }
         # add row tags
         $row =~ s/^/<td>/;
@@ -1783,6 +1790,22 @@ sub runRetrieveMatrix {
   &messageInfoAndLog("\tGot matrixes!\n");
 }
 
+sub wrapPositionsCol {
+  my ($row) = @_;
+
+  # make div to wrap text in positions (fourth) column
+  $row =~ s/(<td>chr[a-zA-z0-9:-]+<\/td><td>)/$1<div class="positions_col">/;
+  $row =~ s/([DR]_\d+_\d+)<\/td>/$1<\/div><\/td>/;
+
+  # add space to be able to wrap
+  my @n_pos = split(/;/,$row);
+  my $n = scalar(@n_pos);
+  if ($n > 4){
+    $row =~ s/([DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;)/$1 /g;
+  }
+
+  return $row;
+}
 
 ################################################################################
 ####                                                                        ####
@@ -2423,6 +2446,23 @@ sub ReportStyleCSS{
 
   .param {
   font: 11px sans-serif;
+  }
+
+  .icon_section_main_table{
+  font-size: 12px;
+  }
+
+  .icon_section_main_table_twocols{
+  font-size: 12px;
+  }
+
+  .icon_section_main_table_indirect{
+  font-size: 12px;
+  }
+
+  .positions_col {
+  display: inline-block;
+  vertical-align: top;
   }
 
 </style>
