@@ -192,7 +192,7 @@ print '
      </div>
    </div>
  </div>
-
+ 
 </div>
 
  <!-- ################################################################-->
@@ -270,7 +270,10 @@ print '
  <div class="panel-heading">Motif Database</div>
  <div class="panel-body"> <br>';
 
-print &MotifSelection('ids' => 1, 'mode' => 'checkbox');
+my %args = ();
+#$args{space} = 1;
+
+print &MotifSelection(%args);
 
  print '</div>
  </div>
