@@ -2060,6 +2060,7 @@ sub MotifSelection {
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice("mode"=>"radio");
     print "</select>";
+    print "</tr><tr>" if ($args{split} == 1); # split table to select motif dbs so that it fits in new cgi form
     print "<td align='top'>2 - Select a collection in list:<br/>";
     print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
