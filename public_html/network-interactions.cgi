@@ -47,7 +47,8 @@ $command = $ENV{RSAT}."/perl-scripts/network-interactions";
 $output_prefix = "";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1);
 
-local $dir_name=$query->param('dir_name');
+local $dir_name=$query->param('html_title');
+$dir_name =~ s/\s/_/g; # correct dir name
 $tmp_dir = &RSAT::util::get_pub_temp();
 
 $output_dir = $output_path."/".$dir_name;
@@ -193,6 +194,10 @@ if ($query->param('net_selection') || $query->param('uploaded_net_file')) {
   $parameters .= " -report_net -net ".$net_file;
   &DelayedRemoval($net_file);
 }
+
+## use user-specified matrixes
+
+
 ################################################################
 ## Advanced options
 

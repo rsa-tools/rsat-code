@@ -138,13 +138,13 @@ print '
   <!-- TFs -->
   <div class="panel panel-danger">
     <div class="panel-heading">Transcription Factors
-      <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Transcription Factors list needed to construct the Gene Regulatory Network, you can either write the TFs list or upload it from your computer."></i>
+      <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Transcription Factors list needed to construct the Gene Regulatory Network, you can either paste the TF names in the text box or upload it from your computer."></i>
     </div>
 
     <div class="panel-body">
       <div class="form-group">';
 
-        print "Specify TFs below\n";
+        print "Specify TFs below\n<br>";
         print $query->textarea(-id=>"tf_selection", -name=>"tf_selection", -default=>$default{tfs_selection}, -rows=>5, -columns=>60, class=>"form-control");
 
         ### option to upload a file with the gene list from the client machine
@@ -153,16 +153,16 @@ print '
 
   print '</div></div></div>
 
-  <!-- Regulatory Sequences BED File -->
+  <!-- Regulatory Sequences -->
   <div class="panel panel-danger">
-    <div class="panel-heading"> Regulatory Sequences BED File
-      <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="BED file indicating the regulatory sequences coordinates for all genes (on fourth column) of interest, including TFs. You can either paste the BED in the text box or upload it from your computer."></i>
+    <div class="panel-heading"> Regulatory Sequences
+      <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Regulatory sequences encoded as genomic coordinates in BED format, with the fourth column specifying the corresponding genes, including TFs. You can either paste the genomic coordinates in the text box or upload it from your computer."></i>
     </div>
 
     <div class="panel-body">
       <div class="form-group">';
 
-        print " Specify BED file below\n";
+        print " Specify BED file below\n<br>";
         print $query->textarea(-id=>"cre_selection", -name=>"cre_selection", -default=>$default{cre_selection}, -rows=>5, -columns=>60, class=>"form-control");
 
         ### option to upload a file with the gene list from the client machine
@@ -176,14 +176,14 @@ print '
  <!-- ### mandatory options ### -->
  <div class="bhoechie-tab-content">
 
- <!-- Genome version -->
+ <!-- Genome asembly -->
  <div class="panel panel-danger">
-   <div class="panel-heading">Genome
-     <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Genome version according to coordinates in BED file."></i>
+   <div class="panel-heading">Genome Assembly
+     <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="Genome assembly version corresponding to the coordinates in the Regulatory sequences BED file."></i>
    </div>
 
    <div class="panel-body">
-     Select a genome version<br>
+     Select a genome assembly<br>
      <div class="form-group">';
 
      print &UCSCGenomePopUpSelectable('genome_v', 'genome_v');
@@ -193,7 +193,7 @@ print '
    </div>
  </div>
   <!-- Directory Name -->
- <div class="panel panel-danger">
+ <!--<div class="panel panel-danger">
    <div class="panel-heading"> Directory Name
      <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Directory Name" data-original-title=""></i>
    </div>
@@ -204,7 +204,7 @@ print '
         -default=>$default{dir_name}) .'
       </div>
    </div>
- </div>
+ </div> -->
 </div>
 
  <!-- ################################################################-->
@@ -231,6 +231,22 @@ print '
       </div>
     </div>
    </div>
+
+       <div class="panel panel-warning">
+
+          <div class="panel-heading">Motif Collection 2
+            <i class="fa fa-info-circle" data-container="body" data-toggle="tooltip" data-placement="top" title="Input here the motif collection of interest to be clustered, you can either paste the motif in the text box or upload it from your computer" data-original-title=""></i>
+          </div>
+
+          <div class="panel-body">
+            <div class="form-group">';
+               print $query->textfield(-id=>'collection_2_label', -name=>'collection_2_label', -class=>'form-control', -placeholder=>'Provide a name for this Motif Collection',
+                 -default=>$default{collection_2_label});
+            print '</div>';
+               &MultiGetMatrix_bootstrap('title'=>'Matrix Format','mat_num'=>2);
+          print '</div></div>
+
+
  </div>
 
  <!-- ################################################################-->
@@ -240,7 +256,9 @@ print '
  <div class="bhoechie-tab-content">
 
  <div class="panel panel-warning">
- <div class="panel-heading"><em>matrix-scan</em> parameters</div>
+ <div class="panel-heading"><em>matrix-scan</em> parameters
+  <i class="fa fa-info-circle" rel="popover" data-container="body" data-trigger="hover" data-placement="right" data-content="By default, score is 5. You may add a p-value threshold and/or change the score and both will be applied to the scanning results."></i>
+ </div>
  <div class="panel-body"> <br>';
 
 print " Score lower threshold \n";
