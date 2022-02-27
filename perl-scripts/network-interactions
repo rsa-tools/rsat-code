@@ -1780,6 +1780,7 @@ sub indirectTableToHTML {
         # add row tags
         $row =~ s/^/<td>/;
         $row =~ s/\t/<\/td><td>/g;
+        $row = &wrapPositionsCol($row);
         $row =~ s/$/<\/td>/;
         # add column tags
         $interaction_details .= "
@@ -1845,10 +1846,11 @@ sub runRetrieveMatrix {
   &messageInfoAndLog("\tGot matrixes!\n");
 }
 
+# Add html div to table to wrap text in Positions column
 sub wrapPositionsCol {
   my ($row) = @_;
 
-  # make div to wrap text in positions (fourth) column
+  # make div to wrap text in positions column (next to coordinates)
   $row =~ s/(<td>chr[a-zA-z0-9:-]+<\/td><td>)/$1<div class="positions_col">/;
   $row =~ s/([DR]_\d+_\d+)<\/td>/$1<\/div><\/td>/;
 
@@ -1856,7 +1858,7 @@ sub wrapPositionsCol {
   my @n_pos = split(/;/,$row);
   my $n = scalar(@n_pos);
   if ($n > 4){
-    $row =~ s/([DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;)/$1 /g;
+    $row =~ s/([DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;)/$1 /g; # wrap each 4 positions
   }
 
   return $row;
