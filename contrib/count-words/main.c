@@ -1,15 +1,17 @@
-// 
+//
 //  main.c
 //  count-words
-//  
 //
-//  
-// 
+//
+//
+//
 
 #include <time.h>
 // #include <limits.h>
 #include "utils.h"
 #include "count.h"
+#include "count.c"
+#include "utils.c"
 
 int VERSION = 20140213;
 
@@ -25,7 +27,7 @@ void help(char *progname)
 {
     printf(
 "NAME\n"
-"        count-words\n"   
+"        count-words\n"
 "\n"
 "AUTHOR\n"
 "        Matthieu Defrance\n"
@@ -89,81 +91,81 @@ int main(int argc, char *argv[])
     int spacing = -1;
     int spacing_tab[2] = {0, 0};
     int grouprc = TRUE;
-    
+
     // options
-    if (argc == 1) 
+    if (argc == 1)
     {
         usage(argv[0]);
         exit(0);
     }
 
     int i;
-    for (i = 1; i < argc; i++) 
+    for (i = 1; i < argc; i++)
     {
-        if (strcmp(argv[i], "--help") == 0) 
+        if (strcmp(argv[i], "--help") == 0)
         {
             help(argv[0]);
             exit(0);
-        } 
-        else if (strcmp(argv[i], "--version") == 0) 
+        }
+        else if (strcmp(argv[i], "--version") == 0)
         {
             printf("%d\n", VERSION);
             exit(0);
-        } 
-        else if (strcmp(argv[i], "-v") == 0) 
+        }
+        else if (strcmp(argv[i], "-v") == 0)
         {
             ASSERT(argc > i + 1, "-v requires a nummber (0, 1 or 2)");
             VERBOSITY = atoi(argv[++i]);
             ASSERT(VERBOSITY >= 0 && VERBOSITY <= 2, "invalid verbosity level (should be 0, 1 or 2)");
-        } 
-        else if (strcmp(argv[i], "-h") == 0) 
+        }
+        else if (strcmp(argv[i], "-h") == 0)
         {
             help(argv[0]);
             exit(0);
-        } 
-        else if (strcmp(argv[i], "-1str") == 0) 
+        }
+        else if (strcmp(argv[i], "-1str") == 0)
         {
             add_rc = FALSE;
-        } 
-        else if (strcmp(argv[i], "-2str") == 0) 
+        }
+        else if (strcmp(argv[i], "-2str") == 0)
         {
             add_rc = TRUE;
-        } 
-        else if (strcmp(argv[i], "-noov") == 0) 
+        }
+        else if (strcmp(argv[i], "-noov") == 0)
         {
             noov = TRUE;
-        } 
-        else if (strcmp(argv[i], "-grouprc") == 0) 
+        }
+        else if (strcmp(argv[i], "-grouprc") == 0)
         {
             grouprc = TRUE;
-        } 
-        else if (strcmp(argv[i], "-nogrouprc") == 0) 
+        }
+        else if (strcmp(argv[i], "-nogrouprc") == 0)
         {
             grouprc = FALSE;
-        } 
+        }
         else if (strcmp(argv[i], "-l") == 0)
         {
             ASSERT(argc > i + 1, "-l requires a nummber");
             oligo_length = atoi(argv[++i]);
-        } 
+        }
         else if (strcmp(argv[i], "-sp") == 0)
         {
             ASSERT(argc > i + 1, "-sp requires an argument");
             parse_spacing(argv[++i], spacing_tab);
             spacing = spacing_tab[0];
             //printf("spacing =%d %d", spacing_tab[0], spacing_tab[1]);
-        } 
-        else if (strcmp(argv[i], "-i") == 0) 
+        }
+        else if (strcmp(argv[i], "-i") == 0)
         {
             ASSERT(argc > i + 1, "-i requires a string");
             input_filename = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-o") == 0) 
+        }
+        else if (strcmp(argv[i], "-o") == 0)
         {
             ASSERT(argc > i + 1, "-o requires a string");
             output_filename = argv[++i];
-        } 
-        else 
+        }
+        else
         {
             ERROR("invalid option %s", argv[i]);
         }
@@ -177,23 +179,23 @@ int main(int argc, char *argv[])
 
     FILE *input_fp = stdin;
     FILE *output_fp = stdout;
-    if (input_filename) 
+    if (input_filename)
     {
         input_fp = fopen(input_filename, "r");
     }
-    if (!input_fp) 
+    if (!input_fp)
     {
        ERROR("can not read from file '%s'", input_filename);
     }
-    if (output_filename) 
+    if (output_filename)
     {
        output_fp = fopen(output_filename, "w");
-       if (!output_fp) 
+       if (!output_fp)
        {
            ERROR("can not write to file '%s'", output_filename);
        }
     }
-    
+
     count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 1);
 
     if (spacing != -1)
@@ -222,6 +224,6 @@ int main(int argc, char *argv[])
         printf("; Job started %s\n", time_buffer);
         strftime (time_buffer, 256, "%Y_%m_%d.%H%M%S", end_time);
         printf("; Job done    %s\n", time_buffer);
-    }        
+    }
     return 0;
 }
