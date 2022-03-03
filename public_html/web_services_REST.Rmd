@@ -1,0 +1,93 @@
+# **RSAT REST APIs**
+
+
+###### RSAT REST API provides language agnostic bindings to RSAT data.
+
+The <b>Regulatory Sequence Analysis Tools</b> are
+accessible via <b>a REST API </b> for its programmatic access.
+
+<p>Web Services offer a <b>programmatic interface</b> for running the tools on the public servers, querying the server with
+a program rather than with the Web forms.
+
+Using RSAT via Web Services allows to <b>automatize repetitive
+tasks</b>, interconnect RSAT with other tools exposing REST API (like Ensembl or Remap) and combine multiple tools of RSAT into automated pipelines.
+</p>
+
+<p>This REST API aims to replace our former SOAP/WSDL programmatic interface. </p>
+
+
+<h2>How to use RSAT REST API web services ?</h2>
+
+#### 
+#### Entry points
+
+
+Currently, **49** individual tools are accessible with a REST API.
+<br/>
+
+The entry points are listed below by server:
+<ul>
+<li>Fungi server : <a target=_blank href=http://rsat-tagc.univ-mrs.fr/rest/>http://rsat-tagc.univ-mrs.fr/rest/</a></li>
+<li>Prokaryotes server : soon to be available</li>
+<li>Protists server :soon to be available</li>
+<li>Metazoa server : soon to be available</li>
+<li>Plants server : soon to be available</li>
+<li>Teaching server : soon to be available</li>
+
+</ul>
+
+#### 
+#### Testing from the Web browser
+
+We suggest to start with the tool <b>supported-organisms</b>. The entry point enables to directly test each tool : 
+
+* choose the GET or POST method, 
+* then click on the <b>Try it out</b> button. The parameters will be filled, 
+* and you can click on the blue <b>Execute</b> button. 
+
+The <b>curl</b> command will be displayed, along with the result.
+
+
+#### 
+#### Example of client program in Python
+
+```python
+#Begin by importing the Requests module
+import requests, sys
+
+#State the base URL
+server = "http://rsat-tagc.univ-mrs.fr/rest.wsgi"
+
+#The endpoint indicates which RSAT resource you are interested in
+ext = "/supported-organisms/" ##Returns the list of organisms supported on the local RSAT or on a remove server (opion -server).
+
+#Write the parameters specifying details of how you want to interact with the resource. For default option write None
+data =  {
+        "format" : "tab", ##Output format. supported tab, tree, html_tree, newick
+        "return" : "ID", ##String. Output fields. Supported ID,name,taxid,source,last_update,nb,seq_format,up_from,up_to,taxonomy,data,genome,genome_assembly,genome_version,download_date,variant_available,variant_source,variant_date,path_to_variant_files
+        "taxon" : None, ##String. Selected_taxon. Only returns organisms belonging to a selected taxon.
+        "group" : "Fungi", ##String. Selected_group. Only returns organisms belonging to a selected taxonomy group.
+        "source" : "NCBI-Refseq", ##String. Selected_source. Only return organisms from a user-selected source(s).
+        "depth" : None, ##Integer. Depth for exploring the taxonomic tree.
+        "unique_species" : None, ##Boolean. Select at most one organism per species. This option aims at avoiding to be submerged by hundreds of strains sequenced for the same species.
+        "unique_genus" : None, ##Boolean. Select at most one organism per genus.
+        "source" : None ##String. Return the list of organisms supported on a remote RSAT server, via the Web services interfaces.
+    } 
+r = requests.get(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"}) ##Default value : text/plain
+#r = requests.post(server+ext, data, headers={ "Content-Type" : "text/plain", "Accept" : "application/json"})
+ 
+if not r.ok:
+  r.raise_for_status()
+  sys.exit()
+
+ 
+print(r.text)
+# print (repr(r.json))
+```
+
+#### 
+#### More example client programs in Python
+
+* check out all clients from our  : [GitHub repository](https://github.com/rsa-tools/rsat-code/tree/master/public_html/web_services/REST-API)
+
+
