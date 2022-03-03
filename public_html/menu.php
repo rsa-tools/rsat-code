@@ -256,7 +256,7 @@
 
                  <div class="menu">
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities</div>
+                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities <img src="images/onebit_49.png"  class="new"/> </div>
                      <div id="menu8" class="menu_collapsible">
                          <a class="menu_separator">Set comparisons / enrichment</a>
                          <!--<a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a> -->
@@ -273,6 +273,8 @@
                          <a class="menu_separator">features</a>
                          <a class="menu_item" href="convert-features_form.cgi" >convert features</a>
                          <a class="menu_item_last" href="compare-features_form.cgi" >compare features</a>
+                         <a class="menu_separator">networks</a>
+                         <a class="menu_item" href="network-interactions_form.cgi" >network interactions <img src="images/onebit_49.png"  class="new"/></a>
                      </div>
 
 
@@ -296,7 +298,7 @@
                        <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services&file=web_services.html">Programmatic interface to RSAT</a>
                       <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services documentation&file=web_services/RSATWS_documentation.xml">WSDL Documentation</a>
 
-                       
+
                          <!--<a class="menu_item" href="htmllink.cgi?title=RSAT : Web services&file=web_services.html">Programmatic interface to RSAT</a>
                          <a class="menu_item" href="web_services/RSATWS.wsdl" target=tools>WSDL</a>
                           <a class="menu_item" href="ws_clients.html" target=tools>Clients</a>
