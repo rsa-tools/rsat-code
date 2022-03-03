@@ -49,6 +49,7 @@ $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1);
 
 local $dir_name=$query->param('html_title');
 $dir_name =~ s/\s/_/g; # correct dir name
+$dir_name =~ s/\'//g; # correct dir name
 $tmp_dir = &RSAT::util::get_pub_temp();
 
 $output_dir = $output_path."/".$dir_name;
