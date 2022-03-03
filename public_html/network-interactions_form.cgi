@@ -101,7 +101,7 @@ print '
           <span class="fa-stack fa-lg">
   							<i class="fa fa-folder-open fa-stack-1x"></i>
 					</span>
-					Sample output<br>
+					<a href="sample_outputs/network-interactions_demo_output/Demo_01/ResultsFiles/SUMMARY_2022-03-03.092844.html">Sample output</a><br>
 
 					<span class="fa-stack fa-lg">
   							<i class="fa fa-book fa-stack-1x"></i>
