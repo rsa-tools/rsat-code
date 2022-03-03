@@ -98,6 +98,11 @@ print '
 
 					Monica Padilla Galvez and <a target="_blank" href="http://liigh.unam.mx/amedina/index.html">Alejandra Medina Rivera</a>.<br>
 
+          <span class="fa-stack fa-lg">
+  							<i class="fa fa-folder-open fa-stack-1x"></i>
+					</span>
+					Sample output<br>
+
 					<span class="fa-stack fa-lg">
   							<i class="fa fa-book fa-stack-1x"></i>
 					</span>
