@@ -374,7 +374,6 @@ function setDemo1(tfs, bed, net){
     html_title.value = "\'Demo 01\'";
     matrixscan_pval.value = "0.0005";
     genome_v.value = "galGal4";
-    dir_name.value = "Demo01";
     tf_selection.value = tfs;
     cre_selection.value = bed;
     net_selection.value = net;
