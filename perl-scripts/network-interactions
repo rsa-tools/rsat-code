@@ -364,7 +364,7 @@ package main;
     my @matrices_from_file = &RSAT::MatrixReader::readFromFile($main::used_outfile{used_matrixes}, "transfac", ());
   }
   if($main::databases ne ""){
-    @dbs = split(/,|;/, $main::databases;
+    @dbs = split(/,|;/, $main::databases);
 
     # check that the dbs specified are supported
     foreach my $motif_db (@dbs) {
@@ -511,7 +511,7 @@ package main;
         if( $row =~ /^$db/){
           @fields = split(/\t/,$row);
           $matfiles_path[$i++] = $ENV{RSAT}."/public_html/motif_databases/".$fields[2];
-          print(" matrix file path number ".$c." : ".$matfiles_path[$c]."\n");
+          #print(" matrix file path number ".$c." : ".$matfiles_path[$c]."\n");
           #$c++;
         }
       }
@@ -1295,6 +1295,14 @@ Working genome version.
 =item B<-db databases>
 
 Database(s) to use separated by commas.
+
+Supported motif databases: ENCODE,epigram,Hocomoco_human,Hocomoco_mouse,Homer,hPDI,HT_Selex,
+Jolma_2013,Jolma_2015,NCAP-SELEX,CAP-SELEX,RSAT,cisBP,Yeastract,
+DrosophilaTFs,Aniseed,ZF_ChIP-exo,ZF_ChIP-seq,footprintDB-plants,
+footprintDB-metazoa,footprintDB,jaspar_core_nonredundant_fungi,
+jaspar_core_nonredundant_insects,jaspar_core_nonredundant_nematodes,
+jaspar_core_nonredundant_plants,jaspar_core_nonredundant_urochordates,
+jaspar_core_nonredundant_vertebrates
 
 =cut
 	} elsif ($arg eq "-db") {
