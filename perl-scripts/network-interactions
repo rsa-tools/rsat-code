@@ -489,7 +489,8 @@ package main;
 
   if($main::databases eq "" && !$main::matrices){ # default option
     #print("Entered default option of dbs\n");
-    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2022/JASPAR_2022_CORE_+_UNVALIDATED_vertebrates.tf";
+    $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2020/nonredundant/JASPAR2020_CORE_vertebrates_non-redundant_pfms.tf";
+    #$matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2022/JASPAR_2022_CORE_+_UNVALIDATED_vertebrates.tf";
     #$matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
     #print($matfiles_path[0]."\n");
   } else {
@@ -1556,6 +1557,8 @@ sub retrieveACsfromTFs {
     my @cols; # list of elementes in field AC
     my $retrievingACs = ""; # final "list" with all AC's from the TFnames required
 
+    print("here retrieveACs\n");
+
     open( my $db, "<", $database) or die "Cannot open file $!";
     while(my $db_row = <$db>){
         chomp($db_row);
@@ -1839,6 +1842,7 @@ sub runRetrieveMatrix {
     my @matfiles_path = @{ $matfiles_path_ref };
     my @nonRepTFs_k = @{ $nonRepTFs_k_ref };
 
+    print("here runretrievematrix\n");
 
   &messageInfoAndLog("Retrieving matrixes ...\n");
   foreach my $db (@matfiles_path){
