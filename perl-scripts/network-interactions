@@ -426,8 +426,8 @@ package main;
     &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
   }
 
-  $main::err = &OpenOutputFile($main::outfile{err_log});
-  &Verbose($main::err) if ($main::verbose >= 1);
+  #$main::err = &OpenOutputFile($main::outfile{err_log});
+  #&Verbose($main::err) if ($main::verbose >= 1);
 
   ################################################################
   if ( $html == 1 ){
@@ -468,7 +468,7 @@ package main;
     my $icon_sync_cmd = "rsync -ruptl";
     $icon_sync_cmd .= " ".$icons_path;
     $icon_sync_cmd .= " ".$main::output_dir;
-    &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out);
 
     $icons{comparison} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/comparison.png");
     $icons{indirect} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/indirect.png");
