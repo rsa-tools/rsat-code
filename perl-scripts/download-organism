@@ -436,7 +436,7 @@ package main;
       my $source = $source{$org} || '<NA>';
       my $date = $last_update{$org} || '<NA>';
       &RSAT::message::TimeWarn("Updating organism",$org) if ($main::verbose >= 2);
-      $cmd = &RSAT::server::GetProgramPath("install-organism");
+      $cmd = "install-organism";
       $cmd .= " -v 1 -task config,phylogeny -org ".$org;
       $cmd .= " -date \"".$date."\"";
       $cmd .= " -source \"".$source."\"";
