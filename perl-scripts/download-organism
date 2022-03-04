@@ -313,7 +313,7 @@ package main;
   my @all_organisms;
   if ($upload) {
     ## For upload, the update date and data sources are read locally
-      $cmd = &RSAT::server::GetProgramPAth("supported-organisms");
+      $cmd = &RSAT::server::GetProgramPath("supported-organisms");
       $cmd .= " -v 0 -return ID,last_update,source | grep -v '^#'";
   } elsif ($ssh_login) {
     $cmd = "ssh $ssh_login '".$source_bashrc_cmd."supported-organisms -v 0 -return ID,last_update,source | grep -v \"^#\"'";
