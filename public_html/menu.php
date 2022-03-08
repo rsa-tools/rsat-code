@@ -273,8 +273,17 @@
                          <a class="menu_separator">features</a>
                          <a class="menu_item" href="convert-features_form.cgi" >convert features</a>
                          <a class="menu_item_last" href="compare-features_form.cgi" >compare features</a>
-                         <a class="menu_separator">networks</a>
-                         <a class="menu_item" href="network-interactions_form.cgi" >network interactions <img src="images/onebit_49.png"  class="new"/></a>
+
+<?php
+
+    if($properties['ucsc_tools'] == '1') {
+      echo '                         <a class="menu_separator">networks</a>
+      <a class="menu_item" href="network-interactions_form.cgi" >network interactions <img src="images/onebit_49.png"  class="new"/></a>'; }
+    else{
+      echo '                         <a class="menu_separator">networks</a>
+      <a class="menu_item" style="cursor:default;color:lightgray" >network interactions <img src="images/onebit_49.png"  class="new"/></a>';
+    }
+?>
                      </div>
 
 
