@@ -256,7 +256,12 @@
 
                  <div class="menu">
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities <img src="images/onebit_49.png"  class="new"/> </div>
+                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities
+                         <?php
+                             if($properties['ucsc_tools'] == '1'){
+                               echo '<img src="images/onebit_49.png"  class="new"/>'; }
+                         ?>
+                       </div>
                      <div id="menu8" class="menu_collapsible">
                          <a class="menu_separator">Set comparisons / enrichment</a>
                          <!--<a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a> -->
@@ -281,7 +286,7 @@
       <a class="menu_item" href="network-interactions_form.cgi" >network interactions <img src="images/onebit_49.png"  class="new"/></a>'; }
     else{
       echo '                         <a class="menu_separator">networks</a>
-      <a class="menu_item" style="cursor:default;color:lightgray" >network interactions <img src="images/onebit_49.png"  class="new"/></a>';
+      <a class="menu_item" style="cursor:default;color:lightgray" >network interactions</a>';
     }
 ?>
                      </div>
