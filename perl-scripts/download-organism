@@ -350,87 +350,93 @@ package main;
     next if (($skip_org > 0) && ($i <= $skip_org));
     next if (($last_org > 0) && ($i > $last_org));
 
-    ## Create destination directory
-    $org_dir = $local_genomes_dir."/".$org;
-    &RSAT::util::CheckOutDir($org_dir);
+    ## Transfer (download or upload) the organism data
+    unless ($no_data) {
 
-    ## download the genome
-    $cmd = $which_aspirator;
-    if ($get_command eq "wget") {
-      my $RSAT_SERVER_ROOT = $RSAT_SERVER;
-      $RSAT_SERVER_ROOT =~ s|http://||;
-      if ($RSAT_SERVER_ROOT =~ /\//) {
-	  $RSAT_SERVER_ROOT = '/'.$'; #'
-      }
+	## Create destination directory
+	unless ($main::upload) {
+	    $org_dir = $local_genomes_dir."/".$org;
+	    &RSAT::util::CheckOutDir($org_dir);
+	}
 
-      &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, 
-			       "RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
-      &RSAT::message::Debug("RSAT server root", $RSAT_SERVER_ROOT) if ($main::verbose >= 3);
-      $cmd .= " --reject jobs --reject 'index.html*'";
-      $cmd .= " -X ".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
-      if ($main::verbose <= 3) {
-	## quiet mode for wget
-	$cmd .= " --quiet"; 
-      } elsif ($main::verbose <= 4) {
-	## "low-verbosity" mode for wget (the default mode is VERY
-	## verbosy, the "low-verbosity" mode is still quite verbosy)
-      	$cmd .= " -nv"; 
-      } else {
-	## "verbosity" mode for wget (VERY verbosy)
-      	$cmd .= " -v"; 
-      }
-      $cmd .= " --passive-ftp";
-      $cmd .= " --no-parent";
-      $cmd .= " --recursive";
-      $cmd .= " --timestamping";
-      $cmd .= " --relative";
-      $cmd .= " --dont-remove-listing";
-      $cmd .= " --convert-links";
-      $cmd .= " --exclude-directories=jobs";
-      $cmd .= " --directory-prefix=".$local_genomes_dir."/";
-      # $cmd .= " --directory-prefix=".$org_dir."/";
-      $cmd .= " --no-host-directories --cut-dirs=3";
-      $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
-      $cmd =~ s|//data|/data|g;
+	## download the genome
+	$cmd = $which_aspirator;
+	if ($get_command eq "wget") {
+	    my $RSAT_SERVER_ROOT = $RSAT_SERVER;
+	    $RSAT_SERVER_ROOT =~ s|http://||;
+	    if ($RSAT_SERVER_ROOT =~ /\//) {
+		$RSAT_SERVER_ROOT = '/'.$'; #'
+	    }
+
+	    &RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, 
+				     "RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+	    &RSAT::message::Debug("RSAT server root", $RSAT_SERVER_ROOT) if ($main::verbose >= 3);
+	    $cmd .= " --reject jobs --reject 'index.html*'";
+	    $cmd .= " -X ".${RSAT_SERVER_ROOT}."/data/genomes/".$org."/blast_hits" if ($no_blast);
+	    if ($main::verbose <= 3) {
+		## quiet mode for wget
+		$cmd .= " --quiet"; 
+	    } elsif ($main::verbose <= 4) {
+		## "low-verbosity" mode for wget (the default mode is VERY
+		## verbosy, the "low-verbosity" mode is still quite verbosy)
+		$cmd .= " -nv"; 
+	    } else {
+		## "verbosity" mode for wget (VERY verbosy)
+		$cmd .= " -v"; 
+	    }
+	    $cmd .= " --passive-ftp";
+	    $cmd .= " --no-parent";
+	    $cmd .= " --recursive";
+	    $cmd .= " --timestamping";
+	    $cmd .= " --relative";
+	    $cmd .= " --dont-remove-listing";
+	    $cmd .= " --convert-links";
+	    $cmd .= " --exclude-directories=jobs";
+	    $cmd .= " --directory-prefix=".$local_genomes_dir."/";
+	    # $cmd .= " --directory-prefix=".$org_dir."/";
+	    $cmd .= " --no-host-directories --cut-dirs=3";
+	    $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
+	    $cmd =~ s|//data|/data|g;
 
 #      die "\n", $cmd, "\n";
 
-    } elsif ($get_command eq "rsync") {
-      my $rsync_opt = " -e ssh -ruptl -z ";
-      $rsync_opt .= " -v" if ($main::verbose >= 4);
-      $rsync_opt .= " --exclude jobs --exclude '*~'";
-      $rsync_opt .= " --exclude blast_hits --exclude blastdb" if ($no_blast);
+	} elsif ($get_command eq "rsync") {
+	    my $rsync_opt = " -e ssh -ruptl -z ";
+	    $rsync_opt .= " -v" if ($main::verbose >= 4);
+	    $rsync_opt .= " --exclude jobs --exclude '*~'";
+	    $rsync_opt .= " --exclude blast_hits --exclude blastdb" if ($no_blast);
 
-      if ($main::upload) {
+	    if ($main::upload) {
 #	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/*";
-	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/";
-	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome)
-	    if ($main::verbose >= 1);
-	$cmd .= $rsync_opt;
-	$cmd .= " ".$local_genomes_dir."/".$org;
-	$cmd .= " ".$remote_genome;
-	$cmd =~ s/\/\//\//g;
+		my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/";
+		&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome)
+		    if ($main::verbose >= 1);
+		$cmd .= $rsync_opt;
+		$cmd .= " ".$local_genomes_dir."/".$org;
+		$cmd .= " ".$remote_genome;
+		$cmd =~ s/\/\//\//g;
 #	&RSAT::error::FatalError("NOT YET IMPLEMENTED");
-      } else {
+	    } else {
 #	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org."/'*'";
-	my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org;
-	&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome) 
-	    if ($main::verbose >= 1);
-	$cmd .= $rsync_opt;
-	$cmd .= " ".$remote_genome;
-	$cmd .= " ".$local_genomes_dir."/";
-	$cmd =~ s/\/\//\//g;
-      }
+		my $remote_genome = $ssh_login.":".$rsat_server_dir."/public_html/data/genomes/".$org;
+		&RSAT::message::TimeWarn($action, "genome", $i."/".$org_nb, $org, "RSAT server\n", $remote_genome) 
+		    if ($main::verbose >= 1);
+		$cmd .= $rsync_opt;
+		$cmd .= " ".$remote_genome;
+		$cmd .= " ".$local_genomes_dir."/";
+		$cmd =~ s/\/\//\//g;
+	    }
+	}
+	&doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
     }
-    &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
 
 
-    ## update the organism in the RSAT configuration tables
+    ## Update organism configuration in the RSAT target server
     unless ($no_config) {
       my $source = $source{$org} || '<NA>';
       my $date = $last_update{$org} || '<NA>';
       &RSAT::message::TimeWarn("Updating organism",$org) if ($main::verbose >= 2);
-      $cmd = &RSAT::server::GetProgramPath("install-organism");
+      $cmd = "install-organism";
       $cmd .= " -v 1 -task config,phylogeny -org ".$org;
       $cmd .= " -date \"".$date."\"";
       $cmd .= " -source \"".$source."\"";
@@ -754,6 +760,18 @@ Download (or upload) the files but do not run the configuration task
 =cut
 	} elsif ($arg eq "-no_config") {
 	    $main::no_config = 1;
+
+=pod
+
+=item B<-no_config>
+
+Do not transfer (download or upload) the data. This optio enables to
+run the configuration after the data has been transferred
+(install-organisms -task config).
+
+=cut
+	} elsif ($arg eq "-no_data") {
+	    $main::no_data = 1;
 
 =pod
 
