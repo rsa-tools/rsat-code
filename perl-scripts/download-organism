@@ -313,7 +313,7 @@ package main;
   my @all_organisms;
   if ($upload) {
     ## For upload, the update date and data sources are read locally
-      $cmd = &RSAT::server::GetProgramPAth("supported-organisms");
+      $cmd = &RSAT::server::GetProgramPath("supported-organisms");
       $cmd .= " -v 0 -return ID,last_update,source | grep -v '^#'";
   } elsif ($ssh_login) {
     $cmd = "ssh $ssh_login '".$source_bashrc_cmd."supported-organisms -v 0 -return ID,last_update,source | grep -v \"^#\"'";
@@ -342,13 +342,19 @@ package main;
   ## Download the genomes
   my $org_nb = scalar(@organisms);
   $i = 0;
+  
+  ## Iterate over organisms
   foreach my $org (@organisms) {
     $i++;
 
     next if (($skip_org > 0) && ($i <= $skip_org));
     next if (($last_org > 0) && ($i > $last_org));
 
-    ## download one genome
+    ## Create destination directory
+    $org_dir = $local_genomes_dir."/".$org;
+    &RSAT::util::CheckOutDir($org_dir);
+
+    ## download the genome
     $cmd = $which_aspirator;
     if ($get_command eq "wget") {
       my $RSAT_SERVER_ROOT = $RSAT_SERVER;
@@ -365,10 +371,13 @@ package main;
       if ($main::verbose <= 3) {
 	## quiet mode for wget
 	$cmd .= " --quiet"; 
-      } else {
+      } elsif ($main::verbose <= 4) {
 	## "low-verbosity" mode for wget (the default mode is VERY
 	## verbosy, the "low-verbosity" mode is still quite verbosy)
       	$cmd .= " -nv"; 
+      } else {
+	## "verbosity" mode for wget (VERY verbosy)
+      	$cmd .= " -v"; 
       }
       $cmd .= " --passive-ftp";
       $cmd .= " --no-parent";
@@ -378,9 +387,13 @@ package main;
       $cmd .= " --dont-remove-listing";
       $cmd .= " --convert-links";
       $cmd .= " --exclude-directories=jobs";
-      $cmd .= " --directory-prefix=".$local_genomes_dir;
-      $cmd .= " --no-host-directories --cut-dirs=4";
+      $cmd .= " --directory-prefix=".$local_genomes_dir."/";
+      # $cmd .= " --directory-prefix=".$org_dir."/";
+      $cmd .= " --no-host-directories --cut-dirs=3";
       $cmd .= " ".${RSAT_SERVER}."/data/genomes/".$org."/";
+      $cmd =~ s|//data|/data|g;
+
+#      die "\n", $cmd, "\n";
 
     } elsif ($get_command eq "rsync") {
       my $rsync_opt = " -e ssh -ruptl -z ";

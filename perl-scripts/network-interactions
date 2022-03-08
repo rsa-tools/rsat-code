@@ -273,6 +273,37 @@ package main;
 
   $main::out = STDOUT; # one_command() relies on this variable
 
+  # supported matrix databases
+  my %supported_motif_databases = (
+    'ENCODE' => 1,
+    'epigram' => 1,
+    'Hocomoco_human' => 1,
+    'Hocomoco_mouse' => 1,
+    'Homer' => 1,
+    'hPDI' => 1,
+    'HT_Selex' => 1,
+    'Jolma_2013' => 1,
+    'Jolma_2015' => 1,
+    'NCAP-SELEX' => 1,
+    'CAP-SELEX' => 1,
+    'RSAT' => 1,
+    'jaspar_core_nonredundant_fungi' => 1,
+    'jaspar_core_nonredundant_insects' => 1,
+    'jaspar_core_nonredundant_nematodes' => 1,
+    'jaspar_core_nonredundant_plants' => 1,
+    'jaspar_core_nonredundant_urochordates' => 1,
+    'jaspar_core_nonredundant_vertebrates' => 1,
+    'cisBP' => 1,
+    'Yeastract' => 1,
+    'DrosophilaTFs' => 1,
+    'Aniseed' => 1,
+    'ZF_ChIP-exo' => 1,
+    'ZF_ChIP-seq' => 1,
+    'footprintDB-plants' => 1,
+    'footprintDB-metazoa' => 1,
+    'footprintDB' => 1,
+  );
+
   ##################################################################
   ### Variables for summary html
 
@@ -328,6 +359,18 @@ package main;
       }
     }
   }
+  if($main::matrices){
+    ## Check provided matrices are ok
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($main::used_outfile{used_matrixes}, "transfac", ());
+  }
+  if($main::databases ne ""){
+    @dbs = split(/,|;/, $main::databases);
+
+    # check that the dbs specified are supported
+    foreach my $motif_db (@dbs) {
+      &RSAT::error::FatalError("Error: Indicated motif database (-db) not recognized: ".$motif_db."\n") unless ($supported_motif_databases{$motif_db});
+    }
+  }
 
   if ($main::output_dir eq "") {
     $main::output_dir = "network-interactions_".$date;
@@ -371,18 +414,20 @@ package main;
   $main::outfile{GRN_direct_interactions} = $basename."GRN_direct_interactions_".$date.".tsv";
   $main::outfile{GRN_indirect_interactions} = $basename."GRN_indirect_interactions_".$date.".tsv";
 
-  #if ( $main::html == 1 );
-  # html summary file
-  $main::outfile{summary} = $basename."SUMMARY_".$date.".html";
-  ## Archive to facilitate transfer of all the results in a zip file
-  $main::outfile{archive} = $out_path."network-interactions_archive_".$date.".zip";
-
-  &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
-
   # main error file
   $main::outfile{err_log} = $basename."_errors.txt";
-  $main::err = &OpenOutputFile($main::outfile{err_log});
-  &Verbose($main::err) if ($main::verbose >= 1);
+
+  if ( $main::html == 1 ){
+    # html summary file
+    $main::outfile{summary} = $basename."SUMMARY_".$date.".html";
+    ## Archive to facilitate transfer of all the results in a zip file
+    $main::outfile{archive} = $out_path."network-interactions_archive_".$date.".zip";
+
+    &RSAT::message::Debug("Archive", $main::outfile{archive}) if ($main::verbose >= 3);
+  }
+
+  #$main::err = &OpenOutputFile($main::outfile{err_log});
+  #&Verbose($main::err) if ($main::verbose >= 1);
 
   ################################################################
   if ( $html == 1 ){
@@ -423,7 +468,7 @@ package main;
     my $icon_sync_cmd = "rsync -ruptl";
     $icon_sync_cmd .= " ".$icons_path;
     $icon_sync_cmd .= " ".$main::output_dir;
-    &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
+    &doit($icon_sync_cmd, 0, 1, $verbose, 0, "", $main::out);
 
     $icons{comparison} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/comparison.png");
     $icons{indirect} = &RSAT::util::RelativePath($main::outfile{summary}, $main::output_dir."/network-interactions_icons/indirect.png");
@@ -442,15 +487,18 @@ package main;
   # Decide which transfac files to use
   # CODE: add all from organism option
 
-  if($main::databases eq ""){ # default option
+  if($main::databases eq "" && !$main::matrices){ # default option
     #print("Entered default option of dbs\n");
     $matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2020/nonredundant/JASPAR2020_CORE_vertebrates_non-redundant_pfms.tf";
+    #$matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2022/JASPAR_2022_CORE_+_UNVALIDATED_vertebrates.tf";
     #$matfiles_path[0] = $ENV{RSAT}."/public_html/motif_databases/JASPAR/Jaspar_2018/nonredundant/JASPAR2018_CORE_vertebrates_non-redundant_pfms_transfac.tf";
     #print($matfiles_path[0]."\n");
   } else {
     if($main::databases eq "all"){ # CODE: falta anadir algo que soporte que meta los nombres de dbs como sea
-      @dbs = qw(ENCODE epigram Hocomoco_human Hocomoco_mouse Homer hPDI HT_Selex Jolma_2013 Jolma_2015 NCAP-SELEX CAP-SELEX RSAT jaspar_core_redundant_all cisBP Yeastract DrosophilaTFs);
-    } else { @dbs = split(/,|;/, $main::databases) }
+      @dbs = keys %supported_motif_databases;
+    } elsif($main::databases ne ""){
+      @dbs = split(/,|;/, $main::databases);
+    }
 
     # retrieve paths to databases from db_matrix_files.tab
     open(my $dbs_file, "<", $ENV{RSAT}."/public_html/motif_databases/db_matrix_files.tab") or die "Cannot open file $!";
@@ -471,8 +519,10 @@ package main;
     }
     close $dbs_file;
   }
-  &messageInfoAndLog("Number of motif databases = ".scalar(@matfiles_path)."\n");
-
+  &messageInfoAndLog("Number of motif databases = ".scalar(@matfiles_path)."\n") if ($main::verbose > 1);
+  unless (scalar(@matfiles_path) > 0){
+    &RSAT::error::FatalError("Error: Upps! Seems like you're trying to use an old database. Please select another\n");
+  }
 
   ################################################################
   ####################################### Save Input Data
@@ -1247,6 +1297,14 @@ Working genome version.
 
 Database(s) to use separated by commas.
 
+Supported motif databases: ENCODE,epigram,Hocomoco_human,Hocomoco_mouse,Homer,hPDI,HT_Selex,
+Jolma_2013,Jolma_2015,NCAP-SELEX,CAP-SELEX,RSAT,cisBP,Yeastract,
+DrosophilaTFs,Aniseed,ZF_ChIP-exo,ZF_ChIP-seq,footprintDB-plants,
+footprintDB-metazoa,footprintDB,jaspar_core_nonredundant_fungi,
+jaspar_core_nonredundant_insects,jaspar_core_nonredundant_nematodes,
+jaspar_core_nonredundant_plants,jaspar_core_nonredundant_urochordates,
+jaspar_core_nonredundant_vertebrates
+
 =cut
 	} elsif ($arg eq "-db") {
 	    $main::databases = shift(@arguments);
@@ -1341,6 +1399,18 @@ ID field.
 	} elsif ($arg eq "-m") {
 	    $main::used_outfile{used_matrixes} = shift(@arguments);
       $main::matrices = 1;
+
+	    ## Input matrices format
+=pod
+
+=item B<-m_format matrices-file-format>
+
+Input matrices format. Should be transfac
+
+=cut
+	} elsif ($arg eq "-m_format") {
+	    $main::matrices_format = shift(@arguments);
+      &RSAT::error::FatalError("Format should be transfac.") unless ($main::matrices_format eq "transfac");
 
 	    ## matrix-scan result
 =pod
@@ -1487,6 +1557,8 @@ sub retrieveACsfromTFs {
     my @cols; # list of elementes in field AC
     my $retrievingACs = ""; # final "list" with all AC's from the TFnames required
 
+    print("here retrieveACs\n");
+
     open( my $db, "<", $database) or die "Cannot open file $!";
     while(my $db_row = <$db>){
         chomp($db_row);
@@ -1632,6 +1704,7 @@ sub tableToHTML {
     # add row tags
     $row =~ s/^/<td>/;
     $row =~ s/\t/<\/td><td>/g;
+    $row = &wrapPositionsCol($row);
     $row =~ s/$/<\/td>/;
     # add column tags
     $table_html .= "
@@ -1713,11 +1786,12 @@ sub indirectTableToHTML {
         # interaction details
         if ($interaction_details eq ""){
           $interaction_details .= '
-          <td><table>'
+          <td><table style="font-size:12px;">'
         }
         # add row tags
         $row =~ s/^/<td>/;
         $row =~ s/\t/<\/td><td>/g;
+        $row = &wrapPositionsCol($row);
         $row =~ s/$/<\/td>/;
         # add column tags
         $interaction_details .= "
@@ -1768,6 +1842,7 @@ sub runRetrieveMatrix {
     my @matfiles_path = @{ $matfiles_path_ref };
     my @nonRepTFs_k = @{ $nonRepTFs_k_ref };
 
+    print("here runretrievematrix\n");
 
   &messageInfoAndLog("Retrieving matrixes ...\n");
   foreach my $db (@matfiles_path){
@@ -1783,6 +1858,23 @@ sub runRetrieveMatrix {
   &messageInfoAndLog("\tGot matrixes!\n");
 }
 
+# Add html div to table to wrap text in Positions column
+sub wrapPositionsCol {
+  my ($row) = @_;
+
+  # make div to wrap text in positions column (next to coordinates)
+  $row =~ s/(<td>chr[a-zA-z0-9:-]+<\/td><td>)/$1<div class="positions_col">/;
+  $row =~ s/([DR]_\d+_\d+)<\/td>/$1<\/div><\/td>/;
+
+  # add space to be able to wrap
+  my @n_pos = split(/;/,$row);
+  my $n = scalar(@n_pos);
+  if ($n > 4){
+    $row =~ s/([DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;[DR]_\d+_\d+;)/$1 /g; # wrap each 4 positions
+  }
+
+  return $row;
+}
 
 ################################################################################
 ####                                                                        ####
@@ -1913,7 +2005,7 @@ sub Archive {
   my $cmd = "";
   if ($main::archive_format eq "zip") {
     $cmd .= "(cd ".$archive_dir_dir." ; ";
-    $cmd .= " zip -ry ".$archive_rel_path." ".$to_archive_rel_path;
+    $cmd .= " zip -rqy ".$archive_rel_path." ".$to_archive_rel_path;
     $cmd .= " -x ".$archive;
     $cmd .= ")";
   } elsif (($main::archive_format eq "tar") ||
@@ -2423,6 +2515,23 @@ sub ReportStyleCSS{
 
   .param {
   font: 11px sans-serif;
+  }
+
+  .icon_section_main_table{
+  font-size: 12px;
+  }
+
+  .icon_section_main_table_twocols{
+  font-size: 12px;
+  }
+
+  .icon_section_main_table_indirect{
+  font-size: 12px;
+  }
+
+  .positions_col {
+  display: inline-block;
+  vertical-align: top;
   }
 
 </style>

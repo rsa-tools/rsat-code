@@ -1,13 +1,13 @@
 /***************************************************************************
  *                                                                         *
  *  matrix-scan-quick
- *  
+ *
  *
  *
  *                                                                         *
  ***************************************************************************/
 
-#include <iostream> 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <cstring>
@@ -25,6 +25,14 @@ using namespace std;
 #include "seq.h"
 #include "dist.h"
 #include "pval.h"
+#include "dist.cpp"
+#include "markov.cpp"
+#include "matrix.cpp"
+#include "pval.cpp"
+#include "scan.cpp"
+#include "seq.cpp"
+#include "utils.cpp"
+#include "cfasta.cpp"
 
 int VERSION = 20160208;
 char *COMMAND_LINE;
@@ -163,46 +171,46 @@ int main(int argc, char *argv[])
     }
 
     int i;
-    for (i = 1; i < argc; i++) 
+    for (i = 1; i < argc; i++)
     {
-        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) 
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0)
         {
             help();
             exit(0);
-        } else if (strcmp(argv[i], "--version") == 0) 
+        } else if (strcmp(argv[i], "--version") == 0)
         {
             printf("%d\n", VERSION);
             exit(0);
-        } else if (strcmp(argv[i], "-v") == 0) 
+        } else if (strcmp(argv[i], "-v") == 0)
         {
             ASSERT(argc > i + 1, "-v requires a nummber (0, 1 or 2)");
             VERBOSITY = atoi(argv[++i]);
             ASSERT(VERBOSITY >= 0 && VERBOSITY <= 2, "invalid verbosity level (should be 0, 1 or 2)");
-        } 
-        else if (strcmp(argv[i], "-1str") == 0) 
+        }
+        else if (strcmp(argv[i], "-1str") == 0)
         {
             rc = FALSE;
-        } 
-        else if (strcmp(argv[i], "-2str") == 0) 
+        }
+        else if (strcmp(argv[i], "-2str") == 0)
         {
             rc = TRUE;
-        } 
-        else if (strcmp(argv[i], "-first_hit_per_seq") == 0) 
+        }
+        else if (strcmp(argv[i], "-first_hit_per_seq") == 0)
         {
             first_hit = TRUE;
-        } 
+        }
 
-        else if (strcmp(argv[i], "-name") == 0) 
+        else if (strcmp(argv[i], "-name") == 0)
         {
             ASSERT(argc > i + 1, "-name requires a value");
             matrix_name = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-i") == 0) 
+        }
+        else if (strcmp(argv[i], "-i") == 0)
         {
             ASSERT(argc > i + 1, "-i requires a filename");
             seqfile = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-origin") == 0) 
+        }
+        else if (strcmp(argv[i], "-origin") == 0)
         {
             ASSERT(argc > i + 1, "-origin requires a value");
             char *value = argv[++i];
@@ -214,59 +222,59 @@ int main(int argc, char *argv[])
                 origin = 1;
             else
                 ERROR("invalid value for option -origin");
-        } 
-        else if (strcmp(argv[i], "-o") == 0) 
+        }
+        else if (strcmp(argv[i], "-o") == 0)
         {
             ASSERT(argc > i + 1, "-o requires a filename");
             outfile = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-m") == 0) 
+        }
+        else if (strcmp(argv[i], "-m") == 0)
         {
             ASSERT(argc > i + 1, "-m requires a filename");
             matfile = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-bgfile") == 0) 
+        }
+        else if (strcmp(argv[i], "-bgfile") == 0)
         {
             ASSERT(argc > i + 1, "-bgfile requires a filename");
             bgfile = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-distrib") == 0) 
+        }
+        else if (strcmp(argv[i], "-distrib") == 0)
         {
             ASSERT(argc > i + 1, "-distrib requires a filename");
             distribfile = argv[++i];
-        } 
-        else if (strcmp(argv[i], "-return") == 0) 
+        }
+        else if (strcmp(argv[i], "-return") == 0)
         {
             ASSERT(argc > i + 1, "-return requires name");
             char *roption = argv[++i];
             if (strcmp(roption, "distrib") == 0)
                 distrib = TRUE;
             // TODO: add more options
-        } 
-        else if (strcmp(argv[i], "-decimals") == 0) 
+        }
+        else if (strcmp(argv[i], "-decimals") == 0)
         {
             ASSERT(argc > i + 1, "-decimals requires a number");
             int decimals = atoi(argv[++i]);
             precision = pow(10.0, -decimals);
             ASSERT(precision >= 0.0001 && precision <= 10, "invalid precision");
-        } 
-        else if (strcmp(argv[i], "-e") == 0) 
+        }
+        else if (strcmp(argv[i], "-e") == 0)
         {
             ASSERT(argc > i + 1, "-e requires a number");
             precision = atof(argv[++i]);
             ASSERT(precision >= 0.0001 && precision <= 10, "invalid precision");
-        } 
-        else if (strcmp(argv[i], "-t") == 0) 
+        }
+        else if (strcmp(argv[i], "-t") == 0)
         {
             ASSERT(argc > i + 1, "-t requires a number");
             theshold = atof(argv[++i]);
         }
-        else if (strcmp(argv[i], "-pseudo") == 0) 
+        else if (strcmp(argv[i], "-pseudo") == 0)
         {
             ASSERT(argc > i + 1, "-pseudo requires a number");
             pseudo = atof(argv[++i]);
         }
-        else if (strcmp(argv[i], "-offset") == 0) 
+        else if (strcmp(argv[i], "-offset") == 0)
         {
             ASSERT(argc > i + 1, "-oofset requires a number");
             offset = atoi(argv[++i]);
@@ -294,7 +302,7 @@ int main(int argc, char *argv[])
         fout = stdout;
     else
         fout = fopen(outfile, "w");
-    
+
     ASSERT(fout != NULL, "invalid output");
 
    if (VERBOSITY >= 1)
@@ -303,7 +311,7 @@ int main(int argc, char *argv[])
     // set bg model
     Markov markov;
     if (bgfile != NULL)
-    {   
+    {
         if (!load_inclusive(markov, bgfile))
             ERROR("can not load bg model");
     }
@@ -316,7 +324,7 @@ int main(int argc, char *argv[])
 
     if (matfile == NULL)
         ERROR("You should specify at least a matrix file and a DNA sequence file");
-    
+
     // input distrib
     if (distribfile != NULL)
         pvalues = read_distrib(distribfile);
@@ -351,7 +359,7 @@ int main(int argc, char *argv[])
         else
             fprintf(fout, "\n");
     }
-    
+
     // scan all sequences
     int s = 1;
     int scanned_pos = 0;
@@ -363,7 +371,7 @@ int main(int argc, char *argv[])
         scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, offset, matrix_name, &scanned_pos, first_hit);
         free_seq(seq);
     }
-    
+
     if (distrib)
         values_print(fout, values);
 

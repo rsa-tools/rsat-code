@@ -108,7 +108,7 @@ initio</i>" from the sequences.</li></p>
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_strings.html"><b>String-based representations</b></a></li>
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_PSSM.html"><b>Position-specific scoring matrices (PSSM)</b></a></li>
 <!--<li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_databases.html"><b>Databases of cis-regulatory elements</b></a></li>-->
-<li><a href='htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_seqlogos.html'><b>Sequence logos</b></a></li>
+<!--<li><a href='htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_seqlogos.html'><b>Sequence logos</b></a></li>-->
 
 
 <h3>Sequence retrieval</h3>
@@ -123,7 +123,7 @@ initio</i>" from the sequences.</li></p>
 
 
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_dna-pattern.html"><b><i>dna-pattern</i></b></a>: string-based pattern matching</li>
-<li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_patser.html"><b><i>patser</i></b></a>: matrix-based pattern matching (obsolete)</li>
+<!--<li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_patser.html"><b><i>patser</i></b></a>: matrix-based pattern matching (obsolete)</li>-->
 <li><b>Detailed protocol for <i>matrix-scan</i></b>: 
   <br>Turatsinze, J.V., Thomas-Chollier, M., Defrance, M. and van
   Helden, J. (2008) Using RSAT to scan genome sequences for
@@ -168,7 +168,16 @@ sequences. </a></li>
   regulatory signals in nucleic sequences. Nature Protocols 3,
   1589-1603. <a target='_blank'
   href='http://www.ncbi.nlm.nih.gov/pubmed/18802440'>Pubmed 18802440</a>
-</li></p>
+</li>
+
+<li><b>plant upstream sequences:</b> motif discovery on the <a href='https://github.com/RSAT-doc/motif_discovery_clusters'>Web browser</a> or running a <a href='https://eead-csic-compbio.github.io/coexpression_motif_discovery/peach/Tutorial.html'>Docker container</a>:
+  <br>Ksouri N, Castro-Mondrag&oacute;n JA, Montardit-Tard&aacute; F, van Helden J, Contreras-Moreira B, Gogorcena Y (2021)
+  Tuning promoter boundaries improves regulatory motif discovery in nonmodel plants: the peach example.
+  Plant Physiol 185(3):1242-1258. <a target='_blank' 
+  href='https://pubmed.ncbi.nlm.nih.gov/33744946'>Pubmed 33744946</a> (updates <a target='_blank' 
+  href='https://pubmed.ncbi.nlm.nih.gov/27557774'>Pubmed 27557774</a>)
+</li>
+</p>
 
 
 </li>
@@ -189,7 +198,7 @@ sequences. </a></li>
 
 <h3>Comparison and clustering of PSSM</h3>
 
-<li><b>compare-matrices</b></li>
+<!--<li><b>compare-matrices</b></li>-->
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_matrix-clustering.html"><b>matrix-clustering</b></a></li>
 
 <h3>Building control sets</h3>
@@ -200,9 +209,9 @@ sequences. </a></li>
 
 <h3>Applications</h3>
 
-<li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_microarrays.html"><b>Microarray analysis</b></a>:
+<!--<li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_microarrays.html"><b>Microarray analysis</b></a>:
   prediction of regulatory motifs from clusters of co-expressed
-  genes.</li>
+  genes.</li>-->
 
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_galaxy.html"><b>Collecting peak sequences from the
 	Galaxy Web site</b></a>.</li>
@@ -210,21 +219,21 @@ sequences. </a></li>
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_peak-motifs.html"><b><i>peak-motifs</i></b></a>:
   motif detection in full-size datasets of ChIP-seq peak sequences.</li>
 
-<li>Combining RSAT and NeAT
+<!--<li>Combining RSAT and NeAT
     to <a href='htmllink.cgi?title=RSAT-tutorials&file=tutorials/tut_pathway_extraction.html'><b>predict metabolic
-    pathways and their regulation</b></a>.</li>
+    pathways and their regulation</b></a>.</li>-->
 
 </ul>
 
 </ol>
 
-
-
 <hr width="100%">
-
-<address>Last update 15 Jan 2012 - by <script type='text/javascript'><!--
-var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
-//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript></address>
+<address>
+For suggestions please post an issue on <a href="https://github.com/rsa-tools/rsat-code/issues">GitHub</a> or contact the
+<script type='text/javascript'><!--
+var v2="36ZNXZ8U4S6J6VKCC3GAJ2SDFCCYGVWYZ3J";var v7=unescape("AE%3B%3Au9W%3B@2U%3Ev%3A%2207%03vo%28%5B%3C%28%29%24*%3Ci39*tU8");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'email the RSAT team<\/a>');
+//--></script><noscript><a href='https://w2.syronex.com/jmr/safemailto/#noscript'>email the RSAT team (with anti-spam)</a></noscript>
+</address>
 
 </div></div>
 </body>

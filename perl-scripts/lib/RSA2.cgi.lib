@@ -1153,7 +1153,7 @@ sub OrganismPopUpString{
         $supported_param .= "&supported=$supported";
     }
 
-    &check_prokaryote_server();
+    ## &check_prokaryote_server(); #No longer an informative message
 
     my $bg_org = $args{'bg_org'};
     my $popupid = ($bg_org == 1) ? "organism_bg" : "organism";
@@ -2055,11 +2055,14 @@ sub MotifSelection {
     my $select_ids = ($args{more} == 1) ? 'dbs_choice2' : 'dbs_choice';
     print "<table><tr><td style='padding-right:20px'><b>Input</b></td>";
 
+    print "</tr><tr><td align='top'><br></td></tr><tr>" if ($args{split} == 1); # split table to select motif dbs so that it fits in new cgi form
     print "<td align='top'>1 - Select a database in list:<br/>";
     print " <select id='$select_ids' name='$select_ids' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
     &DisplayMatrixDBchoice("mode"=>"radio");
     print "</select>";
+
+    print "</tr><tr><td align='top'><br></td></tr><tr>" if ($args{split} == 1); # split table to select motif dbs so that it fits in new cgi form
     print "<td align='top'>2 - Select a collection in list:<br/>";
     print " <select id='$select_id' name='$select_id' $multiple style='width:$width'><option></option>";
     ## load the various databases that can be compared against
@@ -2067,6 +2070,7 @@ sub MotifSelection {
 
     print "</td>";
     if($args{ids} == 1){
+        print "</tr><tr><td align='top'><br></td></tr><tr>" if ($args{split} == 1);
         print "<td align='top'>";
         print "3 - Select one or more matrix identifiers:<br/>";
         print " <select id='db_id' style='width:300px' multiple='multiple'></select>";

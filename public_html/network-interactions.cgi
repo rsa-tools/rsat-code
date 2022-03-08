@@ -47,7 +47,9 @@ $command = $ENV{RSAT}."/perl-scripts/network-interactions";
 $output_prefix = "";
 $output_path = &RSAT::util::make_temp_file("",$output_prefix, 1);
 
-local $dir_name=$query->param('dir_name');
+local $dir_name=$query->param('html_title');
+$dir_name =~ s/\s/_/g; # correct dir name
+$dir_name =~ s/\'//g; # correct dir name
 $tmp_dir = &RSAT::util::get_pub_temp();
 
 $output_dir = $output_path."/".$dir_name;
@@ -193,6 +195,20 @@ if ($query->param('net_selection') || $query->param('uploaded_net_file')) {
   $parameters .= " -report_net -net ".$net_file;
   &DelayedRemoval($net_file);
 }
+
+## use user-specified matrixes
+## check if user matrix has been provided
+if ($query->param('uploaded_file_matrix1') || ($query->param('matrix1') =~ /\S/)) {
+
+  ## Matrix input format
+  local $query_matrix_1_format = lc($query->param('matrix_format1'));
+
+  #### Query matrix file
+  local $matrix_file_1 = &GetMatrixFile($output_dir."/IntermediateFiles/user_matrices1.".$query_matrix_1_format,1);
+
+  $parameters .= " -m_format ".$query_matrix_1_format." -m ".$matrix_file_1;
+}
+
 ################################################################
 ## Advanced options
 
@@ -213,10 +229,7 @@ if($matscan_pval){
 }
 
 ## Add motif database
-#if ($query->param('genome_v')) {
-#    ($database) = split " ", $query->param('genome_v'); ### take the first word
-#    $parameters .= " -database ".$genome_v;
-#}
+
 
 ################################################################
 ## Output dir

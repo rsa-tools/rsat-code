@@ -93,7 +93,7 @@
                      </div>
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('2')" id="heading2">Sequence tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('2')" id="heading2">Sequence tools</div>
                      <div id="menu2" class="menu_collapsible">
                          <a class="menu_item" href="retrieve-seq_form.cgi" >retrieve sequence</a>
 <?php
@@ -105,7 +105,7 @@
     }
 ?>
 
-                         <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf</a>
                          <!--	  <a class="menu_item" href="http://www.rsat.eu/retrieve-ensembl-seq_form.cgi" >retrieve EnsEMBL seq</a>-->
                          <a class="menu_item" href="purge-sequence_form.cgi" >purge sequence</a>
                          <a class="menu_item" href="convert-seq_form.cgi" >convert sequences</a>
@@ -114,12 +114,12 @@
 
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('12')" id="heading12">Matrix tools <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('12')" id="heading12">Matrix tools </div>
                      <div id="menu12" class="menu_collapsible">
-                         <a class="menu_item" href="retrieve-matrix_form.cgi">retrieve matrix <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="retrieve-matrix_form.cgi">retrieve matrix </a>
                          <a class="menu_item" href="convert-matrix_form.cgi" >convert matrix</a>
                          <a class="menu_item" href="compare-matrices_form.cgi" >compare matrices</a>
-                         <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering <img src="images/onebit_49.png" height="30" class="new"></a>
+                         <a class="menu_item" href="matrix-clustering_form.cgi" >matrix-clustering</a>
                          <a class="menu_item" href="matrix-distrib_form.cgi" >matrix distrib</a>
                          <a class="menu_item" href="matrix-quality_form.cgi" >matrix quality</a>
                      </div>
@@ -159,7 +159,7 @@
 
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('4')" id="heading4">Pattern matching <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('4')" id="heading4">Pattern matching</div>
                      <div id="menu4" class="menu_collapsible">
                          <a class="menu_separator">matrices</a>
                          <a class="menu_item" href="matrix-scan_form.cgi" >matrix-scan<br>(full options)</a>
@@ -176,7 +176,7 @@
 
                  <div class="menu">
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('10')" id="heading10">Comparative genomics&nbsp; <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('10')" id="heading10">Comparative genomics&nbsp;</img></div>
                      <div id="menu10" class="menu_collapsible">
 <?php
 
@@ -224,7 +224,7 @@
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> fetch-sequences from UCSC</span>';
     }
 ?>
-                        <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf  <img src="images/onebit_49.png" height="30" class="new"></a>
+                        <a class="menu_item" href="retrieve-seq-bed_form.cgi" >sequences from bed/gff/vcf </a>
 
                          <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>
                          <!--	  <a class="menu_item" href="random-genome-fragments_form.cgi" >random genome fragments</a>-->
@@ -232,15 +232,15 @@
 
 
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('9')" id="heading9">Genetic variations (Var-tools) <img src="images/onebit_49.png" height="30" class="new"></img></div>
+                         onclick="toggleMenu('9')" id="heading9">Genetic variations (Var-tools)</div>
                      <div id="menu9" class="menu_collapsible">
 
                      <?php
 
     if($properties['variations_tools'] == '1') {
-        echo '<!-- <a class="menu_item" href="variation-info_form.cgi" >Variation info <img src="images/onebit_49.png" height="30" class="new"></img></a> -->
-                         <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences <img src="images/onebit_49.png" height="30" class="new"></img></a>
-                         <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs <img src="images/onebit_49.png" height="30" class="new"></img></a>
+        echo '<!-- <a class="menu_item" href="variation-info_form.cgi" >Variation info </a> -->
+                         <a class="menu_item" href="retrieve-variation-seq_form.cgi" >Retrieve variation sequences </img></a>
+                         <a class="menu_item" href="variation-scan_form.cgi" >Scan variations with motifs</a>
                          '; }
     else{
         echo '<span class="menu_item" style="cursor:default;color:lightgray"> Variation information </span>
@@ -249,14 +249,14 @@
     }
 ?>
 
-                         <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats <img src="images/onebit_49.png" height="30" class="new"></img></a>
+                         <a class="menu_item" href="convert-variations_form.cgi" >Convert variation formats </a>
                      </div>
                  </div>
 
 
                  <div class="menu">
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities</div>
+                         onclick="toggleMenu('8')" id="heading8">Conversion/Utilities <img src="images/onebit_49.png"  class="new"/> </div>
                      <div id="menu8" class="menu_collapsible">
                          <a class="menu_separator">Set comparisons / enrichment</a>
                          <!--<a class="menu_item_last" href="compare_classes_form.php?menu=RSAT" >compare classes/clusters</a> -->
@@ -273,6 +273,8 @@
                          <a class="menu_separator">features</a>
                          <a class="menu_item" href="convert-features_form.cgi" >convert features</a>
                          <a class="menu_item_last" href="compare-features_form.cgi" >compare features</a>
+                         <a class="menu_separator">networks</a>
+                         <a class="menu_item" href="network-interactions_form.cgi" >network interactions <img src="images/onebit_49.png"  class="new"/></a>
                      </div>
 
 
@@ -289,11 +291,16 @@
 
                  <div class="menu">
                      <div class="menu_heading_closed"
-                         onclick="toggleMenu('6')" id="heading6">SOAP Web services</div>
+                         onclick="toggleMenu('6')" id="heading6">Web services <img src="images/onebit_49.png"  class="new"/></div>
                      <div id="menu6" class="menu_collapsible">
-                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services&file=web_services.html">Programmatic interface to RSAT</a>
-                         <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services documentation&file=web_services/RSATWS_documentation.xml">WSDL Documentation</a>
-                         <!--a class="menu_item" href="web_services/RSATWS.wsdl" target=tools>WSDL</a>
+                      <a class="menu_item" href="htmllink.cgi?title=RSAT : REST API &file=web_services_REST.html">REST API <img src="images/onebit_49.png"  class="new"/></a>
+                      <a class="menu_separator">deprecated SOAP</a>
+                       <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services&file=web_services.html">Programmatic interface to RSAT</a>
+                      <a class="menu_item" href="htmllink.cgi?title=RSAT : Web services documentation&file=web_services/RSATWS_documentation.xml">WSDL Documentation</a>
+
+
+                         <!--<a class="menu_item" href="htmllink.cgi?title=RSAT : Web services&file=web_services.html">Programmatic interface to RSAT</a>
+                         <a class="menu_item" href="web_services/RSATWS.wsdl" target=tools>WSDL</a>
                           <a class="menu_item" href="ws_clients.html" target=tools>Clients</a>
                           <a class="menu_item" href="ws_workflows.html" target=tools>Taverna workflows </a-->
                      </div>

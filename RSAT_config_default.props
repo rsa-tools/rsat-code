@@ -322,54 +322,6 @@ ensembl_release_safe=70
 ## Config file for Biomart, indicating the URL of the source databases.
 biomart_urlconfig=[RSAT_PARENT_PATH]/rsat/perl-scripts/biomart/martDBLocation.xml
 
-################################################################
-## Parameters for Network Analysis Tools (NeAT)
-neat_supported=0
-
-## URL of the Web server hosting the NeAT Web services, where the result files
-## are to be found 
-#neat_www_root=http://localhost/rsat/
-neat_www_root=auto
-
-## URL for the NeAT web services.  NeAT requires to install some
-## specific programs for path finding and graph layout.  Before
-## changing this URL, check that all the required tools are installed
-## on the new neat_ws server
-##
-## Note: the auto option does not work for neat_ws.
-#neat_ws=http://localhost/rsat/web_services/RSATWS.wsdl
-neat_ws=auto
-
-## URL for the NeAT Web services temporary directory, where the result files
-## are to be found
-#neat_ws_tmp=http://localhost/rsat/tmp/
-neat_ws_tmp=auto
-
-## URL for java-based NeAT web services. The same remark as above holds,
-## please check the RSAT web server install guide to install the additional
-## programs before changing this variable.
-neat_java_ws=http://localhost/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
-
-## The java programs on the Web interface are currently supported only at the
-## ULB server.
-neat_java_host=http://localhost/rsat/
-
-# if forwarding to apache is not activated, indicate the tomcat port
-tomcat_port=
-
-################################################################
-## Directories for programs developed by third parties, necessary for
-## the metabolic pathway analysis tools (part of Network Analysis
-## Tools, NeAT).
-
-## REA, k-shortest path finding program by Jimenez and Marzal. 
-## Used for the path finding algorithms in the NeAT suite.
-REA_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/REA
-
-## kWalks, subgraph extraction program by Pierre Dupont and Jerome Callut
-## Used for the pathway extraction hybrid algorithm in the NeAT suite.
-KWALKS_ROOT=[RSAT_PARENT_PATH]/rsat/contrib/kwalks/bin
-
 
 ################################################################
 ## Name of the program used to generate logos.  Weblogo is not easy to
