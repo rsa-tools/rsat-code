@@ -169,7 +169,7 @@ package main;
   
   ################################################################
   ## Identify the genome sequence file (must be in fasta format)
-  my $genome_dir = $ENV{RSAT}."/data/genomes/".$organism_name."/genome/";
+  my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome/";
   $infile{fasta_genome} = $genome_dir."/".$organism_name;
   $infile{fasta_genome} .= ".dna";
   $infile{fasta_genome} .= "_rm" if ($repeat_masked);
