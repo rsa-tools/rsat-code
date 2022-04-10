@@ -90,7 +90,7 @@ rsat.motif.db.tab %>%
   gt(rowname_col = "DataBase") %>%
   tab_header(
     title    = md(paste0("Motif collections in RSAT by ", today())),
-    subtitle = md(paste0("Supplementary Table 1 : List of the ", nrow(rsat.motif.db.tab), " motif collections integrated in RSAT. This table lists the collection names, date of integration or version, a brief description, and the URL indicating the origin of each database."))) %>% 
+    subtitle = md(paste0("List of the ", nrow(rsat.motif.db.tab), " motif collections integrated in RSAT. This table lists the collection names, date of integration or version, a brief description, and the URL indicating the origin of each database."))) %>% 
   data_color(
     columns = Nb_motifs,
     colors = scales::col_numeric(palette = c("white", "yellow", "darkred"),
