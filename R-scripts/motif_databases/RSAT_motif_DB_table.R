@@ -73,18 +73,18 @@ message("; Counting motifs in each collection")
 rsat.motif.db.nb.motifs <- purrr::map_dbl(.x = rsat.motif.db.content,
                                           .f = ~count.motifs.in.db(motif.collection.lines = .x))
 
-# save.image("TEST.Rdata")
 rsat.motif.db.tab$Nb_motifs <- rsat.motif.db.nb.motifs
 
 rsat.motif.db.tab <- rsat.motif.db.tab %>% 
                       arrange(Category, desc(Nb_motifs))
 
+## Export table as a text file
+write.table(rsat.motif.db.tab, file = file.path(output.folder, "RSAT_motif_DB_table.tab"), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
 ## Export html document
 message("; Generating html file")
 rsat.motif.db.tab %>%
-  # mutate(Nb_motifs_log10 = log10(Nb_motifs)) %>% 
   select(Category, DataBase, Collection, Version, Description, Nb_motifs, URL) %>% 
   group_by(Category) %>% 
   gt(rowname_col = "DataBase") %>%
@@ -109,5 +109,3 @@ rsat.motif.db.tab %>%
     use_seps  = TRUE
   ) %>% 
   gtsave(file.path(output.folder, "RSAT_motif_DB_table.html"))
-
-
