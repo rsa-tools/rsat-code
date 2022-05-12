@@ -34,7 +34,7 @@ print '<center>
 print '<br/><span style="color: #cc6600;"><i class="fa fa-pencil fa-lg"></i> <b>Citing RSAT complete suite of tools:</b></span>
 <div align="left" style="border:1px solid #F6E6CA; padding:10px">
 <ul>
-<li> Santana-Garcia W, Castro-Mondragon JA, Padilla-G&aacute;lvez M, Nguyen NTT, Elizondo-Salas A, Ksouri N, Gerbes F, Thieffry D, Vincens P, Contreras-Moreira B, van Helden J, Thomas-Chollier M, Medina-Rivera A (2022) <b>RSAT 2022: regulatory sequence analysis tools</b>. Nucleic Acids Res. 2022 (Web Server issue), doi:10.1093/nar/gkac312. <a href='https://doi.org/10.1093/nar/gkac312'>[Full text]</a>
+<li> Santana-Garcia W, Castro-Mondragon JA, Padilla-G&aacute;lvez M, Nguyen NTT, Elizondo-Salas A, Ksouri N, Gerbes F, Thieffry D, Vincens P, Contreras-Moreira B, van Helden J, Thomas-Chollier M, Medina-Rivera A (2022) <b>RSAT 2022: regulatory sequence analysis tools</b>. Nucleic Acids Res. 2022 (Web Server issue), doi:10.1093/nar/gkac312. <a href="https://doi.org/10.1093/nar/gkac312">[Full text]</a>
 </li>
 <li>Nguyen, NTT, Contreras-Moreira, B, Castro-Mondragon, JA, Santana-Garcia, W, Ossio, R, Robles-Espinoza, CD, Bahin, M, Collombet, S, Vincens, P, Thieffry, D, van Helden, J, Medina-Rivera, A, Thomas-Chollier, M. (2018) <b>RSAT 2018: regulatory sequence analysis tools 20th anniversary</b>. Nucleic Acids Res., gky317, doi:10.1093/nar/gky317. <a href="https://doi.org/10.1093/nar/gky317">[Full text]</a>
 </li>
