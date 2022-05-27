@@ -25,14 +25,6 @@ using namespace std;
 #include "seq.h"
 #include "dist.h"
 #include "pval.h"
-#include "dist.cpp"
-#include "markov.cpp"
-#include "matrix.cpp"
-#include "pval.cpp"
-#include "scan.cpp"
-#include "seq.cpp"
-#include "utils.cpp"
-#include "cfasta.cpp"
 
 int VERSION = 20160208;
 char *COMMAND_LINE;
