@@ -492,6 +492,10 @@ install_ensembl_api_env:
 MCL_BASE_DIR=${SRC_DIR}/mcl
 #MCL_VERSION=12-135
 MCL_VERSION=14-137
+# Dec2022 notes:
+# 14-137 fails to compile with gcc-10
+# From 22-282 onwards require compilation/installation of C lib libtingea. 
+# See install script https://raw.githubusercontent.com/micans/mcl/main/install-this-mcl.sh
 MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
 MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
 MCL_DISTRIB_DIR=${MCL_BASE_DIR}/mcl-${MCL_VERSION}
