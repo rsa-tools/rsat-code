@@ -511,7 +511,7 @@ _compile_mcl:
 	@echo
 	@echo "Installing MCL in dir ${MCL_BIN_DIR}"
 	@mkdir -p ${MCL_COMPILE_DIR}
-	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_COMPILE_DIR} ; \
+	-(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_COMPILE_DIR} ; \
 	make clean; make ; ${SUDO} make install)
 	@echo "Please check that MCL binary directory is in your PATH"
 	@echo "	${MCL_BIN_DIR}"
