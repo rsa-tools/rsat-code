@@ -183,7 +183,7 @@
 				<h4 class='modal-title'>Tutorials and Help</h4>
 			</div>
 			<div class='modal-body'>
-				<p><i class="fa fa-graduation-cap fa-lg"></i> <a href="https://rsat-doc.github.io/teaching/" target="tools"><b>All training material</b></a> </p>
+				<p><i class="fa fa-graduation-cap fa-lg"></i> <a href="https://rsa-tools.github.io/teaching" target="tools"><b>All training material</b></a> </p>
 	
 	<p><i class="fa fa-graduation-cap fa-lg"></i> Learn how to use <b>Peak-motifs</b> with a <b>Nature Protocol</b> <a href='http://www.nature.com/nprot/journal/v7/n8/full/nprot.2012.088.html' target=_blank>[view article]</a></font>
 	</p><p><i class="fa fa-graduation-cap fa-lg"></i> Check <b>RSAT tutorial</b> at <b><a target='_blank' href="http://rsa-tools.github.io/tutorial_eccb14/index.html" target="tools">ECCB'14</a>
