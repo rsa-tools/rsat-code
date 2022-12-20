@@ -37,6 +37,7 @@ fi
 ################################################################
 ## Required apt-get packages
 PACKAGES_REQUIRED="
+time
 apt-utils
 make
 net-tools
