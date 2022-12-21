@@ -60,6 +60,9 @@ sudo pip3 install pysimplesoap
 # soappy is not maintained, and don't install well on python3
 # sudo pip3 install soappy
 
+# required for downloading GO terms from biomart
+sudo pip3 install requests
+
 # overide old pyyaml on python2
 pip3 install --ignore-installed PyYAML
 
