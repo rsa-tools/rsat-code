@@ -86,7 +86,8 @@ CLUSTER_CMD=matrix-clustering -v ${V} \
 _cluster:
 	@echo
 	@echo "Running matrix-clustering	${MATRIX_PREFIX}	${OPT}"
-	time ${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
+	echo ${CLUSTER_CMD}
+	${MAKE} my_command MY_COMMAND="${CLUSTER_CMD}"
 	@echo "		${CLUSTER_CMD}"
 	@echo "		${CLUSTER_FILE_PREFIX}_SUMMARY.html"
 
@@ -110,7 +111,7 @@ cluster_peakmotifs_Oct4:
 	@echo
 	@echo "Running matrix-clustering on motifs discovered by peak-motifs (Oct4 dataset from Chen 2008)"
 	@${MAKE} _cluster MATRIX_PREFIX=${OCT4_PREFIX} \
-		TITLE='Oct4 motifs peak motifs' \
+		TITLE='Oct_motifs_peak-motifs' \
 		COLLECTION=${OCT4_PREFIX} \
 		METRIC_BUILD_TREE=Ncor \
 		MIN_COR=0.6 MIN_NCOR=0.4 \

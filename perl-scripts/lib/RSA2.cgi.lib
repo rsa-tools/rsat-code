@@ -2864,9 +2864,10 @@ sub DisplayMatrixDBchoice {
         if($mode eq "radio"){
             ## check number of categories
             my @cats = ();
-            foreach my $key (keys %{$matrix_db{$dbs_name}}){
+            foreach my $key (keys %{$matrix_db{$dbs_name}}){            
                 my %db = %{$matrix_db{$dbs_name}{$key}};
-                if(! ($db{category} ~~ @cats)){ push @cats, $db{category};}
+                #if(! ($db{caTegory} ~~ @cats)){ push @cats, $db{category};}
+                if(!grep {$db{caTegory}} @cats){ push (@cats, $db{category}) }
             }
             if(scalar @cats == 1){
                 my $cat = $cats[0];

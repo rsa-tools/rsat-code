@@ -73,24 +73,24 @@ message("; Counting motifs in each collection")
 rsat.motif.db.nb.motifs <- purrr::map_dbl(.x = rsat.motif.db.content,
                                           .f = ~count.motifs.in.db(motif.collection.lines = .x))
 
-# save.image("TEST.Rdata")
 rsat.motif.db.tab$Nb_motifs <- rsat.motif.db.nb.motifs
 
 rsat.motif.db.tab <- rsat.motif.db.tab %>% 
                       arrange(Category, desc(Nb_motifs))
 
+## Export table as a text file
+write.table(rsat.motif.db.tab, file = file.path(output.folder, "RSAT_motif_DB_table.tab"), quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
 ## Export html document
 message("; Generating html file")
 rsat.motif.db.tab %>%
-  # mutate(Nb_motifs_log10 = log10(Nb_motifs)) %>% 
   select(Category, DataBase, Collection, Version, Description, Nb_motifs, URL) %>% 
   group_by(Category) %>% 
   gt(rowname_col = "DataBase") %>%
   tab_header(
     title    = md(paste0("Motif collections in RSAT by ", today())),
-    subtitle = md(paste0("Supplementary Table 1 : List of the ", nrow(rsat.motif.db.tab), " motif collections integrated in RSAT. This table lists the collection names, date of integration or version, a brief description, and the URL indicating the origin of each database."))) %>% 
+    subtitle = md(paste0("List of the ", nrow(rsat.motif.db.tab), " motif collections integrated in RSAT."))) %>% 
   data_color(
     columns = Nb_motifs,
     colors = scales::col_numeric(palette = c("white", "yellow", "darkred"),
@@ -109,5 +109,3 @@ rsat.motif.db.tab %>%
     use_seps  = TRUE
   ) %>% 
   gtsave(file.path(output.folder, "RSAT_motif_DB_table.html"))
-
-

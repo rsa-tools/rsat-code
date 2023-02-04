@@ -10,8 +10,6 @@
 // #include <limits.h>
 #include "utils.h"
 #include "count.h"
-#include "count.c"
-#include "utils.c"
 
 int VERSION = 20140213;
 
