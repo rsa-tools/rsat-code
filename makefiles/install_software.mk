@@ -433,8 +433,17 @@ install_ensembl_api_git_git:
 ## version. Starting with 1.2.4, major changes were made to the
 ## BioPerl API which have made it incompatible with Ensembl."
 ##
-## ISSUES ERROR MESSAGE (2016-10-18)
-## IS IT STILL REQUIRED ?
+## Required by 
+## download-ensembl-features
+## download-ensembl-variations
+## ensembl-org-info 
+## get-ensembl-genome-no-objects.pl 
+## get-ensembl-genome-only-objects.pl
+## get-ensembl-genome.pl 
+## get-ensembl-one_chrom.pl
+## random-genome-fragments
+## retrieve-ensembl-seq
+## supported-organisms-ensembl
 install_ensembl_bioperl:
 	@echo ""
 	@echo "Installing bioperl release ${BIOPERL_VERSION} (required for ensembl)"
@@ -472,19 +481,39 @@ install_ensembl_api_env:
 	@echo 'export PERL5LIB=$${RSAT}/ext_lib/ensemblgenomes-$${ENSEMBLGENOMES_RELEASE}-$${ENSEMBL_RELEASE}/ensembl-variation/modules::$${PERL5LIB}'
 
 ################################################################
-## Install biomart Perl libraries
-# from: http://www.ensembl.org/info/data/biomart/biomart_perl_api.html#downloadbiomartperlapi
-# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart login
-# # passwd: CVSUSER
-# cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/biomart co -r release-0_7 biomart-perl
 
-# # Paste the text obtained on
-# # [http://plants.ensembl.org/biomart/martservice?type=registry] into
-# # the biomart-perl/conf/martURLLocation.xml file
-# # PERL5LIB=${PERL5LIB}:${RSAT}/ext_lib/biomart-perl/lib                                                                                         # export PERL5LIB
-# # check missing dependencies
-# perl bin/configure.pl -r conf/registryURLPointer.xml
-# #install the required modules
+BIOMART_VERSION=0_7
+BIOMART_DIR=${RSAT}/ext_lib/biomart-perl
+
+## Install biomart Perl libraries
+install_biomart_perl:
+	@echo ""
+	@echo "Installing BioMart release ${BIOMART_VERSION} (required for download-ensembl-go-annotations-biomart)"
+	@echo " BIOMART_DIR     ${BIOMART_DIR}"
+	@if [ -d ${BIOMART_DIR} ] ; then \
+		echo "BioMart already installed"; \
+	else \
+		echo "Cloning BioMart" ; \
+		(cd ${RSAT}/ext_lib; git clone --branch cvs/release-${BIOMART_VERSION} https://github.com/biomart/biomart-perl); \
+ 	fi
+	chmod a+w ${BIOMART_DIR}/conf
+	@echo "biomart-perl ${BIOMART_VERSION} installed in ${BIOMART_DIR}"
+
+# Not needed, perhaps useful for debugging: perl bin/configure.pl -r conf/registryURLPointer.xml
+check_biomart_perl:
+	@echo
+	@echo "BioMart installed in directory ${BIOMART_DIR}"
+	@echo
+	@echo "BEWARE !"
+	@echo "You need to paste the following lines in the bash profile ${RSAT}/RSAT_config.bashrc"
+	@echo
+	@echo 'export 'PERL5LIB=${RSAT}/ext_lib/biomart-perl/lib/::${PERL5LIB}
+	@echo
+	@echo "Extra manual step required:"
+	@echo 
+	@echo "Paste the text obtained on"
+	@echo "[https://plants.ensembl.org/biomart/martservice?type=registry] "
+	@echo "into the ${BIOMART_DIR}/conf/martURLLocation.xml file"
 
 
 ################################################################
@@ -492,6 +521,10 @@ install_ensembl_api_env:
 MCL_BASE_DIR=${SRC_DIR}/mcl
 #MCL_VERSION=12-135
 MCL_VERSION=14-137
+# Dec2022 notes:
+# 14-137 fails to compile with gcc-10
+# From 22-282 onwards require compilation/installation of C lib libtingea. 
+# See install script https://raw.githubusercontent.com/micans/mcl/main/install-this-mcl.sh
 MCL_ARCHIVE=mcl-${MCL_VERSION}.tar.gz
 MCL_URL=http://www.micans.org/mcl/src/${MCL_ARCHIVE}
 MCL_DISTRIB_DIR=${MCL_BASE_DIR}/mcl-${MCL_VERSION}
@@ -511,7 +544,7 @@ _compile_mcl:
 	@echo
 	@echo "Installing MCL in dir ${MCL_BIN_DIR}"
 	@mkdir -p ${MCL_COMPILE_DIR}
-	(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_COMPILE_DIR} ; \
+	-(cd ${MCL_DISTRIB_DIR}; ./configure --prefix=${MCL_COMPILE_DIR} ; \
 	make clean; make ; ${SUDO} make install)
 	@echo "Please check that MCL binary directory is in your PATH"
 	@echo "	${MCL_BIN_DIR}"

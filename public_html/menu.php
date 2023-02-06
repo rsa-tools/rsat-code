@@ -328,7 +328,7 @@
                          onclick="toggleMenu('7')" id="heading7">Help & Contact</div>
                          <div id="menu7" class="menu_collapsible_display">
                          <a class="menu_item" href="people.php" >RSAT team</a>
-                         <a class="menu_item" href="https://rsat-doc.github.io/teaching/" target="_blank">Training material</a>
+                         <a class="menu_item" href="https://rsa-tools.github.io/teaching/" target="_blank">Training material</a>
                          <a class="menu_item" href="tutorials.php" >Tutorials</a>
 
                          <a class="menu_item" href="publications.cgi" >Publications</a>

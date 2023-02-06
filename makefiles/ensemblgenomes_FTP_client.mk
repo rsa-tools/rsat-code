@@ -384,7 +384,7 @@ install_go_annotations:
 	@echo "Expanding GO annotations of ${SPECIES}" 
 	@rm -f ${GO_ANNOT_LINK}
 	@ln -s ${GO_ANNOT_FILE} ${GO_ANNOT_LINK}
-	@python2.7 ${RSAT}/python-scripts/go_analysis.py expand -a ${GO_ANNOT_LINK} -d ${GO_DESC} -r ${GO_REL} 
+	@python3 ${RSAT}/python-scripts/go_analysis.py expand -a ${GO_ANNOT_LINK} -d ${GO_DESC} -r ${GO_REL} 
 	@mv ${GO_EXPANDED_FILE} ${GO_ANNOT_DIR}
 	@rm -f ${GO_ANNOT_LINK}
 
