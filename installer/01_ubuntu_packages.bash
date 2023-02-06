@@ -101,11 +101,6 @@ mysql-client
 default-jre
 python-pip
 python-setuptools
-python-numpy
-python-scipy
-python-matplotlib
-python-suds
-python-rpy2
 python3
 python3-pip
 python3-setuptools
