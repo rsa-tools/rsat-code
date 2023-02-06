@@ -99,8 +99,6 @@ gnuplot
 graphviz
 mysql-client
 default-jre
-python-pip
-python-setuptools
 python3
 python3-pip
 python3-setuptools
@@ -108,7 +106,6 @@ python3-numpy
 python3-scipy
 python3-matplotlib
 python3-rpy2
-python-yaml
 emacs
 x11-apps
 eog
@@ -141,7 +138,6 @@ links
 gfortran
 libmysqlclient-dev
 texlive-latex-base
-python-virtualenv
 ipython
 ipython-notebook
 libreadline-gplv2-dev:i386
@@ -161,7 +157,6 @@ lib32ncurses5
 lib32bz2-1.0
 libc6-dev
 build-essential
-python-dev
 python3-dev
 libnet-ssleay-perl
 libcrypt-ssleay-perl
@@ -261,15 +256,6 @@ echo "Log files are in folder ${RSAT}/install_logs"
 ## Not sure it is still required though.
 ## TO BE CHECKED
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# ################################################################
-# ## Specific treatment for some Python libraries
-# ##
-# ## A fix for a problem to install scipy with pip: use ${OS_INSTALLER} build-dep
-# ## taken from here: http://stackoverflow.com/questions/11863775/python-scipy-install-on-ubuntu
-# ## Note that these dependencies cost 400Mb ! To be checked
-# ${OS_INSTALLER} ${INSTALLER_OPT} build-dep python-numpy python-scipy
-# df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_numpy-scipy_dependencies_installed.txt
-# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 
 ################################################################
 ## To free space, remove apt-get packages that are no longer required.a
