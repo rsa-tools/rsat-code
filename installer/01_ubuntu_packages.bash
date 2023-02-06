@@ -99,7 +99,6 @@ gnuplot
 graphviz
 mysql-client
 default-jre
-python
 python-pip
 python-setuptools
 python-numpy
@@ -130,6 +129,7 @@ php
 libapache2-mod-php
 libapache2-mod-wsgi
 rsync
+python-is-python3
 "
 
 
