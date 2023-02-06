@@ -293,7 +293,7 @@ if (($query->param('output') =~ /display/i) ||
 
 #    &RSAT::message::Debug("ticket", $ticket);
 #    &RSAT::message::Debug("command", $command);
-
+#    die "Command: ".$command;
     ### Print the result page
 #    my $css_body_class = "form";
 #    my $title = $query->param('title');
