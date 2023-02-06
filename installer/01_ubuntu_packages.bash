@@ -119,10 +119,12 @@ libcrypt-ssleay-perl
 libssl-dev
 php
 libapache2-mod-php
-libapache2-mod-wsgi
 rsync
 python-is-python3
 "
+
+## Suppressed for Ubuntu 22.04
+# libapache2-mod-wsgi
 
 
 ################################################################
