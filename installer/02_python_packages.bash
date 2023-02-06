@@ -55,8 +55,8 @@ sudo pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
 ## SAME ERROR: ImportError: No module named 'WSDLTools'
 
 ## I should test one of the following SOAP packages
-sudo pip3 install suds-jurko
 sudo pip3 install pysimplesoap
+# sudo pip3 install suds-jurko ## Inactivated on 2023-02-06 because does not work anymore with Ubuntu 22.04
 # soappy is not maintained, and don't install well on python3
 # sudo pip3 install soappy
 
