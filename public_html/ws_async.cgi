@@ -126,9 +126,15 @@ sub GetResult {
 #	    $server_file = $results -> get_server();
 	    $sequence_file = $results->get_server();     ## variable name has to be '$sequence_file' for PipingFormForSequence subroutine
 	} else {
-	    $sequence_file = `mktemp $ENV{rsat_tmp}/retrieve-ensembl-seq.XXXXXXXXXX`;
+#	    $sequence_file = `mktemp /opt/rsat-tools/rsat_metazoa/public_html/tmp/www-data/2022/03/30/retrieve-ensembl-seq.XXXXXXXXXX`;
 ## WE SHOULD TRY THIS:	  $tmp_file_path = &RSAT::util::make_temp_file("","retrieve-ensembl-seq", 1); ($tmp_file_dir, $tmp_file_name) = &SplitFileName($tmp_file_path); $sequence_file = $tmp_file_name.".fasta";
-	    open TMP_IN, ">".$sequence_file or die "cannot open temp file ".$sequence_file."\n";
+
+	    $prefix = "retrieve-ensembl-seq";
+	    $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
+#	    $sequence_file = $tmp_file_name;
+	    $sequence_file = $tmp_file_path;
+
+	    open TMP_IN, ">".$sequence_file or die "cannot open that damn temp file ".$sequence_file."\n";
 	    print TMP_IN $result;
 	    close TMP_IN;
 	}

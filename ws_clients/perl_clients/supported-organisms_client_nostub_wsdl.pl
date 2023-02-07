@@ -17,10 +17,11 @@ use XML::Compile::Transport::SOAPHTTP;
 ## Specification of the server(s)
 #my $server = $ARGV[0] || "http://rsat.bigre.ulb.ac.be/rsat";
 my @servers =  $ARGV[0] || qw(
-        http://pedagogix-tagc.univ-mrs.fr/rsat
-        http://rsat-tagc.univ-mrs.fr/rsat
-        http://embnet.ccg.unam.mx/rsa-tools
-        http://rsat01.biologie.ens.fr/rsa-tools
+	http://rsat.france-bioinformatique.fr/metazoa
+	http://pedagogix-tagc.univ-mrs.fr/rsat
+	http://rsat-tagc.univ-mrs.fr/rsat
+	http://embnet.ccg.unam.mx/rsa-tools
+	http://rsat01.biologie.ens.fr/rsa-tools
        );
 
 my @servers_not_ok_yet = qw(
