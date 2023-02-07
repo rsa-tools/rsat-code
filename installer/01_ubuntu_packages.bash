@@ -120,6 +120,7 @@ libssl-dev
 php
 libapache2-mod-php
 rsync
+libmysqlclient-dev
 python-is-python3
 "
 
