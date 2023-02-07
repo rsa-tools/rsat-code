@@ -1891,7 +1891,7 @@ if __name__=='__main__':
 	filehandle.write("; Number of binomial tests	%d\n"% nb_binom_computation)
 	filehandle.write("; Number of sites scanned	%d\n" % length_list_site)
 	filehandle.write("; Sum of sequence lengths	%d\n" % sum_lengths)
-	filehandle.write("; Number of Crer	%d\n" % nb_crer)
+	filehandle.write("; Number of CRERs returned	%d\n" % nb_crer)
 	
 	# finished times
 	time_end= time.strftime("%Y-%d-%m.%H:%M:%S")
