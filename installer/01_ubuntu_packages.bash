@@ -121,6 +121,7 @@ php
 libapache2-mod-php
 rsync
 libmysqlclient-dev
+libapache2-mod-wsgi-py3
 python-is-python3
 "
 

@@ -78,8 +78,9 @@ libcrypt-ssleay-perl
 libssl-dev
 php
 libapache2-mod-php
-libapache2-mod-wsgi-py3
 rsync
+libmysqlclient-dev
+libapache2-mod-wsgi-py3
 python-is-python3
 "
 
