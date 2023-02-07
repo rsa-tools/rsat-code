@@ -2,7 +2,8 @@
 ## Initialize Regulatory Sequence Analysis Tools (in principle, this
 ## script should be used only once at installation).
 
-RSAT=$(CURDIR)
+# RSAT=$(CURDIR) ## Commented by JvH on 2023-02-06 because CURDIR is not defined anywhere
+include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/init_rsat.mk
 MAKE = make -sk -f ${MAKEFILE}
 include ${RSAT}/RSAT_config.mk
