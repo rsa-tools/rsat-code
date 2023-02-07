@@ -85,7 +85,7 @@ Optional arguments:
 		Default = 1e-4
 
   -number_of_matrix
-  		number of matrix used for the discovery of transcription factor binding sites.
+  		number of matrices used for the discovery of transcription factor binding sites.
   		Warning : Not considered if autoparam is on
   		
   -lth_score LTH_SITE_SCORE
@@ -531,7 +531,7 @@ def read_features(number_of_matrix,autoparam,file_name,pval_threshold,lth_score_
 	Return respectively,
 		- a list of site objects 
 		- a list of sequence limits which are list with the sequence,start position and end position of the sequence
-		- the number of matrix used to predict binding sites
+		- the number of matrices used to predict binding sites
 	
 	This function will take as arguments:
 		file_name -> name of file in feature format. Type = string
@@ -588,7 +588,7 @@ def read_features(number_of_matrix,autoparam,file_name,pval_threshold,lth_score_
 		
 	sites_list = sorted(sites_list,key=lambda x: x[4])
 	
-	# Extraction of other information like the number of matrix
+	# Extraction of other information like the number of matrices
 	if autoparam == "on" :
 		for line in read :
 			
@@ -607,7 +607,7 @@ def read_features(number_of_matrix,autoparam,file_name,pval_threshold,lth_score_
 						num = row.split()
 						matrix_list.append(int(num[1]))
 				
-				# Number of matrix is the maximum of the matrix_list
+				# Number of matrices is the maximum of the matrix_list
 				number_of_matrix = max(matrix_list)
 			
 			j= j+1
@@ -677,7 +677,7 @@ def read_stdin(number_of_matrix,autoparam,stdin,format,pval_threshold,lth_score_
 	Return respectively,
 		- a list of site objects 
 		- a list of sequence limits which are list with the sequence,start position and end position of the sequence
-		- the number of matrix used to predict binding sites
+		- the number of matrices used to predict binding sites
 	
 	This function will take as arguments:
 		stdin -> standard input name. Type = string
@@ -739,7 +739,7 @@ def read_stdin(number_of_matrix,autoparam,stdin,format,pval_threshold,lth_score_
 		sites_list = sorted(sites_list,key=lambda x: x[4])
 	
 		if autoparam == "on":
-		# Extraction of other information like the number of matrix
+		# Extraction of other information like the number of matrices
 			for line in read :
 				
 				# When there is the word "Matches" the followed informations are extracted
@@ -757,7 +757,7 @@ def read_stdin(number_of_matrix,autoparam,stdin,format,pval_threshold,lth_score_
 							num = row.split()
 							matrix_list.append(int(num[1]))
 					
-					# Number of matrix is the maximum of the matrix_list
+					# Number of matrices is the maximum of the matrix_list
 					number_of_matrix = max(matrix_list)
 				
 				j= j+1
@@ -935,7 +935,7 @@ def read_bed(file_name,lth_score_threshold,uth_score_threshold,verbose):
 	Return respectively,
 		- a list of site objects 
 		- a list of sequence limits which are list with the sequence,start position and end position of the sequence
-		- the number of matrix used to predict binding sites
+		- the number of matrices used to predict binding sites
 	
 	this function will take as arguments :
 		file_name -> filehandle of read file in format bed. Type = string
@@ -1117,7 +1117,7 @@ if __name__=='__main__':
 	parse.add_argument('-lth_score',action='store',dest='lth_site_score',default= None ,type= float, help = "minimal site score to be considered")
 	parse.add_argument('-uth_score',action='store',dest='uth_site_score',default= None, type= float, help = "maximal site score to be considered")
 	parse.add_argument('-uth_site_pval', action='store', dest='uth_site_pval', default= 1e-4, type = float, help='maximal p_value of sites to be considered. recommended to be the higher site p_value considered')
-	parse.add_argument('-number_of_matrix',action = 'store', dest = 'number_of_matrix',type = int, default= 0 ,help = "number of matrix used for the discovery of transcription factor binding sites. Warning : Not considered if autoparam is on")
+	parse.add_argument('-number_of_matrix',action = 'store', dest = 'number_of_matrix',type = int, default= 0 ,help = "number of matrices used for the discovery of transcription factor binding sites. Warning : Not considered if autoparam is on")
 	
 	# Arguments for return CRERs
 	parse.add_argument('-lth_crer_size',action='store',dest='lth_crer_size',default=None,type= float, help = "minimal size of the enriched region (in bp). Default: minimal size = 30bp")
@@ -1416,7 +1416,7 @@ if __name__=='__main__':
 	
 	# Computation of the binomial function
 	# As the R function : pbinom(q,size,prob,lower.tail=FALSE)
-	# p is the probability to have at least one site with the number of matrix.
+	# p is the probability to have at least one site with the number of matrices.
 	# With the maximum p-value of sites
 	
 	if format == 'ft':
@@ -1887,8 +1887,8 @@ if __name__=='__main__':
 		time_warn("Writing the end of output file")
 	
 	# Statistics
-	filehandle.write("; Number of matrix	%d\n"% number_of_matrix)
-	filehandle.write("; Number of binomial	%d\n"% nb_binom_computation)
+	filehandle.write("; Number of matrices used	%d\n"% number_of_matrix)
+	filehandle.write("; Number of binomial tests	%d\n"% nb_binom_computation)
 	filehandle.write("; Number of sites scanned	%d\n" % length_list_site)
 	filehandle.write("; Sum of sequence lengths	%d\n" % sum_lengths)
 	filehandle.write("; Number of Crer	%d\n" % nb_crer)
