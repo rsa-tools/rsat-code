@@ -58,8 +58,6 @@ gnuplot
 graphviz
 default-mysql-client
 default-jre
-python
-python-setuptools
 python3
 python3-pip
 python3-setuptools
@@ -80,8 +78,10 @@ libcrypt-ssleay-perl
 libssl-dev
 php
 libapache2-mod-php
-libapache2-mod-wsgi-py3
 rsync
+libmysqlclient-dev
+libapache2-mod-wsgi-py3
+python-is-python3
 "
 
 
@@ -98,7 +98,6 @@ links
 gfortran
 libmysqlclient-dev
 texlive-latex-base
-python-virtualenv
 ipython
 ipython-notebook
 libreadline-gplv2-dev:i386
@@ -118,7 +117,6 @@ lib32ncurses5
 lib32bz2-1.0
 libc6-dev
 build-essential
-python-dev
 python3-dev
 libnet-ssleay-perl
 libcrypt-ssleay-perl
