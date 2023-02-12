@@ -211,19 +211,19 @@
   	    <a href="http://rsat.france-bioinformatique.fr/fungi/" target="_top">
   	      <img src="images/logo_fungi.jpg" height='100' border='0'
   		   alt="fungi"></a>
-  	    <br>hosted by <a href="https://www.france-bioinformatique.fr/">Institut Fran&Ccedil;ais de Bioinformatique (IFB), France </a>
+  	    <br>hosted by <a target='_blank' href="https://www.france-bioinformatique.fr/">Institut Fran&Ccedil;ais de Bioinformatique (IFB), France </a>
   	  </td>
   
   	  <td>
   	    <a href="http://prokaryotes.rsat.eu/" target="_top">
   	      <img src="images/logo_prokaryotes.jpg" height='100' border='0' alt="prokaryotes"></a>
-  	   <br>hosted by <a href="http://www.ccg.unam.mx/en/projects/collado/regulondb">Centro de Ciencias Genomicas (CCG), Cuernavaca, Mexico </a>
+  	   <br>hosted by <a target='_blank' href="https://www.ccg.unam.mx/genomica-computacional/">Centro de Ciencias Genomicas (CCG), Cuernavaca, Mexico</a>
   	  </td>
   
       <td>
   	    <a href="http://rsat.france-bioinformatique.fr/metazoa/" target="_top">
   	      <img src="images/logo_metazoa.jpg" height='100' border='0' alt="metazoa"></a>
-  	   <br>hosted by <a href="https://www.france-bioinformatique.fr/">Institut Fran&Ccedil;ais de Bioinformatique (IFB), France </a>
+  	   <br>hosted by <a target='_blank' href="https://www.france-bioinformatique.fr/">Institut Fran&Ccedil;ais de Bioinformatique (IFB), France </a>
   	  </td>
   
   	</tr>
@@ -232,19 +232,19 @@
   	  <td>
   	    <a href="http://protists.rsat.eu/" target="_top">
   	      <img src="images/logo_protists.jpg" height='100' border='0' alt="protists"></a>
-  	    <br>hosted by <a href="https://www.france-bioinformatique.fr/">Institut Fran&Ccedil;ais de Bioinformatique (IFB), France </a>
+  	    <br>hosted by <a target='_blank' href="https://www.france-bioinformatique.fr/">Institut Fran&Ccedil;ais de Bioinformatique (IFB), France </a>
   	  </td>
   
   	  <td>
   	    <a href="http://plants.rsat.eu/" target="_top">
   	      <img src="images/logo_plants.jpg" height='100' border='0' alt="plants"></a>
-  	    <br>deployed by <a href="http://www.eead.csic.es/compbio/staff.html">Bruno Contreras Moreira, Zaraagoza, Spain</a>
+  	    <br>deployed by <a target='_blank' href="http://www.eead.csic.es/compbio/staff.html">Bruno Contreras Moreira, Zaraagoza, Spain</a>
   	  </td>
   
       <td>
   	    <a href="http://teaching.rsat.eu" target="_top" >
   	      <img src="images/logo_teaching.jpg" height='100' border='0' alt="teaching"></a>
-  	    <br>hosted by <a href="http://france-bioinformatique.fr/">IFB - Institut Fran&ccedil;ais de Bioinformatique (IFB), France</a>
+  	    <br>hosted by <a target='_blank' href="http://france-bioinformatique.fr/">IFB - Institut Fran&ccedil;ais de Bioinformatique (IFB), France</a>
   	  </td>
   	  
   	</tr>
