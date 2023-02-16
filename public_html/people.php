@@ -166,6 +166,22 @@
   </tr>
 
   <tr><td colspan=4><hr class='portal'></td></tr>
+  <tr>
+    <td><a name=walter></a><a href="images/people/najla_ksouri.jpeg">
+	<img border=0
+	     src="images/people/najla_ksouri.jpeg" width="80" alt=""></a></td>
+    <td><b>Najla Ksouri</b>
+      <br>PhD student at Estacion Experimental Aula Dei-CSIC
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0001-8956-2920">0000-0001-8956-2920</a>
+    </td>
+    <td>Since 2019
+    </td>
+    <td>
+      Protocols for the analysis of regulatory sequences in plants. <br/>
+    </td>
+  </tr>
+
+  <tr><td colspan=4><hr class='portal'></td></tr>
 
   <tr>
     <td><a name=oly></a><a href="images/people/olivier_sand.jpeg">
