@@ -38,7 +38,7 @@
   </tr>
 -->
 
-  <tr><th colspan=4>Project leaders</th></tr>
+  <tr><th colspan=4>Steering committee</th></tr>
 
   <tr>
     <td><a href="images/people/who_is_nb_one.png">
@@ -56,11 +56,6 @@
       the analysis of regulatory sequences and biological networks.
     </td>
   </tr>
-
-
-
-
-
 
  <tr><td colspan=4><hr class='portal'></td></tr>
     <td><a name=morgane></a><a href="images/people/morgane_thomas_chollier.jpeg">
@@ -94,11 +89,32 @@
     <td>RSAT developper since 2008
     </td>
     <td>
-      NGS and ChIP-seq methods<br>
+      NGS and ChIP-seq methods.<br>
       Evaluation of PSSM quality. <br>
   Evolution of bacterial regulation. <br>
-  Identification of regulatory variants.</td>
+	    Identification of regulatory variants.</td>
   </tr>
+
+  <tr><td colspan=4><hr class='portal'></td></tr>
+  <tr>
+    <td><a name=contreras></a><a href="images/people/bruno_contreras_moreira.jpg">
+    <img border=0
+         src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
+    <td><a target='_blank' href="https://orcid.org/0000-0002-5462-907X"><b>Bruno Contreras Moreira</b></a>
+      <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
+      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-5462-907X">0000-0002-5462-907X</a>
+    </td>
+    <td>
+    Since 2014
+    </td>
+    <td>
+      Deployment of Plant server.<br>
+      Linking RSAT to Ensembl genomes.<br>
+      Protocols for the analysis of regulatory sequences in plants.<br>
+      Developer of FootprintDB.
+    </td>
+  </tr>		    
+		    
   <tr><th colspan=4> Active developpers</th></tr>
   <tr>
     <td><a href="images/people/jaime_castro.jpg">
@@ -135,25 +151,7 @@
     </td>
   </tr>
 
-   <tr><td colspan=4><hr class='portal'></td></tr>
-  <tr>
-    <td><a name=contreras></a><a href="images/people/bruno_contreras_moreira.jpg">
-    <img border=0
-         src="images/people/bruno_contreras_moreira.jpg" width="80" alt="Bruno Contreras Moreira"></a></td>
-    <td><a target='_blank' href="https://orcid.org/0000-0002-5462-907X"><b>Bruno Contreras Moreira</b></a>
-      <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
-      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-5462-907X">0000-0002-5462-907X</a>
-    </td>
-    <td>
-    Since 2014
-    </td>
-    <td>
-       Protocols for the analysis of regulatory sequences in plant genomes.
-       Linking RSAT to Ensembl genomes.
-    </td>
-  </tr>
-
-   <tr><td colspan=4><hr class='portal'></td></tr>
+  <tr><td colspan=4><hr class='portal'></td></tr>
   <tr>
     <td><a name=walter></a><a href="images/people/wsantana.png">
 	<img border=0
