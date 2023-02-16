@@ -178,6 +178,7 @@
     </td>
     <td>
       Protocols for the analysis of regulatory sequences in plants. <br/>
+      Docker container
     </td>
   </tr>
 
