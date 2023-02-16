@@ -118,8 +118,7 @@
     <td><a href="images/people/jaime_castro.jpg">
 	<img border='0' src="images/people/jaime_castro.jpg" width="80" alt="Jaime Castro"></a></td>
     <td><a target='_blank' href="http://folk.uio.no/jamondra/"><b>Jaime Castro-Mondragon</b></a>
-    <br>Post-doc Centre for Molecular Medicine Norway (NCMM) (Norway)
-      <br>ORCID: <a target=_blank href="https://orcid.org/0000-0003-4069-357X">0000-0003-4069-357X</a>
+    <br>ORCID: <a target=_blank href="https://orcid.org/0000-0003-4069-357X">0000-0003-4069-357X</a>
     </td>
     <td>RSAT developper since 2013
     </td>
@@ -155,7 +154,7 @@
 	<img border=0
 	     src="images/people/wsantana.png" width="80" alt=""></a></td>
     <td><b>Walter Santana Garcia</b>
-      <br>Ingénieure d'étude at IBENS (France)
+      <br>Predoctoral Fellow at the EMBL-European Bioinformatics Institute
       <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-1350-9880">0000-0002-1350-9880</a>
     </td>
     <td>Since 2016
