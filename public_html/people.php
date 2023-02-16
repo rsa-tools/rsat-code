@@ -104,9 +104,7 @@
       <br>Laboratory of Computational and Structural Biology, EEAD-CSIC, Zaragoza, Spain
       <br>ORCID: <a target=_blank href="https://orcid.org/0000-0002-5462-907X">0000-0002-5462-907X</a>
     </td>
-    <td>
-    Since 2014
-    </td>
+    <td>RSAT developper since 2014</td>
     <td>
       Deployment of Plant server.<br>
       Linking RSAT to Ensembl genomes.<br>
