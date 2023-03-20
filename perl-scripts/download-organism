@@ -146,7 +146,8 @@ package main;
 
   ## Remote server from which genomes should be downloaded
 #  $RSAT_SERVER="http://teaching.rsat.eu/";
-  $RSAT_SERVER="http://rsat-tagc.univ-mrs.fr/rsat/";
+#  $RSAT_SERVER="http://rsat-tagc.univ-mrs.fr/rsat/";
+  $RSAT_SERVER="https://rsat.france-bioinformatique.fr/rsat/";
 
   ## List of organisms to install
   @organisms = ();
