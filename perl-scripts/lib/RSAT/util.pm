@@ -1372,9 +1372,13 @@ sub one_command {
       my $OS = `uname -a`;
       chomp($OS);
       &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 5);
-      if (($OS =~ /ubuntu/i) || ($OS =~ /debian/i) || ($OS =~ /bongcam/i)
-	  ) { ## Some versions of Ubuntu have a special output option for time, I have to check which ones
+      
+      if ( $OS =~ /ubuntu/i || $OS =~ /debian/i || 
+           $OS =~ /linux/i || $OS =~ /darwin/i || 
+           $OS =~ /bongcam/i ) { # personal path?
+	  
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
+
       } elsif ($OS =~ /biow/) {
 	  ## Do nothing
       } else {
