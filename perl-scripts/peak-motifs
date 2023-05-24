@@ -4267,6 +4267,25 @@ sub SmallSummary {
 }
 
 
+################################################################
+## Produces a string with a URL to display a motif in an external database.
+## For enabled dbs (ie footprintDB) makes the "Discovered motifs (with motif comparison)"
+## HTML table interactive.
+## If database not enabled returns original motif name.
+## Decided to define URLs here as they might not necessarily match the entrypoint URLs in
+## file motif_databases/db_matrix_files.tab
+sub MotifExternalURL {
+
+  my ($db_name, $motif_name ) = @_;
+  my $URL = $motif_name;
+
+  if($db_name =~ m/^footprintDB/ && $motif_name !~ m/\s+/) {
+    $URL = 'https://footprintdb.eead.csic.es/index.php?motif=' . $motif_name;
+  }
+
+  return $URL
+}
+
 
 ################################################################
 ## Delete purged sequence files after analysis has been completed.
