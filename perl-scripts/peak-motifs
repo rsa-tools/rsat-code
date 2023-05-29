@@ -3012,6 +3012,7 @@ sub SynthesisOneMotifComparison {
     my @values = ();
     foreach my $field (@match_fields) {
       my $value = "NA";
+
       if (defined($col_index{$field})) {
 	my $column = $col_index{$field};
 	$value = $fields[$column];
@@ -3019,7 +3020,19 @@ sub SynthesisOneMotifComparison {
 	  $value = &RSAT::SeqUtil::ColorConsensus($value, bold=>1, iupac=>$main::param{iupac_coloring});
 	}
       }
-      $db_match_table .= "\n<td>".$value."</td>\n\n";
+      
+      # add URL to motif in external database, or else simply concat motif name (field name2)
+      if($field eq 'name2') {
+        my $URL = MotifExternalURL($db_name, $value);
+        if($URL =~ /^http/) {
+          $db_match_table .= "\n<td><a href=\"$URL\" target=\"_blank\">".$value."</a></td>\n\n";
+        } else {
+          $db_match_table .= "\n<td>".$value."</td>\n\n";
+        }
+      } else {
+        $db_match_table .= "\n<td>".$value."</td>\n\n";
+      }
+
       #&RSAT::message::Debug("DB matches", $db_name, $match_nb, $field, "col=".$column, "value=".$value, $file) if ($main::verbose >= 10);
     }
     $db_match_table .= "</tr>\n\n";
@@ -4266,6 +4279,25 @@ sub SmallSummary {
   &Archive(0, $main::outfile{small_summary}) if ($task{archive});
 }
 
+
+################################################################
+## Produces a string with a URL to display a motif in an external database.
+## For enabled dbs (ie footprintDB) makes the "Discovered motifs (with motif comparison)"
+## HTML table interactive.
+## If database not enabled returns original motif name.
+## Decided to define URLs here as they might not necessarily match the entrypoint URLs in
+## file motif_databases/db_matrix_files.tab
+sub MotifExternalURL {
+
+  my ($db_name, $motif_name ) = @_;
+  my $URL = $motif_name;
+
+  if($db_name =~ m/^footprintDB/ && $motif_name !~ m/\s+/) {
+    $URL = 'https://footprintdb.eead.csic.es/index.php?motif=' . $motif_name;
+  }
+
+  return $URL
+}
 
 
 ################################################################
