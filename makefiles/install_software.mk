@@ -828,9 +828,8 @@ _install_fastqc:
 install_bedtools: _download_bedtools _compile_bedtools _install_bedtools
 
 #http://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
-#BED_VERSION=2.13.3
-#BED_VERSION=2.17.0
-BED_VERSION=2.25.0
+#BED_VERSION=2.25.0, failed compilation in ubuntu20.04
+BED_VERSION=2.29.1
 BED_RELEASE=2
 BED_ARCHIVE=bedtools-${BED_VERSION}.tar.gz
 BED_URL=https://github.com/arq5x/bedtools2/releases/download/v${BED_VERSION}/${BED_ARCHIVE}
