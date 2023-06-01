@@ -197,22 +197,29 @@ RUN echo "source ${RSAT}/RSAT_config.bashrc" >> /etc/bash.bashrc \
 
 ENV RSATUSER="rsat_user"
 ENV RSATPASS="rsat_2020"
-ENV TESTPATH="/home/${RSATUSER}/test_data"
+ENV RSATUSERHOME="/home/${RSATUSER}"
+ENV TESTPATH="${RSATUSERHOME}/test_data"
 
 RUN useradd ${RSATUSER} \
-	&& echo ${RSATUSER}:${RSATPASS} | chpasswd \
+	&& echo "${RSATUSER}:${RSATPASS}" | chpasswd \
 	&& adduser ${RSATUSER} sudo \
-	&& chown -R ${RSATUSER}:${RSATUSER} ${RSAT} \
+	&& chown -R "${RSATUSER}:${RSATUSER}" ${RSAT} \
 	&& chmod 755 ${RSAT} \
-	&& mkdir -p ${TESTPATH} 
+	&& mkdir -p ${TESTPATH} \
+	&& chmod -R a+w ${RSATUSERHOME}
+
+
 
 ## <---- Create new folder with test _data 
 
+ENV TESTMAKEURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/makefile/peak-motifs.mk"
 ENV TESTRSATURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/peach/Modules/M11"
 ENV TESTRSATFILEREMOTE="${TESTRSATURL}/genesM11.txt"
 ENV TESTRSATFILELOCAL="${TESTPATH}/M11.txt"
+ENV TESTMAKEFILELOCAL="${TESTPATH}/peak-motifs.mk"
 
 RUN wget ${TESTRSATFILEREMOTE} -O ${TESTRSATFILELOCAL}
+RUN wget ${TESTMAKEURL} -O ${TESTMAKEFILELOCAL}
 
 
 ## <---- rename the container's folder for installing genomes, local volume to be used instead
@@ -256,8 +263,7 @@ WORKDIR "/home/${RSATUSER}"
 ## 5) Test container
 #
 # cd rsat_results 
-# wget https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/makefile/peak-motifs.mk
-# make all -f peak-motifs.mk
+# make -f ../test_data/peak-motifs.mk RNDSAMPLES=2 all
 #
 # 
 ## 6) To connect to RSAT Web server running from Docker
