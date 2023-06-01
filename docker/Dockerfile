@@ -230,35 +230,37 @@ WORKDIR "/home/${RSATUSER}"
 #################################  Useful command lines  ################################# 
 #
 #
-## Build RSAT Docker container
+## 1) Build RSAT Docker container
 #
 # export RSATDOCKERVERSION=`date '+%Y%m%d'` 
 # docker build --tag rsat:$RSATDOCKERVERSION --tag rsat:latest --force-rm --compress .
 # 
 #
-## Create local folders for input data and results, outside the container, as these might be large
+## 2) Create local folders for input data and results, outside the container, as these might be large
 #
 # mkdir -p ~/rsat_data/genomes ~/rsat_results
 # chmod -R a+w ~/rsat_data/genomes ~/rsat_results
 # 
 #  
-## Launch Docker RSAT container:
+## 3) Launch Docker RSAT container:
 #
 # docker run --rm -v ~/rsat_data:/packages/rsat/public_html/data/ -v ~/rsat_results:/home/rsat_user/rsat_results -it rsat:latest
 #
 #
-## Download organism from public RSAT server, such as the Plants server.
+## 4) Download organism from public RSAT server, such as the Plants server.
 ## Other available servers: http://fungi.rsat.eu, http://metazoa.rsat.eu, http://protists.rsat.eu
 # 
 # download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
 #
 #
-## To copy local file to Docker container:
+## 5) Test container
+#
+# cd rsat_results 
+# wget https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/makefile/peak-motifs.mk
+# make all -f peak-motifs.mk
+#
 # 
-# docker cp /path/to/data.txt 20bdbc29573c:/home/rsat_user/test_data 
-# 
-# 
-## To connect to RSAT Web server running from Docker
+## 6) To connect to RSAT Web server running from Docker
 #
 # If you run Docker as a normal user Apache will not start properly and you will see these messages:
 #
