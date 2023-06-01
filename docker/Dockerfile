@@ -1,0 +1,235 @@
+## <---- Create a clone of Ubuntu image
+
+FROM ubuntu:latest
+
+MAINTAINER Najla Ksouri <najlaksouri@gmail.com>
+MAINTAINER Bruno Contreras Moreira <bcontreras@eead.csic.es>
+
+##  <---- Prevent to open interactive dialogs during the installation process
+ENV DEBIAN_FRONTEND=noninteractive
+
+##  <----  Set the language environment in the docker container: should be included before installing any other package
+
+RUN apt-get update \
+	&& apt-get install -y locales \
+	&& locale-gen en_US.UTF-8 \
+	&& update-locale LANG=en_US.UTF-8 \
+   	&& apt-get autoremove
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+##  <----  Install required packages
+
+RUN apt-get install -y --no-install-recommends \
+	apt-transport-https \
+	wget \
+	less \
+	vim-tiny \
+	vim \
+	time \
+	lsb-release \
+# gnupg2 needed for gpg command and FOR R key installation
+	gnupg2 \  
+	dirmngr \    
+	ca-certificates\
+	software-properties-common \
+# optimize the space in your docker
+   && rm -rf /var/lib/apt/lists/*
+
+
+##  <----  Add the CRAN repository to your system sources’ list
+
+RUN echo "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" > /etc/apt/sources.list.d/cran.list
+RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+	&& gpg -a --export E298A3A825C0D65DFD57CBB651716619E084DAB9| apt-key add -
+
+
+## <---- Now install R and littler, and create a link for littler in /usr/local/bin
+## <---- Also set a default CRAN repo, and make sure littler knows about it too
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		littler \
+        	r-cran-littler \
+		r-base \
+		r-base-dev \
+		r-recommended \
+        && echo 'options(repos = c(CRAN = "https://cloud.r-project.org/"), download.file.method = "libcurl")' >> /etc/R/Rprofile.site \
+        && echo 'source("/etc/R/Rprofile.site")' >> /etc/littler.r \
+	&& ln -s /usr/share/doc/littler/examples/install.r /usr/local/bin/install.r \
+	&& ln -s /usr/share/doc/littler/examples/install2.r /usr/local/bin/install2.r \
+	&& ln -s /usr/share/doc/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
+	&& ln -s /usr/share/doc/littler/examples/testInstalled.r /usr/local/bin/testInstalled.r \
+	&& install.r docopt \
+	&& rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
+	&& rm -rf /var/lib/apt/lists/*
+
+
+## <---- Now we will install RSAT from the GitHub repository; https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html#5_Configuring_RSAT
+## <---- install git and git-lfs
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		git \	
+		git-lfs \
+	&& rm -rf /var/lib/apt/lists/*
+
+
+## <---- Create "packages directory and Set your working directory: 
+
+ENV INSTALL_ROOT=/packages
+RUN echo $INSTALL_ROOT \
+	&& mkdir -p ${INSTALL_ROOT}/
+WORKDIR /packages
+
+
+## <----  Clone RSAT repository into your working dir
+
+RUN git clone https://github.com/rsa-tools/rsat-code.git
+
+########################################################       Notes       ########################################################
+# [Jun2023] When clonning 'motif_databases' you get 
+# 'This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access'
+# Workaround: download motif_databases from RSAT Web instance (Plants), which are updated
+# 
+# Repositories 'demo_files' and 'sample_ouput' are skipped to save space
+#
+# git clone https://github.com/rsa-tools/demo_files.git
+# git clone https://github.com/rsa-tools/motif_databases.git
+# git clone https://github.com/rsa-tools/sample_outputs.git
+####################################################################################################################################
+
+
+## <---- Download motif_databases, move this directory to /packages, then rename rsat_code
+RUN wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
+	&& mv /packages/rsat.eead.csic.es/plants/motif_databases/ /packages \
+	&& rm -rf  /packages/rsat.eead.csic.es/ \
+	&& rm -rf /packages/motif_databases/_to_remove \
+	&& mv rsat-code rsat
+
+
+
+
+## <---- Create soft link 
+
+RUN cd rsat/public_html/ \
+&& ln -s ../../motif_databases/
+
+
+## <---- Declare the environment path and set the new working directory
+
+ENV RSAT /packages/rsat
+RUN echo $RSAT
+WORKDIR $RSAT
+
+
+## <---- define your IP, this step is needed to have access to web interface
+
+ENV MY_IP "localhost" 
+
+## <---- Check that the IP site of your machine has been specified
+RUN echo "MY_IP ${MY_IP}"
+
+## <----Choose your RSAT site name
+ENV RSAT_SITE=my_rsat
+
+## <---- Configure RSAT to be used internally and in web server, this step is needed to generate the RSAT_config.bashrc
+
+RUN perl perl-scripts/configure_rsat.pl -auto  rsat=${RSAT} rsat_site=${RSAT_SITE} rsat_www=http://${MY_IP}/rsat/ \
+  	rsat_ws=http://${MY_IP}/rsat/ package_manager="apt-get" ucsc_tools=1 ensembl_tools=1
+
+
+
+## <---- Read config and run bash installation scripts: FIRST WE NEED TO INSTALL SUDO, something failed so i had to install apt-utils
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+	sudo \
+	apt-utils
+
+########################################################       Notes       ########################################################
+# To run the bash installation scripts, we need a sudo access 
+# To run source RSAT_config.bashrc we need a bash shell, However the default shell in docker for the RUN instruction is ["/bin/sh", "-c"]. 
+# Using SHELL instruction SHELL ["/bin/bash", "-c"], we can change default shell for subsequent RUN instructions in Dockerfile 
+# then RUN "source file"    # now translates to: RUN /bin/bash -c "source file"
+####################################################################################################################################
+
+
+## <---- switch to bash
+SHELL ["/bin/bash", "-c"]
+
+
+
+## <---- make sure you are in your working dir
+RUN cd /packages/rsat
+WORKDIR /packages/rsat
+
+
+## <---- Read config and run bash installation scripts
+
+RUN  source /packages/rsat/RSAT_config.bashrc \
+	&& bash installer/01_ubuntu_packages.bash \
+	&& bash installer/02_python_packages.bash
+
+########################################################       Notes       ########################################################
+# When installinng python dependencies i got error with rpy2-3.5.12.tar.gz :
+# "note: This error originates from a subprocess, and is likely not a problem with pip"
+# To fix this, we need to Upgrade versions of pip, setuptools and wheel.
+# see https://bobbyhadz.com/blog/python-note-this-error-originates-from-subprocess
+# RUN pip install wheel setuptools pip --upgrade
+# RUN pip3 install wheel setuptools pip --upgrade
+# These commands were added to installer/02_python_packages.bash 
+####################################################################################################################################
+
+RUN bash installer/03_install_rsat.bash \
+	&& bash installer/04_perl_packages.bash \
+	&& bash installer/06_install_organisms.bash \
+	&& bash installer/07_R-and-packages.bash \
+	&& bash installer/08_apache_config.bash \
+	&& bash installer/09_rsat_ws.bash \
+	&& bash installer/10_clean_unnecessary_files.bash
+
+RUN echo "source /packages/rsat/RSAT_config.bashrc" >> /etc/bash.bashrc \
+	&& echo "service apache2 start" >>  /etc/bash.bashrc 
+
+
+
+## <---- add new user called rsat_user and give it permission to $RSAT
+
+RUN  useradd rsat_user && echo "rsat_user:rsat_2020" | chpasswd && adduser rsat_user sudo \
+	&& chown -R rsat_user:rsat_user /packages/rsat \
+	&& chmod 755 /packages/rsat
+
+## <---- from now on the working directory is rsat_user
+
+USER rsat_user
+
+WORKDIR /home/rsat_user
+
+## <---- Create new folder called test_data, this folder will contain the file M11.txt (list of gene_ids of module M11)
+
+RUN mkdir -p /home/rsat_user/test_data \
+	&& wget https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/peach/Modules/M11/genesM11.txt
+
+RUN mv genesM11.txt M11.txt
+RUN mv M11.txt ~/test_data/
+
+
+
+#################################  Useful command lines  ################################# 
+# Connect to rsat docker
+# docker run --rm -v ~/rsat_data:/packages/rsat/public_html/data/ -v ~/rsat_results:/home/rsat_user/rsat_results -it rsat_docker:latest
+#
+# Once connected to rsat container, we need to type sudo service apache2 restart, password rsat_2020, to get access to the webserver http://172.17.0.2/rsat/
+
+# download organism <----------  download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
+
+# copy file from local host to container <--------- docker cp /home/sie/dockerproject/M11.txt 20bdbc29573c:/home/rsat_user/test_data <----------- copy file from local host to container
+
+# build docker container using a dockerfile <---------- docker build -t <container name> -f <dockerfile> . (the "." is crucial); EXPL docker build -t rsat_docker myrsatdockerfile .
+# run container as root <---------- docker exec -u 0 -it <container running id> bash
+# 
+
+
