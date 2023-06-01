@@ -196,14 +196,14 @@ RUN echo "source ${RSAT}/RSAT_config.bashrc" >> /etc/bash.bashrc \
 ## <---- add new user called rsat_user and give it permission to $RSAT
 
 ENV RSATUSER="rsat_user"
-ENV RSATPASS="rsat_2023"
+ENV RSATPASS="rsat_2020"
 ENV TESTPATH="/home/${RSATUSER}/test_data"
 
 RUN useradd ${RSATUSER} \
-	&& echo "${RSATUSER}:${RSATPASS}" | chpasswd \
+	&& echo ${RSATUSER}:${RSATPASS} | chpasswd \
 	&& adduser ${RSATUSER} sudo \
-	&& chown -R "${RSATUSER}:${RSATUSER}" /packages/rsat \
-	&& chmod 755 /packages/rsat \
+	&& chown -R ${RSATUSER}:${RSATUSER} ${RSAT} \
+	&& chmod 755 ${RSAT} \
 	&& mkdir -p ${TESTPATH} 
 
 ## <---- Create new folder with test _data 
@@ -215,13 +215,9 @@ ENV TESTRSATFILELOCAL="${TESTPATH}/M11.txt"
 RUN wget ${TESTRSATFILEREMOTE} -O ${TESTRSATFILELOCAL}
 
 
-## <---- make sure the folder for installing genomes is writable
+## <---- rename the container's folder for installing genomes, local volume to be used instead
 
-ENV GENOMESPATH="${RSAT}/public_html/data/genomes/"
-
-RUN mkdir -p ${GENOMESPATH} \
-        && chmod 755 ${GENOMESPATH}
-
+RUN mv ${RSAT}/public_html/data ${RSAT}/public_html/data_container
 
 ## <---- set default user and path
 
@@ -237,22 +233,24 @@ WORKDIR "/home/${RSATUSER}"
 ## Build RSAT Docker container
 #
 # export RSATDOCKERVERSION=`date '+%Y%m%d'` 
-# docker build --build-arg version=$RSATDOCKERVERSION --tag rsat:$RSATDOCKERVERSION --tag rsat:latest --force-rm --compress .
+# docker build --tag rsat:$RSATDOCKERVERSION --tag rsat:latest --force-rm --compress .
 # 
 #
 ## Create local folders for input data and results, outside the container, as these might be large
 #
-# mkdir ~/rsat_data ~/rsat_results
-#
+# mkdir -p ~/rsat_data/genomes ~/rsat_results
+# chmod -R a+w ~/rsat_data/genomes ~/rsat_results
+# 
 #  
 ## Launch Docker RSAT container:
 #
 # docker run --rm -v ~/rsat_data:/packages/rsat/public_html/data/ -v ~/rsat_results:/home/rsat_user/rsat_results -it rsat:latest
 #
 #
-## Download organism from RSAT instance; for instance, the Plants server can be found at http://plants.rsat.eu
+## Download organism from public RSAT server, such as the Plants server.
+## Other available servers: http://fungi.rsat.eu, http://metazoa.rsat.eu, http://protists.rsat.eu
 # 
-# download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server http://plants.rsat.eu
+# download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
 #
 #
 ## To copy local file to Docker container:
