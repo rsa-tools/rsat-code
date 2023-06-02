@@ -255,7 +255,7 @@ WORKDIR "/home/${RSATUSER}"
 #
 #
 ## 4) Download organism from public RSAT server, such as the Plants server.
-## Other available servers: http://fungi.rsat.eu, http://metazoa.rsat.eu, http://protists.rsat.eu
+##    Other available servers: http://fungi.rsat.eu, http://metazoa.rsat.eu, http://protists.rsat.eu
 # 
 # download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
 #
@@ -265,8 +265,12 @@ WORKDIR "/home/${RSATUSER}"
 # cd rsat_results 
 # make -f ../test_data/peak-motifs.mk RNDSAMPLES=2 all
 #
+#
+## 6) Install any organism, please follow 
+##    https://rsa-tools.github.io/managing-RSAT/genome_installation/install_organisms_FASTA_GTF.html
+#
 # 
-## 6) To connect to RSAT Web server running from Docker
+## 7) To connect to RSAT Web server running from Docker
 #
 # If you run Docker as a normal user Apache will not start properly and you will see these messages:
 #
