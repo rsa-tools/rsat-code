@@ -48,7 +48,10 @@ Please follow these steps to install it:
 
 ## Dockerfiles
 
-This Dockerfile builds a standalone Docker container of RSAT and was used with minor modifications
+The Dockerfiles for the containers at [biocontainers/rsat](https://hub.docker.com/r/biocontainers/rsat) 
+can be found at https://github.com/BioContainers/containers/tree/master/rsat
+
+Those are based on the this [Dockerfile](./Dockerfile), which we use for testing and builds a standalone Docker container of RSAT.
 ~                                                                                                                                               
 ~                                                                                                                                               
 ~                                                                                                                                               
