@@ -35,6 +35,10 @@ echo
 ## PROBLEM : No distributions at all found for python-suds
 ## pip3 install python-suds
 
+echo "# manual system installation (tested in Debian 12):"; 
+echo "apt install python3-numpy python3-scipy python3-matplotlib snakemake python3-rpy2 python3-pysimplesoap python3-requests python3-yaml"
+echo
+
 ## Failures: no distributions at all found
 # pip3 install wsdl
 # pip3 install wstools
