@@ -196,12 +196,20 @@ Function load_props($props) {
   return $prop_array;
 }
 
+//Debian 12 php8.2:
+// PHP Warning:  Trying to access array offset on value of type null in 
+// /var/www/html/rsat/public_html/functions.php on line 111, 
+// referer: https://rsat.eead.csic.es/plants/index.php
+// fatal: detected dubious ownership in repository at '/var/www/html/rsat'
+// To add an exception for this directory, call:
+//   git config --global --add safe.directory /var/www/html/rsat
+// explanation: use www-data does not own repository and cannot do git pull
 Function getGitLastCommitDate(){
 	$date = shell_exec('git log | head -n 4 | grep Date');
-	$date = str_replace('Date:', '', $date);
 	$date = preg_replace('/^\s*\w+\s+/', '', $date);
 	$date = preg_replace('/\D+\w+\s*$/', '', $date);
 	return $date;
+	return '';
 }
 ////////////////////////////////////////////////////////////////
 // Operations done when loading each php page
