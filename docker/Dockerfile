@@ -67,8 +67,8 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 
-## <---- Now we will install RSAT from the GitHub repository; https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html#5_Configuring_RSAT
-## <---- install git and git-lfs
+## <---- Now we will install RSAT from the GitHub repository; requires git see,
+#        https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html#5_Configuring_RSAT
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
@@ -77,7 +77,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 
-## <---- Create "packages directory and Set your working directory: 
+## <---- Create INSTALL_ROOT directory and set as working directory: 
 
 ENV INSTALL_ROOT=/packages
 RUN echo $INSTALL_ROOT \
@@ -99,7 +99,6 @@ RUN git clone https://github.com/rsa-tools/rsat-code.git
 # git clone https://github.com/rsa-tools/demo_files.git
 # git clone https://github.com/rsa-tools/motif_databases.git
 # git clone https://github.com/rsa-tools/sample_outputs.git
-####################################################################################################################################
 
 
 ## <---- Download motif_databases, move this directory to /packages, then rename rsat_code
@@ -142,7 +141,7 @@ RUN perl perl-scripts/configure_rsat.pl -auto  rsat=${RSAT} rsat_site=${RSAT_SIT
 
 
 
-## <---- Read config and run bash installation scripts: FIRST WE NEED TO INSTALL SUDO, something failed so i had to install apt-utils
+## <---- Read config and run bash installation scripts: requires sudo and apt-utils
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
@@ -150,11 +149,10 @@ RUN apt-get update \
 	apt-utils
 
 ########################################################       Notes       ########################################################
-# To run the bash installation scripts, we need a sudo access 
-# To run source RSAT_config.bashrc we need a bash shell, However the default shell in docker for the RUN instruction is ["/bin/sh", "-c"]. 
+# To run the bash installation scripts, we need sudo access 
+# To run source RSAT_config.bashrc we need a bash shell; however, the default shell for RUN instructions is ["/bin/sh", "-c"]. 
 # Using SHELL instruction SHELL ["/bin/bash", "-c"], we can change default shell for subsequent RUN instructions in Dockerfile 
 # then RUN "source file"    # now translates to: RUN /bin/bash -c "source file"
-####################################################################################################################################
 
 
 ## <---- switch to bash
@@ -163,8 +161,8 @@ SHELL ["/bin/bash", "-c"]
 
 
 ## <---- make sure you are in your working dir
-RUN cd /packages/rsat
-WORKDIR /packages/rsat
+RUN cd ${RSAT}
+WORKDIR ${RSAT}
 
 
 ## <---- Read config and run bash installation scripts
@@ -181,55 +179,110 @@ RUN  source /packages/rsat/RSAT_config.bashrc \
 # RUN pip install wheel setuptools pip --upgrade
 # RUN pip3 install wheel setuptools pip --upgrade
 # These commands were added to installer/02_python_packages.bash 
-####################################################################################################################################
+
 
 RUN bash installer/03_install_rsat.bash \
 	&& bash installer/04_perl_packages.bash \
 	&& bash installer/06_install_organisms.bash \
 	&& bash installer/07_R-and-packages.bash \
 	&& bash installer/08_apache_config.bash \
-	&& bash installer/09_rsat_ws.bash \
 	&& bash installer/10_clean_unnecessary_files.bash
 
-RUN echo "source /packages/rsat/RSAT_config.bashrc" >> /etc/bash.bashrc \
+RUN echo "source ${RSAT}/RSAT_config.bashrc" >> /etc/bash.bashrc \
 	&& echo "service apache2 start" >>  /etc/bash.bashrc 
 
 
 
 ## <---- add new user called rsat_user and give it permission to $RSAT
 
-RUN  useradd rsat_user && echo "rsat_user:rsat_2020" | chpasswd && adduser rsat_user sudo \
-	&& chown -R rsat_user:rsat_user /packages/rsat \
-	&& chmod 755 /packages/rsat
+ENV RSATUSER="rsat_user"
+ENV RSATPASS="rsat_2020"
+ENV RSATUSERHOME="/home/${RSATUSER}"
+ENV TESTPATH="${RSATUSERHOME}/test_data"
 
-## <---- from now on the working directory is rsat_user
+RUN useradd ${RSATUSER} \
+	&& echo "${RSATUSER}:${RSATPASS}" | chpasswd \
+	&& adduser ${RSATUSER} sudo \
+	&& chown -R "${RSATUSER}:${RSATUSER}" ${RSAT} \
+	&& chmod 755 ${RSAT} \
+	&& mkdir -p ${TESTPATH} \
+	&& chmod -R a+w ${RSATUSERHOME}
 
-USER rsat_user
 
-WORKDIR /home/rsat_user
 
-## <---- Create new folder called test_data, this folder will contain the file M11.txt (list of gene_ids of module M11)
+## <---- Create new folder with test _data 
 
-RUN mkdir -p /home/rsat_user/test_data \
-	&& wget https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/peach/Modules/M11/genesM11.txt
+ENV TESTMAKEURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/makefile/peak-motifs.mk"
+ENV TESTRSATURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/peach/Modules/M11"
+ENV TESTRSATFILEREMOTE="${TESTRSATURL}/genesM11.txt"
+ENV TESTRSATFILELOCAL="${TESTPATH}/M11.txt"
+ENV TESTMAKEFILELOCAL="${TESTPATH}/peak-motifs.mk"
 
-RUN mv genesM11.txt M11.txt
-RUN mv M11.txt ~/test_data/
+RUN wget ${TESTRSATFILEREMOTE} -O ${TESTRSATFILELOCAL}
+RUN wget ${TESTMAKEURL} -O ${TESTMAKEFILELOCAL}
+
+
+## <---- rename the container's folder for installing genomes, local volume to be used instead
+
+RUN mv ${RSAT}/public_html/data ${RSAT}/public_html/data_container
+
+## <---- set default user and path
+
+USER ${RSATUSER}
+
+WORKDIR "/home/${RSATUSER}"
 
 
 
 #################################  Useful command lines  ################################# 
-# Connect to rsat docker
-# docker run --rm -v ~/rsat_data:/packages/rsat/public_html/data/ -v ~/rsat_results:/home/rsat_user/rsat_results -it rsat_docker:latest
 #
-# Once connected to rsat container, we need to type sudo service apache2 restart, password rsat_2020, to get access to the webserver http://172.17.0.2/rsat/
-
-# download organism <----------  download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
-
-# copy file from local host to container <--------- docker cp /home/sie/dockerproject/M11.txt 20bdbc29573c:/home/rsat_user/test_data <----------- copy file from local host to container
-
-# build docker container using a dockerfile <---------- docker build -t <container name> -f <dockerfile> . (the "." is crucial); EXPL docker build -t rsat_docker myrsatdockerfile .
-# run container as root <---------- docker exec -u 0 -it <container running id> bash
+#
+## 1) Build RSAT Docker container
+#
+# export RSATDOCKERVERSION=`date '+%Y%m%d'` 
+# docker build --tag rsat:$RSATDOCKERVERSION --tag rsat:latest --force-rm --compress .
 # 
-
-
+#
+## 2) Create local folders for input data and results, outside the container, as these might be large
+#
+# mkdir -p ~/rsat_data/genomes ~/rsat_results
+# chmod -R a+w ~/rsat_data/genomes ~/rsat_results
+# 
+#  
+## 3) Launch Docker RSAT container:
+#
+# docker run --rm -v ~/rsat_data:/packages/rsat/public_html/data/ -v ~/rsat_results:/home/rsat_user/rsat_results -it rsat:latest
+#
+#
+## 4) Download organism from public RSAT server, such as the Plants server.
+##    Other available servers: http://fungi.rsat.eu, http://metazoa.rsat.eu, http://protists.rsat.eu
+# 
+# download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
+#
+#
+## 5) Test container
+#
+# cd rsat_results 
+# make -f ../test_data/peak-motifs.mk RNDSAMPLES=2 all
+#
+#
+## 6) Install any organism, please follow 
+##    https://rsa-tools.github.io/managing-RSAT/genome_installation/install_organisms_FASTA_GTF.html
+#
+# 
+## 7) To connect to RSAT Web server running from Docker
+#
+# If you run Docker as a normal user Apache will not start properly and you will see these messages:
+#
+#   * Starting Apache httpd web server apache2
+#   (13)Permission denied: AH00091: apache2: could not open error log file /var/log/apache2/error.log.
+#   AH00015: Unable to open logs
+#   Action 'start' failed.
+#   The Apache error log may have more information
+#
+# If you really want lo launch the Docker Web server launch tge container and do (see RSATPASS above):
+# 
+# sudo service apache2 restart
+# hostname -I
+#
+# open the following URL in your browser, using the obtained the IP address: http://172.17.0.2/rsat
