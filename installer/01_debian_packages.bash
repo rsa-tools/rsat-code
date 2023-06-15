@@ -53,7 +53,6 @@ apache2
 libgdbm-dev
 libgd-tools
 libgd-gd2-perl
-ghostscript
 gnuplot
 graphviz
 default-mysql-client
