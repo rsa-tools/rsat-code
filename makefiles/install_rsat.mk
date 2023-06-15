@@ -193,7 +193,7 @@ PERL_MODULES= \
 	Data::Dumper \
 	Digest::MD5::File \
 	Email::Sender \
-	Email::Sender::Transport::SMTPS \
+	Email::Sender::Transport::SMTP \
 	Email::Simple \
 	Email::Simple::Creator \
 	File::Spec \
