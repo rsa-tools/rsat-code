@@ -5,7 +5,7 @@ This folder contains the code required to install a local version of
 the **Regulatory Sequence Analysis Tools** (**RSAT**). 
 
 
-**Contact**: <Jacques.van-Helden@univ-amu.fr>
+**Contact**: Jacques.van-Helden[AT]univ-amu.fr , rsat-contact[AT]list01.bio.ens.psl.eu
 
 **Authors**: Jacques van Helden + the RSAT team.
 
