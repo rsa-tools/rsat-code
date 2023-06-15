@@ -215,7 +215,7 @@ Function getGitLastCommitDate(){
 
 	} else {
 		$rsat_path = getcwd() . "/../";
-		$date = date("F d H:i:s Y", filemtime( $rsat_path . '.git'));
+		$date = date("F d H:i:s Y e", filemtime( $rsat_path . '.git'));
 	}
 
 	return $date;
