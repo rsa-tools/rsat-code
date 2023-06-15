@@ -108,8 +108,8 @@ sub send_mail_STARTTLS {
 	);
     
     ## Try to send the email
-    eval  "use Email::Sender::Transport::SMTPS";  die $@ if $@;
-    my $transport = Email::Sender::Transport::SMTPS->new(
+    eval  "use Email::Sender::Transport::SMTP";  die $@ if $@;
+    my $transport = Email::Sender::Transport::SMTP->new(
 	host => $smtp_server,
 	ssl  => 'starttls',
 	sasl_username => $user,
