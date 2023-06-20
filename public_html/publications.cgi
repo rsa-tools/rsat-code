@@ -27,7 +27,7 @@ foreach $key (keys %default) {
 
 print '<center>
 <h2>
-<a href="RSAT_home.cgi">RSAT</A> - Publications</H2>
+<a href="index.php">RSAT</A> - Publications</H2>
 </center>
 ';
 
