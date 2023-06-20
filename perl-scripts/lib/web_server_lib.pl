@@ -58,7 +58,7 @@ sub RSA_header_old {
 			   -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen,projection,print' });
-  print "<h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
+  print "<h3 align='center'><a href='index.php'>RSAT</a> - $title</h3>";
 
   ################################################################
   ## Check if client IP is blacklisted on this server.
