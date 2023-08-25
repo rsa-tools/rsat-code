@@ -2369,7 +2369,15 @@ sub Add_gaps_to_motifs {
 
     ## Call the program 'convert-matrix' to add the empty columns
     ## to the aligned logos and retrieve the logos in RC
-    my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
+    my $max_sys_process = qx/bash -c "ulimit -u"/;
+
+    if($max_sys_process eq 'unlimited') {
+        # in Docker container
+        $max_sys_process = 4;
+    } elsif($max_sys_process =~ m/\d+/) {
+        $max_sys_process += 0; # cast as number
+    }
+
     my $num_process = ($max_sys_process > $ENV{max_num_process}) ? $ENV{max_num_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
     &RSAT::message::TimeWarn("Process divided in ", $num_process, " threads") if ($main::verbose >= 2);
@@ -6472,7 +6480,15 @@ sub Clustered_PSSMS_TRANSFAC_format(){
     my $file_names = "";
 
     my ($clusters_table) = &OpenInputFile($main::outfile{clusters_table});
-    my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
+    my $max_sys_process = qx/bash -c "ulimit -u"/;
+
+    if($max_sys_process eq 'unlimited') {
+        # in Docker container
+        $max_sys_process = 4;
+    } elsif($max_sys_process =~ m/\d+/) {
+        $max_sys_process += 0; # cast as number
+    }
+
     my $num_process = ($max_sys_process > $ENV{max_num_process}) ? $ENV{max_num_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
 LINKS:
