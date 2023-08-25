@@ -2903,7 +2903,15 @@ sub Merge_matrices {
     my %width_internal_alignments = ();
     &RSAT::message::TimeWarn("Merging matrices for", scalar(@clusters_to_HTML), "clusters") if ($main::verbose >= 2);
     
-    my $max_sys_process = qx/bash -c "ulimit -u"/ + 0;
+    my $max_sys_process = qx/bash -c "ulimit -u"/;
+
+    if($max_sys_process eq 'unlimited') {
+        # in Docker container
+        $max_sys_process = 4;
+    } elsif($max_sys_process =~ m/\d+/) {
+        $max_sys_process += 0; # cast as number
+    }
+
     my $num_process = ($max_sys_process > $ENV{max_num_child_process}) ? $ENV{max_num_child_process} : $max_sys_process;
     my $pm = Parallel::ForkManager->new($num_process);
     LINKS:
