@@ -75,7 +75,7 @@ MAIN:
 <HEADER>
 <TITLE>RSAT - neighbour-orfs result</TITLE>
 </HEADER><BODY BGCOLOR="#FFFFFF">
-<H3 ALIGN=CENTER><A HREF="$ENV{rsat_www}/RSAT_home.cgi">
+<H3 ALIGN=CENTER><A HREF="$ENV{rsat_www}/index.php">
 RSAT</A> - neighbour-orfs result $input{'set_name'}</H3>
 End_Header
 

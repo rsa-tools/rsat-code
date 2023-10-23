@@ -269,7 +269,14 @@ sub AlignMatricesOneToN {
   foreach my $m (0..$#matching_matrices) {
     my $matrix2 = $matching_matrices[$m];
     my $offset = $matching_offsets[$m];
-    my $ncol2 = $matrix2->get_attribute("ncol"); push @ncol2, $ncol2;
+
+    # init ncol2 as there might be undefined matrices
+    # [Can't call method "get_attribute" on an undefined value MatrixAlignment.pm line 274.] 
+    my $ncol2 = 0;
+    if(defined($matrix2)) { 
+      my $ncol2 = $matrix2->get_attribute("ncol"); push @ncol2, $ncol2;
+    }
+
     my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset); push @end1, $end1;
     my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1); push @start1, $start1;
     my $w = $end1-$start1+1; push @w, $w;
@@ -345,6 +352,10 @@ sub AlignMatricesOneToN {
     my $strand = $matching_strands[$m];
     my $rc = "";
     $rc = "_rc" if ($strand eq "R"); ## Suffix added to matrix ID, name and descrption to indicate reverse complement
+
+    # skip undefined matrices
+    # [Can't call method "get_attribute" on an undefined value at MatrixAlignment.pm line 355.]
+    next if(!defined($matrix2));
 
     my $score = $matching_scores[$m];
     my $id2 = $matrix2->get_attribute("id");

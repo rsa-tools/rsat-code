@@ -196,13 +196,31 @@ Function load_props($props) {
   return $prop_array;
 }
 
+// PHP Warning:  Trying to access array offset on value of type null in 
+// /var/www/html/rsat/public_html/functions.php on line ...
+// fatal: detected dubious ownership in repository at '/var/www/html/rsat'
+// To add an exception for this directory, call:
+//   git config --global --add safe.directory /var/www/html/rsat
+//
+// explanation: user www-data does not own repository and cannot do git pull,
+//              observed in Debian 12 with php 8.2
+//
 Function getGitLastCommitDate(){
-	$date = shell_exec('git log | head -n 4 | grep Date');
-	$date = str_replace('Date:', '', $date);
-	$date = preg_replace('/^\s*\w+\s+/', '', $date);
-	$date = preg_replace('/\D+\w+\s*$/', '', $date);
+	$date = shell_exec('git log | head -n 4 | grep Date'); 
+	//Date:   Thu Jun 15 10:52:32 2023 +0200
+
+	if (isset($date)) {
+		$date = preg_replace('/^\s*\w+\s+/', '', $date);
+		$date = preg_replace('/\D+\w+\s*$/', '', $date);
+
+	} else {
+		$rsat_path = getcwd() . "/../";
+		$date = date("F d H:i:s Y e", filemtime( $rsat_path . '.git'));
+	}
+
 	return $date;
 }
+
 ////////////////////////////////////////////////////////////////
 // Operations done when loading each php page
 

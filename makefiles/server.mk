@@ -153,7 +153,7 @@ clean_tmp:
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Removing all files older than ${CLEAN_LIMIT} days"
-	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_LIMIT} -type f -exec $(SUDO) rm -f {} \;	
+	find -L ${RSAT}/public_html/tmp/ -mtime +${CLEAN_LIMIT} -type f -exec $(SUDO) rm -f {} \;	
 	@echo
 	@date "+%Y/%m/%d %H:%M:%S"
 	@echo "Measuring disk usage after cleaning"

@@ -326,7 +326,7 @@ $(document).ready(function(){
     print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
-        print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><!--h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3-->";
+            print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><!--h3 align='center'><a href='index.php'>RSAT</a> - $title</h3-->";
     }
 
 
@@ -393,7 +393,7 @@ system("php menu.php");
 print "<div class='container' id='page-content-wrapper'>";
 
     if(!($title =~ 'RSAT home') && !($title =~ "Publications")) {
-        print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='RSAT_home.cgi'>RSAT</a> - $title</h3>";
+            print "<span class='menu-toggle'><a href='#' id='menu-toggle'><i class='fa fa-bars fa-2x' style='color:green;'></i></a></span><h3 align='center'><a href='index.php'>RSAT</a> - $title</h3>";
     }
 
 

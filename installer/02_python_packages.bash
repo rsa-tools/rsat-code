@@ -35,6 +35,10 @@ echo
 ## PROBLEM : No distributions at all found for python-suds
 ## pip3 install python-suds
 
+echo "# manual system installation (tested in Debian 12):"; 
+echo "apt install python3-numpy python3-scipy python3-matplotlib snakemake python3-rpy2 python3-pysimplesoap python3-requests python3-yaml"
+echo
+
 ## Failures: no distributions at all found
 # pip3 install wsdl
 # pip3 install wstools
@@ -44,7 +48,14 @@ sudo pip3 install matplotlib
 # sudo pip3 install suds ## Error on Mac OSX
 sudo pip3 install fisher
 sudo pip3 install snakemake
-sudo pip3 install rpy2  ## THIS FAILS on the IFB cloud. To be checked.
+
+# may2023, ubuntu 20.04
+# to avoid error with rpy2-3.5.12.tar.gz "note: This error originates from a subprocess, and is likely not a problem with pip",
+# not sure this solves "THIS FAILS on the IFB cloud. To be checked"
+sudo pip install wheel setuptools pip --upgrade
+sudo pip3 install wheel setuptools pip --upgrade
+sudo pip3 install rpy2 
+
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
 
 ## Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/wstools

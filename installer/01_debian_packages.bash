@@ -53,7 +53,6 @@ apache2
 libgdbm-dev
 libgd-tools
 libgd-gd2-perl
-ghostscript
 gnuplot
 graphviz
 default-mysql-client
@@ -65,6 +64,10 @@ python3-numpy
 python3-scipy
 python3-matplotlib
 python3-rpy2
+snakemake 
+python3-pysimplesoap 
+python3-requests 
+python3-yaml
 emacs
 x11-apps
 eog
@@ -79,7 +82,7 @@ libssl-dev
 php
 libapache2-mod-php
 rsync
-libmysqlclient-dev
+default-libmysqlclient-dev
 libapache2-mod-wsgi-py3
 python-is-python3
 "
