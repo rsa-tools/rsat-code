@@ -40,7 +40,7 @@ Examples
 
 Retrieve mammal genome disponible on UCSC.
 
- supported-organims-uscs.pl -taxon mammal
+ supported-organisms-ucsc -v 1
 
 =cut
 
@@ -51,7 +51,10 @@ BEGIN {
 }
 require "RSA.lib";
 
-use Bio::Das; ## Required to access UCSC Genome Browser
+#use Bio::Das; ## Required to access UCSC Genome Browser
+use REST::Client;
+use JSON;
+#use Data::Dumper;
 
 ## Main package
 package main;
@@ -63,28 +66,31 @@ package main;
   our $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
-	our $taxon = "";
-	our $id_ok = "";
+#  our $taxon = "";
+#  our $id_ok = "";
   our %outfile = ();
   our $verbose = 0;
 
+  ## Get the list of organisms via the REST interface
+  our $rest_server_url = "https://api.genome.ucsc.edu/list/ucscGenomes";
+  
   ## Parameters for connecting the DAS server
-  our $das_server_url ="http://genome.cse.ucsc.edu/cgi-bin/das";
+#  our $das_server_url ="http://genome.cse.ucsc.edu/cgi-bin/das";
 
   ################################################################
   ## Read argument values
   &ReadArguments();
 
-  ################################################################
-  ## Define the URL fo the DAS server
-#  our $das_server_url = $das_server;
-  &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
+#   ################################################################
+#   ## Define the URL fo the DAS server
+# #  our $das_server_url = $das_server;
+#   &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
 
-  ## Open DAS client
-  my $das = Bio::Das->new(30);  # timeout of 10 sec => not enough for UCSC, changed to 30 sec (MTC, 16 Feb 2015)
-  unless ($das) {
-    &RSAT::error::FatalError("Cannot establish connection to UCSC DAS server", $das_server_url);
-  }
+#   ## Open DAS client
+#   my $das = Bio::Das->new(30);  # timeout of 10 sec => not enough for UCSC, changed to 30 sec (MTC, 16 Feb 2015)
+#   unless ($das) {
+#     &RSAT::error::FatalError("Cannot establish connection to UCSC DAS server", $das_server_url);
+#   }
 
   ################################################################
   ## Open output stream
@@ -92,22 +98,61 @@ package main;
 
   ################################################################
   ## Print verbose
-  #&Verbose() if ($main::verbose >= 1);
+  &Verbose() if ($main::verbose >= 1);
 
-  ## Send request to DAS server to obtain the list of supported organisms
-  &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
-  my @response = $das->dsn('http://genome.cse.ucsc.edu/cgi-bin/das');
+  ################################################################
+  ## REST request
 
-  for my $url (@response) {
-    if ($url->is_success) {
-	    my @dsns = $url->results;
-      foreach (@dsns) {
-        print $out $_->id,"\t",$_->description,"\n";
-		  } 
-    } else {
-	    &RSAT::message::Warning("DAS request returned error", $request->dsn,": ",$request->error);
-    }
+  &RSAT::message::TimeWarn("Sending request to REST server", $rest_server_url) if ($main::verbose >= 3);
+
+  our $client = REST::Client->new();
+  $client->GET($rest_server_url);
+
+  our $response = $client->responseContent();
+  our $decoded = decode_json($response);
+
+#  print Dumper($decoded);
+
+  if ($main::verbose >= 1) {
+      print $out "; REST URL        \t", $rest_server_url, "\n";
+      print $out "; dataTime         \t", $decoded->{dataTime}, "\n";
+      print $out "; dataTimeStamp    \t", $decoded->{dataTimeStamp}, "\n";
+      print $out "; downloadTime     \t", $decoded->{downloadTime}, "\n";
+      print $out "; downloadTimeStamp\t", $decoded->{downloadTimeStamp}, "\n";
   }
+  
+  print join("; ", keys(%$decoded)), "\n";
+  our $genomes = $decoded->{"ucscGenomes"};
+  our @ids = keys(%$genomes);
+
+  for my $id (sort @ids) {
+      my $scientific_name = $decoded->{"ucscGenomes"}->{$id}->{"scientificName"};
+      print $out join("\t", $id, $scientific_name), "\n";
+  }
+  
+  
+  ## Send request to DAS server to obtain the list of supported organisms
+  # &RSAT::message::TimeWarn("Sending request to DAS server", $das_server_url) if ($main::verbose >= 3);
+  # my @response = $das->dsn('http://genome.cse.ucsc.edu/cgi-bin/das');
+
+
+#  print("Response\n", @response);
+  
+#  &RSAT::message::Info("UCSC DAS response");
+  
+#   for my $url (@response) {
+#     &RSAT::message::Info("\tURL\t\t", $url);
+# #    &RSAT::message::Info("\tis_success\t", $url->is_success);
+#     if ($url->is_success) {
+#       my @dsns = $url->results;
+#       foreach (@dsns) {
+#         print $out $_->id,"\t",$_->description,"\n";
+#       } 
+#     } else {
+# 	&RSAT::message::Warning("DAS request returned error");
+# #	&RSAT::message::Info("Request DSN: ", $request->dsn,": ", $request->error);
+#     }
+#   }
 
   ################################################################
   ## Report execution time and close output stream
@@ -200,6 +245,26 @@ allows to use the command within a pipe.
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
 
+    }
+  }
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+  print $out "; supported-organisms-ucsc ";
+  &PrintArguments($out);
+  printf $out "; %-22s\t%s\n", "Program version", $program_version;
+  if (%main::infile) {
+    print $out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
+    }
+  }
+  if (%main::outfile) {
+    print $out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
     }
   }
 }
