@@ -35,13 +35,15 @@ graphviz
 openssl
 mysql-connector-c
 mysql
-python
 python3
 emacs
 ntp
 curl
 php
 "
+
+## 2023-11-05: JvH suppresses this because python2 is not suppported anymore
+# python
 
 
 ################################################################
