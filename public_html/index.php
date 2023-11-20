@@ -66,7 +66,7 @@
 			  target="_blank"> in Computational and
 			  Structural Biotechnology
 			      Journal</b></a></span><br/><br/>
-<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<!--<a class="twitter-timeline" data-border-color="#F6E6AC" data-chrome="nofooter" data-height="500" href="https://twitter.com/RSATools">Tweets by RSATools</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>-->
 			</div>	
 		</div>
 	</div>
