@@ -42,7 +42,7 @@
 
       <p>Most genomes RSAT Plants are imported from EnsemblPlants, other sources include the NCBI and Phytozome.</p>
 
-      <ul><a  target="_blank" href="ftp://ftp.ensemblgenomes.org/pub/plants/current">https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/plants</a></ul>
+      <ul><a  target="_blank" href="https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/plants">https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/plants</a></ul>
 
       <p>Most genomes of RSAT Fungi are imported from the NCBI and EnsemblFungi.</p>
 
