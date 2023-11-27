@@ -34,24 +34,23 @@
       
       <p>Most genomes of RSAT Prokaryotes are parsed from the NCBI genome repository.</p>
       
-      <ul><a  target="_blank" href="ftp://ftp.ncbi.nih.gov/genomes/">ftp://ftp.ncbi.nih.gov/genomes/</a></ul>
+      <ul><a  target="_blank" href="https://ftp.ncbi.nlm.nih.gov/genomes">https://ftp.ncbi.nlm.nih.gov/genomes</a></ul>
 
       <p>Most genomes of RSAT Metazoa are imported from the Ensembl database.</p>
 
-      <ul><a target="_blank" href="ftp://ftp.ensembl.org/pub/">ftp://ftp.ensembl.org/pub/</a></ul>
+      <ul><a target="_blank" href="https://ftp.ensembl.org/pub">https://ftp.ensembl.org/pub</a></ul>
 
+      <p>Most genomes RSAT Plants are imported from EnsemblPlants, other sources include the NCBI and Phytozome.</p>
 
-      <p>Genomes and annotations of RSAT Plants are parsed from EnsemblPlants.</p>
-
-      <ul><a  target="_blank" href="ftp://ftp.ensemblgenomes.org/pub/plants/current">ftp://ftp.ensemblgenomes.org/pub/plants/current</a></ul>
+      <ul><a  target="_blank" href="ftp://ftp.ensemblgenomes.org/pub/plants/current">https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/plants</a></ul>
 
       <p>Most genomes of RSAT Fungi are imported from the NCBI and EnsemblFungi.</p>
 
-      <ul><a target="_blank" href="ftp://ftp.ensemblgenomes.org/pub/fungi/current/">ftp://ftp.ensemblgenomes.org/pub/fungi/current/</a></ul>
+      <ul><a target="_blank" href="https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/fungi">https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/fungi</a></ul>
 
       <p>Most genomes of RSAT Protists are imported from EnsemblProtists.</p>
 
-      <ul><a target="_blank" href="ftp://ftp.ensemblgenomes.org/pub/protists/current/">ftp://ftp.ensemblgenomes.org/pub/protists/current/</a></ul>
+      <ul><a target="_blank" href="https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/protists">https://ftp.ebi.ac.uk/ensemblgenomes/pub/current/protists</a></ul>
 
 
       <h2>RSAT logo (August 2014)</h2>
