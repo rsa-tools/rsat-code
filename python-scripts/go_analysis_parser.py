@@ -12,8 +12,11 @@ def go_parser():
 
     #Task 1 : download_go
     parser_dl_go = subparsers.add_parser("download_go",
-                                         description="Download the GO term definitions from the gene ontoloy web site "
-                                              "http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo")
+                                         description="Download the GO term definitions from the gene ontology web site "
+                                              "http://current.geneontology.org/ontology/go.obo")
+
+    #"http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo")
+
     parser_dl_go.add_argument('-o', '--outputFile',
                               metavar='<file>',
                               type=str,
