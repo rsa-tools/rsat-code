@@ -89,11 +89,6 @@ WORKDIR /packages
 
 RUN git clone https://github.com/rsa-tools/rsat-code.git
 
-########################################################       Notes       ########################################################
-# [Jun2023] When clonning 'motif_databases' you get 
-# 'This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access'
-# Workaround: download motif_databases from RSAT Web instance (Plants), which are updated
-# 
 # Repositories 'demo_files' and 'sample_ouput' are skipped to save space
 #
 # git clone https://github.com/rsa-tools/demo_files.git
@@ -101,7 +96,7 @@ RUN git clone https://github.com/rsa-tools/rsat-code.git
 # git clone https://github.com/rsa-tools/sample_outputs.git
 
 
-## <---- Download motif_databases, move this directory to /packages, then rename rsat_code
+## <---- Download motif_databases licensed-collections , move this directory to /packages, then rename rsat_code
 RUN wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
 	&& mv /packages/rsat.eead.csic.es/plants/motif_databases/ /packages \
 	&& rm -rf  /packages/rsat.eead.csic.es/ \

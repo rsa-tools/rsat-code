@@ -1,8 +1,7 @@
 # Regulatory Sequence Analysis Tools (RSAT)
 
-
-This folder contains the code required to install a local version of
-the **Regulatory Sequence Analysis Tools** (**RSAT**). 
+This folder contains the code required to run a local version of the
+software suite **Regulatory Sequence Analysis Tools** (**RSAT**).
 
 
 **Contact**: Jacques.van-Helden[AT]univ-amu.fr , rsat-contact[AT]list01.bio.ens.psl.eu
@@ -40,8 +39,5 @@ NeAT code.
 - **downloads** this folder is created at RSAT initialisation. It
   serves to download the genome data from NCBI, Ensembl or other
   databases, which will serve to install organisms on RSAT.
-
-
-
 
 ****************************************************************
