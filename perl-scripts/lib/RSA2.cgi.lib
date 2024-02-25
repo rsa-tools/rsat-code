@@ -1533,7 +1533,7 @@ sub SeqBoxMQ {
  # text area to enter the sequence
  # print "<h2>Dataset ".$seq_num."</h2>";
   print "<table ><tr><td>";
- &MultiSequenceChoice("Dataset ".$seq_num, $seq_num);
+  &MultiSequenceChoice("Dataset ".$seq_num, $seq_num);
   print "</td>";
 
   if ($main::quality==1){
