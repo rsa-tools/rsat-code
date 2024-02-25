@@ -213,7 +213,8 @@ package main;
   our $sum_seq_len = 0;
 
   ## Parameters for connecting the DAS server
-  our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das";
+  our $das_server="http://genome.ucsc.edu/cgi-bin/das";
+#  our $das_server="http://genome.cse.ucsc.edu/cgi-bin/das"; ## Not supported anymore ? (2023-10)
   our $timeout = 60; ## seconds for the timeout at UCSC
   our $max_trials = 20; ## Number of trials in case of timeout
 
@@ -240,6 +241,7 @@ package main;
 
   ## Define the URL fo the DAS server
   our $das_server_url = $das_server.'/'.$genome;
+#  our $das_server_url = $das_server.'/database/'.$genome;
   &RSAT::message::Info("DAS server", $das_server_url) if ($main::verbose >= 2);
 
   ## Open DAS client
@@ -268,10 +270,15 @@ package main;
   our %chr_end  = ();
 
   ## Send request to DAS server
-  my @entry_points = $das->entry_points(-dsn=>[$das_server_url]);
+  my $entry_points_url = $das_server_url."/entry_points";
+  my @entry_points = $das->entry_points(-dsn=>[$entry_points_url]);
+#  my @entry_points = $das->entry_points(-dsn=>[$das_server_url]);
 
+  &RSAT::message::Debug("Entry_points: ", join("; ", @entry_points)) if ($main::verbose >= 0);
+  
   ## Treat request results
   for my $id (@entry_points) {
+    &RSAT::message::Debug("ID\t", $id) if ($main::verbose >= 0);
     if ($id->is_success) {
       my @dsns = $id->results;
       foreach (@dsns) {
@@ -283,7 +290,7 @@ package main;
     }
   }
   if (scalar(keys(%chr_end)) == 0) {
-    &RSAT::error::FatalError("Could not obtain entry points from UCSC DAS server", $das_server_url);
+    &RSAT::error::FatalError("Could not obtain entry points from UCSC DAS server", $entry_points_url);
   }
 
   ################################################################
