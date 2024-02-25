@@ -294,16 +294,17 @@ if (!$errors) {
       }
     }
   }
-  
-  // Run the command
-  exec("$cmd >/dev/null", $error);
-  
-  /*
+
   // Display the command
   $cmd_report = str_replace($properties['RSAT'], '$RSAT', $cmd);
   info("Command : ".$cmd_report);
   echo "<hr>";
-  
+
+  // Run the command
+  exec("$cmd >/dev/null", $error);
+       
+  /*
+       
   //display log file
   
   $info = "";
@@ -332,6 +333,7 @@ if (!$errors) {
 
   // Display the result
   print_url_table($URL);
+//  echo $cmd;
 
   ////////////////////////////////////////////////////////////////
   // Send email with notification of task completion 
