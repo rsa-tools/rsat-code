@@ -106,10 +106,9 @@
     </td>
     <td>RSAT developper since 2014</td>
     <td>
-      Deployment of Plant server.<br>
-      Linking RSAT to Ensembl genomes.<br>
+      Deployment of RSAT::Plants & footprintDB, part of the <a href="https://inb-elixir.es">INB/ELIXIR-ES</a> resources portfolio.<br>
+      Integration of plant genomes from Ensembl.<br>
       Protocols for the analysis of regulatory sequences in plants.<br>
-      Developer of FootprintDB.
     </td>
   </tr>		    
 		    

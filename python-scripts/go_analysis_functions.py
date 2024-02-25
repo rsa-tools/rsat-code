@@ -43,7 +43,9 @@ def download_go(outfile):
     :return: no return value. The download result is printed to the output file.
 
     """
-    url = "http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology.1_2.obo"
+    #url = "http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology.1_2.obo"
+    url = "http://current.geneontology.org/ontology/go.obo"
+
     if not os.path.isfile(outfile):
         print("Downloading gene ontology terms from \n\t{} ...".format(url))
         try:
