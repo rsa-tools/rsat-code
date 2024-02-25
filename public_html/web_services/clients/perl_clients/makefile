@@ -7,13 +7,23 @@ MAKEFILE=makefile
 SERVER=http://pedagogix-tagc.univ-mrs.fr/rsat
 
 ## For these servers, the SOAP/WSDL should be working fine
-SERVERS=http://pedagogix-tagc.univ-mrs.fr/rsat \
-	http://rsat-tagc.univ-mrs.fr/rsat \
-	http://floresta.eead.csic.es/rsat \
+SERVERS=http://embnet.ccg.unam.mx/rsat \
+	http://rsat.france-bioinformatique.fr/rsat \
+	http://rsat.france-bioinformatique.fr/fungi \
+	http://rsat.france-bioinformatique.fr/metazoa \
+	http://rsat.france-bioinformatique.fr/protists \
+	http://rsat.france-bioinformatique.fr/teaching \
 	http://rsat01.biologie.ens.fr/rsat \
-	http://embnet.ccg.unam.mx/rsa-tools \
-	http://rsat.ulb.ac.be/rsat \
-	http://wwwsup.scmbb.ulb.ac.be/rsat
+	http://floresta.eead.csic.es/rsat
+
+
+# SERVERS=http://pedagogix-tagc.univ-mrs.fr/rsat \
+# 	http://rsat-tagc.univ-mrs.fr/rsat \
+# 	http://floresta.eead.csic.es/rsat \
+# 	http://rsat01.biologie.ens.fr/rsat \
+# 	http://embnet.ccg.unam.mx/rsa-tools \
+# 	http://rsat.ulb.ac.be/rsat \
+# 	http://wwwsup.scmbb.ulb.ac.be/rsat
 
 ## This server should be working only if you have a local installation of RSAT
 SERVERS_TO_CHECK = \
@@ -64,6 +74,7 @@ list_param:
 
 
 test_one_server:
+	@echo
 	@echo "Testing web services (without stub) at URL	${RSAT_WS}"
 	perl ./supported-organisms.pl ${RSAT_WS}
 
