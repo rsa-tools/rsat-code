@@ -35,60 +35,63 @@ package main;
   ################################################################
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
-  $org_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
-  @masking_modes = ("");	## by default, use no masking
-  @oligo_lengths=(6,1,2,3,4,5,7,8);
-  $verbose = 0;
+  our $org_table = $ENV{RSAT}."/public_html/data/supported_organisms.tab";
+  our @masking_modes = ("");	## by default, use no masking
+  our @oligo_lengths=(6,1,2,3,4,5,7,8);
+  our $verbose = 0;
 
-  $seq_format = "fasta"; ## default format for exporting sequences
-  $img_format = $ENV{rsat_img_format} || "png";
-  $noov="";
-  $strands="-1str";
-  $purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
+  our $seq_format = "fasta"; ## default format for exporting sequences
+  our $img_format = $ENV{rsat_img_format} || "png";
+  our $noov="";
+  our $strands="-1str";
+  our $purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
+  our %supported_for_installation;
   $supported_for_installation{"fasta"} = 1;
   $supported_for_installation{"raw"} = 1;
   $supported_for_installation{"filelist"} = 1;
-  @default_tasks = qw(
-			config
-			phylogeny
-			start_stop
-			allup
-			seq_len_distrib
-			genome_segments
-			upstream_freq
-			genome_freq
-			protein_freq
-			protein_len
-			oligos
-			dyads
-		       );
 
-  @extra_tasks = qw(
-                    fasta_genome
-                    fasta_genome_rm
-                    chrom_sizes
-                    index_bedtools
-                    uninstall
-                    erase
-		    distrib
-		    ncf
-		    intergenic_freq
-		    ensembl_freq
-                    clean
-                    default
-            rewrite
-		    all
+  our @default_tasks = qw(
+      config
+      phylogeny
+      start_stop
+      allup
+      seq_len_distrib
+      genome_segments
+      upstream_freq
+      genome_freq
+      protein_freq
+      protein_len
+      oligos
+      dyads
+      );
+  
+  our @extra_tasks = qw(
+      fasta_genome
+      fasta_genome_rm
+      chrom_sizes
+      index_bedtools
+      uninstall
+      erase
+      distrib
+      ncf
+      intergenic_freq
+      ensembl_freq
+      clean
+      default
+      rewrite
+      all
       );
 
   ## Tasks to handle download and parsing of genomes from NCBI ftp/rsync site.
-  @species_tasks = qw(available
-                      download
-                      list
-                      parse);
+  our @species_tasks = qw(
+      available
+      download
+      list
+      parse);
 
-  @organism_tasks = (@default_tasks, @extra_tasks);
-  @supported_tasks = (@species_tasks, @organism_tasks);
-  %supported_task = ();
+  our @organism_tasks = (@default_tasks, @extra_tasks);
+  our @supported_tasks = (@species_tasks, @organism_tasks);
+  our %supported_task = ();
   foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
   }
@@ -140,18 +143,18 @@ package main;
   $dir{main} = $ENV{PWD};
 
   ## Directory to download files from NCBI
-  our $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
+  $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
 #  $dir{refseq} = $ENV{REFSEQ_DIR} || $ENV{RSAT}."/downloads/refseq";
 
   ## Options for the job scheduler
-  $dry = 0;
-  $die_on_error = 0;
-  $batch = 0;
-  $job_prefix = "install_org";
-  $log_handle = "";
-  $err_handle = "";
-  $cluster_queue = $ENV{CLUSTER_QUEUE};
-  $download_date="";
+  our $dry = 0;
+  our $die_on_error = 0;
+  our $batch = 0;
+  our $job_prefix = "install_org";
+  our $log_handle = "";
+  our $err_handle = "";
+  our $cluster_queue = $ENV{CLUSTER_QUEUE};
+  our $download_date="";
       
   ################################################################
   ## Read arguments
@@ -165,7 +168,7 @@ package main;
     &RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
   }
 
-  ## Run all default tasks
+  ## Set on the default tasks is the task "default" was invoked
   if ($task{default}) {
     foreach my $task (@default_tasks) {
       $task{$task} = 1;
@@ -173,7 +176,8 @@ package main;
   }
 
   ## Run all the tasks for each organism (not the species-wide tasks
-  ## like downloading and parsing).
+  ## like downloading and parsing). Note: by "organism" we mean here a
+  ## given strain of a given species.
   if ($task{all}) {
     %task = %organism_task;
   }
@@ -192,13 +196,13 @@ package main;
 
   ## Consistency between tasks
   if ($task{oligos} || $task{dyads}) {
-    unless (($task{upstream_freq}) ||
-	    ($task{intergenic_freq}) ||
-	    ($task{protein_freq}) ||
-	    ($task{genome_freq}) ||
-	    ($task{ensembl_freq})) {
-      &RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ",
-			       "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
+      unless (($task{upstream_freq}) ||
+	      ($task{intergenic_freq}) ||
+	      ($task{protein_freq}) ||
+	      ($task{genome_freq}) ||
+	      ($task{ensembl_freq})) {
+	  &RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ",
+				   "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
     }
   }
   if (($task{protein_freq}) && !($task{oligos})) {
@@ -245,12 +249,10 @@ package main;
   ## Check the directory containing the Genbank-formatted organisms
   ## (which can be downloaded from NCBI/refseq).
   unless ($dir{refseq}) { # Refseq dir specified on the command line
-      $dir{refseq} = $dir{downloads}."/refseq";
-      
+      $dir{refseq} = $dir{downloads}."/refseq";      
   }
   &RSAT::util::CheckOutDir($dir{refseq});
   
-  our $assembly_file; ## FIle containing the assembly summary downloaded from NCBI
 
   ################################################################
   ## Check consistency of arguments for download/list/parse tasks.
@@ -273,10 +275,18 @@ package main;
     }
   }
 
+
+  ################################################################
+  ## Define the name of the assembly summary file
+  ## File containing the assembly summary downloaded from NCBI
+#  my $today = &trim(`date +%Y-%m-%d`);
+  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";
+  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
+
   ################################################################
   ## Open output stream and print arguments if required
   our $out = &OpenOutputFile($outputfile);
-  &Verbose if ($main::verbose >= 1);
+  &Verbose() if ($main::verbose >= 1);
 
   ################################################################
   ## Get the list of available species for the selected group
@@ -293,16 +303,13 @@ package main;
 	&RSAT::message::Info("\t".$assembly_url);
     }
     
-    my $today = &trim(`date +%Y-%m-%d`);
-    $assembly_file = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";
     my $assembly_columns = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
     my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
     $command .= "head -2 ${assembly_file} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > ${assembly_columns}";
     &doit($command, $dry, $die_on_error, $main::verbose);
-    &RSAT::message::Info("Assembly summary file\t", $assembly_file) if ($main::verbose >= 1);
+    &RSAT::message::Info("Assembly summary file\t", $outfile{assembly_summary}) if ($main::verbose >= 1);
     &RSAT::message::Info("Assembly summary file columns\t", $assembly_columns) if ($main::verbose >= 1);
-
-    exit(0);
+    
     
     my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
     if ($main::versbose >= 1) {
@@ -324,11 +331,15 @@ package main;
   }
 
     
-    ############ Rewrite table
-    if($task{rewrite}){
-        &RewriteConfigTab();
-        exit;
-    }
+  ## Rewrite config table
+  if($task{rewrite}){
+      &RewriteConfigTab();
+      exit;
+  }
+
+  ## Read assembly summary table
+  our @strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+  
     
   ################################################################
   ## Download the required files from NCBI FTP site
@@ -358,8 +369,8 @@ package main;
 	&RSAT::message::TimeWarn("Downloaded group assembly summary file", $dir{downloads}) if ($main::verbose >= 3);
 
 	## Select the information for the species and assembly, retrieve the column with the FTP address for the genome
-	my $space_species=$species ;
-	$space_species=~s/_/ /g;
+	my $space_species = $species ;
+	$space_species =~ s/_/ /g;
 
 	my $command = join (" ","grep", '"'.$space_species.'"',$dir{downloads}."/refseq/".$group."/assembly_summary.txt | grep ". '"'.$strain.'"'. "| cut -f20 | head -n1" ); ## Some organisms already have complete versions from different places
 
@@ -2641,5 +2652,64 @@ sub CleanUp {
     my $command = "rm -f $file";
     &doit($command, $dry, $die_on_error, $main::verbose);
   }
+}
+
+
+################################################################
+## Read assembly summary file as provided by NCBI
+sub ReadAssemblySummary {
+    my ($file) = @_;
+
+    ## Check if the file exists
+    if (-e $file) {
+    } else {
+	&RSAT::error::FatalError("Missing assembly summary file\t", $file);
+    }
+
+    ## Parse the file
+    my @header;
+    my @strain_info = {};
+    &RSAT::message::TimeWarn("Reading assembly summary table\t", $file);
+    my $l = 0;
+    my ($asmb) = &OpenInputFile($file);
+    while (<$asmb>) {
+	s/\r//;
+	$l++;
+#	next;
+#	next unless (/\S/); ## Skip empty rows
+	#	next if (/^;/); ## Skip comment rows
+	chomp();
+	if (/^#/) {
+	    if (/^#assembly_accession/) {
+		## Parse column headers
+		s/^#//;
+		@header = split("\t");
+		if ($main::verbose >= 3) {
+		    print $out "; Column content\n";
+		    for my $f (1..scalar(@header)) {
+			print $out join("\t", ";", $f, $header[$f-1]), "\n";
+		    }
+		}
+	    } else {
+		next; ## Skip comment rows
+	    }
+	} else {
+	    my @fields = split("\t");
+	    my $strain = $fields[0];
+	    for my $f (1..$#fields) {
+		$strain_info{$strain}->{$header[$f]} = $fields[$f];
+	    }
+	    if (($main::verbose >= 3) && ($l <= 50)) {
+		print join("\t",
+			   $l,
+			   $strain,
+			   $strain_info{$strain}->{"organism_name"},
+			   $strain_info{$strain}->{"asm_name"},		      
+		    ), "\n";
+	    }
+	}
+    }
+    &RSAT::message::TimeWarn("Read ", $l," assemblies") if ($main::verbose >= 1);
+    return(@strain_info);
 }
 
