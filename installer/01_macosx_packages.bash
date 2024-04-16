@@ -39,7 +39,9 @@ emacs
 ntp
 curl
 php
+pkg-config
 python3
+blast
 "
 
 ## 2023-11-05: JvH suppresses this because python2 is not suppported anymore
