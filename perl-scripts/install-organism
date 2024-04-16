@@ -131,7 +131,7 @@ package main;
   $last = 0;  ## Stop after a given number of organisms from the list
 
   our $backup_org_table = 0;
-
+  
   ## installation date
   local $install_date = $force_date || &AlphaDate();
   chomp $install_date;
@@ -140,7 +140,7 @@ package main;
   $dir{main} = $ENV{PWD};
 
   ## Directory to download files from NCBI
-  $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
+  our $dir{downloads} = $ENV{DOWNLOAD_DIR} || $ENV{RSAT}."/downloads/";
 #  $dir{refseq} = $ENV{REFSEQ_DIR} || $ENV{RSAT}."/downloads/refseq";
 
   ## Options for the job scheduler
@@ -238,19 +238,23 @@ package main;
   }
 
   ################################################################
+  ## Define the local download directory for NCBI Refseq files
+  #$source = "NCBI-Refseq";
+  our $source = "NCBI"; ## 2019 this format works better for the newest formating in NCBI
+  
+  ## Check the directory containing the Genbank-formatted organisms
+  ## (which can be downloaded from NCBI/refseq).
+  unless ($dir{refseq}) { # Refseq dir specified on the command line
+      $dir{refseq} = $dir{downloads}."/refseq";
+      
+  }
+  &RSAT::util::CheckOutDir($dir{refseq});
+  
+  our $assembly_file; ## FIle containing the assembly summary downloaded from NCBI
+
+  ################################################################
   ## Check consistency of arguments for download/list/parse tasks.
   if ($task{parse} || $task{download} || $task{list} || ($task{config} && ($group))) {
-    #$source = "NCBI-Refseq";
-      $source = "NCBI"; ## 2019 this format works better for the newest formating in NCBI
-
-    ## Check the directory containing the Genbank-formatted organisms
-    ## (which can be downloaded from NCBI/refseq).
-    unless ($dir{refseq}) { # Refseq dir specified on the command line
-	$dir{refseq} = $dir{downloads}."/refseq";
-
-    }
-    &RSAT::util::CheckOutDir($dir{refseq});
-
     ## Check that all required parameters are defined
 
     ## One taxonomic group
@@ -281,11 +285,33 @@ package main;
     unless ($group) {
       &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
     }
+
+    ## Download the assembly summary for all species of the selected taxonomic group
+    my $assembly_url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/".${group}."/assembly_summary.txt";
+    if ($main::verbose >= 1) {
+	&RSAT::message::Info("Downloadin assembly summary from NCBI");
+	&RSAT::message::Info("\t".$assembly_url);
+    }
     
+    my $today = &trim(`date +%Y-%m-%d`);
+    $assembly_file = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";
+    my $assembly_columns = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
+    my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
+    $command .= "head -2 ${assembly_file} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > ${assembly_columns}";
+    &doit($command, $dry, $die_on_error, $main::verbose);
+    &RSAT::message::Info("Assembly summary file\t", $assembly_file) if ($main::verbose >= 1);
+    &RSAT::message::Info("Assembly summary file columns\t", $assembly_columns) if ($main::verbose >= 1);
+
+    exit(0);
     
-    my $command = 'rsync --copy-links  --times  --list-only rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq/'.$group.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
+    my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
+    if ($main::versbose >= 1) {
+	&RSAT::message::Info("; Getting available species from NCBI; \t", $refseq_folder_url, "\n");
+    }
+    
+    my $command = 'rsync --copy-links  --times  --list-only rsync://'.$refseq_folder_url.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
     if ($main::verbose >= 3) {
-      print "\nRunning command\n", $command, "\n";
+      &RSAT::message::TimeWarn("Running command\n".$command);
     }
     my $available_species = `$command`;
     print $main::out $available_species;
@@ -420,7 +446,7 @@ package main;
 	      }
 
 	      ## Strain
-	      $strain_nb ++;
+	      $strain_nb++;
 
 	      ## Restrinct the number of strains if requested
 	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
@@ -531,9 +557,11 @@ package main;
   &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
   ## Check that at least one organism has been specified
-  &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") 
-      unless ((scalar(@organisms) > 0) || ($task{parse}));
-
+#  unless ($task{list}) { HELLO
+      &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") 
+	  unless ((scalar(@organisms) > 0) || ($task{parse}));
+#  }
+  
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
     &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($user_specified_orgname);
@@ -720,9 +748,8 @@ sub Verbose {
     print $out ";\t$task\n";
   }
   
-  print $out ";\n; Supported organism table:\n";
-  printf $out ";    %-25s\t%s\n", "RSAT config", $main::org_table;
-  printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+  print $out ";\n; Supported organism table\n;\t", $main::org_table, "\n";
+
   
 }
 
