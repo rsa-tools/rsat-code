@@ -37,11 +37,6 @@ cd ${RSAT}
 ##	apt-get install libssl-dev
 
 
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## NOTE: at this stage I had to inactivate the Kaspersky antivirus because it
-## prevents CPAN from downloading and installing Perl modules !
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 yes yes | cpan YAML ## Type "yes" on request !!!
 yes yes | cpan CPAN ## Update CPAN
 
