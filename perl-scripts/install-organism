@@ -279,9 +279,10 @@ package main;
   ################################################################
   ## Define the name of the assembly summary file
   ## File containing the assembly summary downloaded from NCBI
-#  my $today = &trim(`date +%Y-%m-%d`);
-  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";
-  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
+  
+  #  my $today = &trim(`date +%Y-%m-%d`);
+  #  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";  
+  $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
 
   ################################################################
   ## Open output stream and print arguments if required
@@ -334,7 +335,7 @@ package main;
   ## Rewrite config table
   if($task{rewrite}){
       &RewriteConfigTab();
-      exit;
+      exit();
   }
 
   ## Read assembly summary table
@@ -382,8 +383,10 @@ package main;
 	chomp($URL);
 	&RSAT::message::TimeWarn("Downloading genome from NCBI FTP site", $URL) if ($main::verbose >= 1);
 
-	
-	$dir{downloads} = $ENV{RSAT}."/downloads/refseq/".$strain;
+#	my $ftp_path = $strain_info{$strain};
+	$dir{downloads} = $ENV{RSAT}."/downloads/refseq/".$strain;	
+#	$dir{downloaded_strain} = $ENV{RSAT}."/downloads/refseq/".$strain;
+
 	
 	&RSAT::util::CheckOutDir($dir{downloads});
 	$RSYNC_URL = $URL;
@@ -1172,7 +1175,7 @@ sub RewriteConfigTab{
 ## Create a directory for the taxonomic group of the organism
 sub CreatePhylogeny {
     my $taxonomy = "";
-    &RSAT::message::Warning("Phylogeny indexation has been disabled");
+    &RSAT::message::Warning("Phylogeny indexing has been disabled");
     return;
 
     ## read taxonomy from the parsing result
@@ -2672,6 +2675,7 @@ sub ReadAssemblySummary {
     &RSAT::message::TimeWarn("Reading assembly summary table\t", $file);
     my $l = 0;
     my ($asmb) = &OpenInputFile($file);
+    my @column_index;
     while (<$asmb>) {
 	s/\r//;
 	$l++;
@@ -2684,6 +2688,9 @@ sub ReadAssemblySummary {
 		## Parse column headers
 		s/^#//;
 		@header = split("\t");
+		for $h (0..$#header) {
+		    $column_index{$header[$h]} = $h;
+		}
 		if ($main::verbose >= 3) {
 		    print $out "; Column content\n";
 		    for my $f (1..scalar(@header)) {
@@ -2695,15 +2702,19 @@ sub ReadAssemblySummary {
 	    }
 	} else {
 	    my @fields = split("\t");
-	    my $strain = $fields[0];
-	    for my $f (1..$#fields) {
+#	    my $strain = $fields[0];
+	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
+#	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
+	    for my $f (0..$#fields) {
 		$strain_info{$strain}->{$header[$f]} = $fields[$f];
 	    }
-	    if (($main::verbose >= 3) && ($l <= 50)) {
+	    if (($main::verbose >= 0) && ($l <= 50)) {
 		print join("\t",
 			   $l,
 			   $strain,
 			   $strain_info{$strain}->{"organism_name"},
+			   $strain_info{$strain}->{"assembly_accession"},
+			   $strain_info{$strain}->{"asm_name"},
 			   $strain_info{$strain}->{"asm_name"},		      
 		    ), "\n";
 	    }
