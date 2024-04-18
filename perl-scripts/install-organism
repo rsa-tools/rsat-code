@@ -1056,7 +1056,8 @@ sub UpdateConfigPerl {
   $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
   $new_org_config =~ s|\/\/|/|g;
 
-  #$new_org_config .= "\$supported_organism{'$organism_short_name'}->{'download_date'} = ".$download_date.";\n";
+  $download_date = &AlphaDate();
+  $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'download_date'} = ".$download_date.";\n";
 
   
   print CONFIG $new_org_config;
@@ -1074,9 +1075,9 @@ sub UpdateConfigTab {
   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism->get_attribute("name");
   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $install_date;
-    $supported_organism{$organism_short_name}->{'genome_assembly'} = $organism->get_attribute("genome_assembly");
-
-  #$supported_organism{$organism_short_name}->{'download_date'} =  $download_date if ($task{download});
+  $supported_organism{$organism_short_name}->{'genome_assembly'} = $organism->get_attribute("genome_assembly");
+  $supported_organism{$organism_short_name}->{'download_date'} =  &AlphaDate() if ($task{download});
+  $supported_organism{$organism_short_name}->{'update_date'} =  &AlphaDate();
 
 #  &RSAT::message::Debug($organism,  $organism_short_name, $organism->get_attribute("name"), $install_date) if ($main::verbose >= 10);
 
