@@ -574,16 +574,26 @@ package main;
   &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
   ## Check that at least one organism has been specified
-#  unless ($task{list}) { HELLO
-      &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)") 
-	  unless ((scalar(@organisms) > 0) || ($task{parse}));
-#  }
+  unless ($task{list}) { 
+      unless ((scalar(@organisms) > 0) || ($task{parse})) {
+#	  die("species=", $species[0],"strain=", $strain);
+	  if ($strain && $species[0]) {
+	      @organisms = (join("_", $species, $strain));
+#	      die("HELLO");
+	  } else {
+	      &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)")
+	  }
+      }
+  }
   
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
-    &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.") if ($user_specified_orgname);
-    &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.") if ($install_dir);
-    &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.") if ($outfile{synonyms});
+      &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.")
+	  if ($user_specified_orgname);
+      &RSAT::message::FatalError("The option -dir is (installation directory) not valid when multiple organisms are selected.")
+	  if ($install_dir);
+      &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.")
+	  if ($outfile{synonyms});
   }
 
   ################################################################
