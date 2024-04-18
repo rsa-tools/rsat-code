@@ -282,7 +282,9 @@ package main;
   
   #  my $today = &trim(`date +%Y-%m-%d`);
   #  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";  
-  $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
+  # $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
+  $dir{assembly_summary} = join("/", $dir{downloads}."refseq", ${group});
+  $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "assembly_summary.txt");
 
   ################################################################
   ## Open output stream and print arguments if required
@@ -338,6 +340,9 @@ package main;
       exit();
   }
 
+  ## Download or update the assembly summary table for the selected group
+  &DownloadAssemblySummary($group) if ($task{download});; 
+
   ## Read assembly summary table
   our @strain_info = &ReadAssemblySummary($outfile{assembly_summary});
   
@@ -361,13 +366,6 @@ package main;
 	}
 
 
-	## Dowload the assembly file for the group
-
-	my $assembly_summary_url=  join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, "assembly_summary.txt");
-	&RSAT::util::CheckOutDir($dir{downloads});
-	my $command = "rsync --copy-links --recursive --times -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-	&doit($command, $dry, $die_on_error, $main::verbose);
-	&RSAT::message::TimeWarn("Downloaded group assembly summary file", $dir{downloads}) if ($main::verbose >= 3);
 
 	## Select the information for the species and assembly, retrieve the column with the FTP address for the genome
 	my $space_species = $species ;
@@ -626,23 +624,24 @@ package main;
       ## Automatic full name specification
       my $organism_full_name = "";
       unless ($organism_full_name{organism_short_name}) {
-	if ($user_specified_orgname) {
-	  ## Full name specified with option -organism on the command line
-	  $organism_full_name = $user_specified_orgname;
-	} else {
-	  ## Build organism full name from the organism short name (replace _ by spaces)
-	  $organism_full_name = $organism_short_name;
-      if(($source eq 'ensemblgenomes') || ($source eq 'ensembl')){
-          $organism_full_name = (defined $species[0] && !($species[0] eq '')) ? ucfirst($species[0]) : $organism_short_name;
-          @names = split($organism_full_name."_", $organism_short_name);
-          $organism->set_attribute("genome_assembly", $names[1]);
-      }
-	  $organism_full_name =~ s/\_/ /g;
-	}
+	  if ($user_specified_orgname) {
+	      ## Full name specified with option -organism on the command line
+	      $organism_full_name = $user_specified_orgname;
+	  } else {
+	      ## Build organism full name from the organism short name (replace _ by spaces)
+	      $organism_full_name = $organism_short_name;
+	      if (($source eq 'ensemblgenomes') || ($source eq 'ensembl')){
+		  $organism_full_name = (defined $species[0] && !($species[0] eq '')) ? ucfirst($species[0]) : $organism_short_name;
+		  @names = split($organism_full_name."_", $organism_short_name);
+		  $organism->set_attribute("genome_assembly", $names[1]);
+	      }
+	      $organism_full_name =~ s/\_/ /g;
+	  }
       }
 #      $organism->set_attribute("name", $organism_short_name);
       $organism->set_attribute("name", $organism_full_name);
-      
+      $organism_full_name{$organism_short_name} = $organism_full_name;
+#      die "HELLO1";
       
       
 	################################################################
@@ -776,9 +775,32 @@ sub OrgParameters {
     printf $out ";    %-25s\t%s\n", "organism file", $infile{organisms};
   } else {
     printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
-    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name; ## THIS IS WRONG (JvH, 2017-12-12)
+    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name{$organism_short_name}; ## THIS IS WRONG (JvH, 2017-12-12)
+#    die "HELLO2";
     printf $out ";    %-25s\t%s\n", "Update date", $install_date;
     printf $out ";    %-25s\t%s\n", "Data source", $source;
+    printf $out ";    %-25s\t%s\n", "strain", $strain;
+    if ($strain_info{$strain}) {
+	for my $field (qw(assembly_accession
+                          taxid species_taxid
+                          organism_name
+                          infraspecific_name
+                          version_status
+                          assembly_level 
+                          seq_rel_date
+                          asm_name
+		          group
+		          genome_size
+  		          genome_size_ungapped
+ 		          contig_count
+ 		          total_gene_count
+ 		          protein_coding_gene_count
+ 		          non_coding_gene_count
+		       )) {
+	    printf $out ";    %-25s\t%s\n", $field, $strain_info{$strain}->{$field};
+	}
+    }
+#    die "HELLO"
   }
   
   print $out ";\n; Directories and files:\n";
@@ -1053,18 +1075,17 @@ sub UpdateConfigTab {
   }
  
   ## Update blast column in config table if blast information is available
-
-  my $blast_folder=$supported_organism{$organism_short_name}->{'data'}."/blast_hits" ;
-  print "genome folder ". $genome_folder."\n";
+  my $blast_folder = $supported_organism{$organism_short_name}->{'data'}."/blast_hits" ;
+  &RSAT::message::Info($blast_folder) if ($main::verbose >= 2);
   if ( -d $blast_folder ){
     $supported_organism{$organism_short_name}->{'blast_available'}= 1;
   } else {
     $supported_organism{$organism_short_name}->{'blast_available'}= 0;
   }
+
   ## Update variant columns in config table if variant information
   my $variants_folder=$supported_organism{$organism_short_name}->{'data'}."/variations" ;
- 
-  print "variants folder" . $variants_folder."\n"; 
+  &RSAT::message::Info($variants_folder) if ($main::verbose >= 2);
   if ( -d $variants_folder ){
     $supported_organism{$organism_short_name}->{'variant_available'}= 1;
     my $variant_source = `cat $variants_folder/source.txt`;
@@ -1078,6 +1099,7 @@ sub UpdateConfigTab {
   }
 
 
+  ## Update organism configuration table
   &RSAT::message::Debug("&UpdateConfigTab()",
 			$supported_organism{$organism_short_name}->{'source'},
 			$supported_organism{$organism_short_name}->{'taxid'},
@@ -2659,6 +2681,21 @@ sub CleanUp {
 
 
 ################################################################
+## Dowload the assembly file for the group
+sub DownloadAssemblySummary {
+    my ($group) = @_;
+    &RSAT::message::TimeWarn("Downloading assembly summary file for group\t", $group);
+    my $assembly_summary_url=  join("/", "rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq", $group, "assembly_summary.txt");
+    &RSAT::util::CheckOutDir($dir{downloads});
+#    my $command = "rsync --copy-links --recursive --times -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    my $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    &doit($command, $dry, $die_on_error, $main::verbose);
+    &RSAT::message::TimeWarn("Downloaded group assembly summary file", $dir{downloads}, "\n;\t", $outfile{assembly_summary}) if ($main::verbose >= 1);
+    return($outfile{assembly_summary});
+}
+
+
+################################################################
 ## Read assembly summary file as provided by NCBI
 sub ReadAssemblySummary {
     my ($file) = @_;
@@ -2679,9 +2716,6 @@ sub ReadAssemblySummary {
     while (<$asmb>) {
 	s/\r//;
 	$l++;
-#	next;
-#	next unless (/\S/); ## Skip empty rows
-	#	next if (/^;/); ## Skip comment rows
 	chomp();
 	if (/^#/) {
 	    if (/^#assembly_accession/) {
@@ -2702,13 +2736,11 @@ sub ReadAssemblySummary {
 	    }
 	} else {
 	    my @fields = split("\t");
-#	    my $strain = $fields[0];
 	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
-#	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
 	    for my $f (0..$#fields) {
 		$strain_info{$strain}->{$header[$f]} = $fields[$f];
 	    }
-	    if (($main::verbose >= 0) && ($l <= 50)) {
+	    if (($main::verbose >= 3) && ($l <= 50)) {
 		print join("\t",
 			   $l,
 			   $strain,
