@@ -771,9 +771,9 @@ taxon organism. This option is useless when dbtaxon == qtaxon.
 
 Use diamond instead of formatdb and blastall. 
 
-genome-blast uses blastall by default. This option makes it use diamond
-blast which has a significant increase in speed. Although, slighly
- less sensitive.
+genome-blast uses blastall by default. This option makes it use
+diamond blast which has a significant increase in speed. Although,
+slighly less sensitive.
 
 =cut
  	} elsif ($ARGV[$a] eq "-diamond") {
@@ -785,7 +785,8 @@ blast which has a significant increase in speed. Although, slighly
 
 =item B<-threads>
 
-Specifies the number of threads used for diamond blast. Uses 1 by default.
+Specifies the number of threads used for diamond blast. Uses 1 by
+default.
 
 =cut
  	} elsif ($ARGV[$a] eq "-threads") {
@@ -801,9 +802,9 @@ Specifies the number of threads used for diamond blast. Uses 1 by default.
 Specify the ourput directory. 
 
 By default, blast results are exported in the RSAT genome directory
-($RSAT/public_html/data/genomes), but for this you need to have write access
-to that directory. If this is not the case, the output can be redirected to
-another directory of your choice.
+($RSAT/public_html/data/genomes), but for this you need to have write
+access to that directory. If this is not the case, the output can be
+redirected to another directory of your choice.
 
 =cut
  	} elsif ($ARGV[$a] eq "-outdir") {
@@ -814,8 +815,9 @@ another directory of your choice.
 
 =item B<-task selected_task>
 
-Select the tasks to be performed.  Supported tasks:
-formatdb,blastall,rank,cleandb,all.
+Select the tasks to be performed.  
+
+Supported tasks: formatdb,blastall,rank,cleandb,all.
 
 This option can be used iteratively on the same command line to select
 multiple tasks.
