@@ -343,11 +343,18 @@ package main;
       exit();
   }
 
-
+  ################################################################
+  ## Assembllies
+  
   ## Read assembly summary table
   our %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
-  
-    
+
+  ## List assemblies if requested
+  if ($task{list}) {
+      &ListAssemblies(%strain_info);
+  }
+
+
   ################################################################
   ## Download the required files from NCBI FTP site
   if ($task{download}) {
@@ -397,7 +404,6 @@ package main;
 
 	&doit($command, $dry, $die_on_error, $main::verbose);
 
-
 	&RSAT::message::TimeWarn("Downloaded genome in dir", $dir{downloads}) if ($main::verbose >= 3);
 	$download_date =  &AlphaDate();
 
@@ -417,10 +423,10 @@ package main;
 	  &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
       }
 
-      ## Header for species list
-      if ($task{list}) {
-	  print $main::out "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
-      }
+      # ## Header for species list
+      # if ($task{list}) {
+      # 	  print $main::out "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
+      # }
       
       # Iterate over species
       my $org_nb = 0; # Initialize organism counter
@@ -487,9 +493,9 @@ package main;
 	      ## Parse the selected organism if requested
 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 
-	      if ($task{list}) {
-		  print $out join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
-	      }
+	      # if ($task{list}) {
+	      # 	  print $out join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
+	      # }
 
 	      if ($task{parse}) {
 		 
@@ -604,6 +610,7 @@ package main;
       exit(0);
   }
 
+  
   ################################################################
   ## Iterate installation over selected organisms
   $i = 0;
@@ -1957,15 +1964,15 @@ OPTIONS
 
 		Example 1: list the reference genomes
 
-		install-organism -v 1 -group bacteria  -task list \
+		install-organism -v 1 -group bacteria  -task list \\
 		    -filter  refseq_category "reference genome"
 
 		Example 2: select major releases of complete genomes
 		belonging to the category "representative".
 
-		install-organism -v 1 -group bacteria  -task list \
-		    -filter  refseq_category "representative genome" \
-		    -filter assembly_level "Complete Genome" \
+		install-organism -v 1 -group bacteria  -task list \\
+		    -filter  refseq_category "representative genome" \\
+		    -filter assembly_level "Complete Genome" \\
 		    -filter release_type Major
 
     SPECIFIC ARGUMENTS FOR THE DOWNLOAD AND PARSE TASK
@@ -2877,14 +2884,28 @@ sub ReadAssemblySummary {
 
 
 ################################################################
-## Select a subset of the assemblies based on filters
-sub FilterAssemblies {
-    my (%strain_info) = @_;
-    &RSAT::message::Info("Filtering assemblies") if ($main::verbose >= 1);
+## Export a table with a subset of the fields for selected organisms
+sub ListAssemblies {
+    my %strain_info = @_;
+    my @fields = qw(
+    	organism
+	genus
+	species
+	assembly_accession
+	asm_name
+	genus_species
+	strain
+	);
 
-    ## Run each filter on each assembly
-    
-    return @selected_strains;
+
+    print $out join("\t", @fields), "\n";
+    for my $strain (sort keys(%strain_info)) {
+	my @values = ();
+	for my $field (@fields) {
+	    push @values, $strain_info{$strain}->{$field};
+	}
+	print $out join("\t", @values), "\n";
+    }
 }
 
 ################################################################
