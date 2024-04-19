@@ -2197,6 +2197,18 @@ OPTIONS
 			     and the computation of all oligo and dyad
 			     frequencies might take ages.
 
+		protein_freq
+			     calculate amino acid frequencies for all
+			     peptidic sequences. 
+
+		protein_seq
+			     remove empty rows present in the peptidic
+			     sequence files dowloaded from NCBI,
+			     because the fact that the first row of
+			     these files is empty raises a bug with
+			     diamond (highly efficient implementation
+			     of blast used by genome-blast)
+
 		clean	     remove unnecessary sequence files
 
 	-rm	calibrate oligo and dyad frequncies on repeat masked
@@ -2306,6 +2318,12 @@ SEE ALSO
 	to use download-genomes in order to obtain it immediately in
 	the RSAT format, rather than install-genomes.
 
+
+    genome-blast
+
+	run blast for all the peptidic sequences of a query organism
+	against those of a reference organism (db), and generate a
+	table with all the detected similarities.
 
 End_of_help
     close HELP;
