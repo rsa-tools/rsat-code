@@ -285,7 +285,9 @@ package main;
   # $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
   $dir{assembly_summary} = join("/", $dir{downloads}."refseq", ${group});
   $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "assembly_summary.txt");
-  $outfile{assembly_columns} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
+  $outfile{assembly_columns} = $outfile{assembly_summary}; 
+  $outfile{assembly_columns} =~ s/\.txt/_colums.tsv/;
+#  $outfile{assembly_columns} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
 
   ################################################################
   ## Open output stream and print arguments if required
@@ -293,7 +295,7 @@ package main;
   &Verbose() if ($main::verbose >= 1);
 
   ## Download or update the assembly summary table for the selected group
-  if (($task{download}) || ($task{download})) {
+  if (($task{download}) || ($task{available})) {
       &DownloadAssemblySummary($group);
   }
   
@@ -305,21 +307,6 @@ package main;
     unless ($group) {
       &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
     }
-
-
-    ## Download the assembly summary for all species of the selected taxonomic group
-    # my $assembly_url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/".${group}."/assembly_summary.txt";
-    # if ($main::verbose >= 1) {
-    # 	&RSAT::message::Info("Downloadin assembly summary from NCBI");
-    # 	&RSAT::message::Info("\t".$assembly_url);
-    # }    
-    # my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
-    # my $assembly_columns = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
-    # $command .= "head -2 ${assembly_file} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > ${assembly_columns}";
-    # &doit($command, $dry, $die_on_error, $main::verbose);
-    # &RSAT::message::Info("Assembly summary file\t", $outfile{assembly_summary}) if ($main::verbose >= 1);
-    # &RSAT::message::Info("Assembly summary file columns\t", $assembly_columns) if ($main::verbose >= 1);
-    
     
     my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
     if ($main::versbose >= 1) {
@@ -2724,44 +2711,22 @@ sub DownloadAssemblySummary {
     
     if ($main::verbose >= 1) {
 	&RSAT::message::TimeWarn("Downloading NCBI assembly summary file for group\t", $group);
-     	&RSAT::message::Info("\t".$assembly_url);
+     	&RSAT::message::Info("\t".$assembly_summary_url);
     }    
     &RSAT::util::CheckOutDir($dir{downloads});
+
     # my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
     my $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-    $command .= "head -2 ${assembly_file} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
+    $command .= "; head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
     &doit($command, $dry, $die_on_error, $main::verbose);
+
+    ## Display file names
     if ($main::verbose >= 1) {
 	&RSAT::message::TimeWarn("Downloaded group assembly summary file");
 	&RSAT::message::Info("Assembly summary file\t", $outfile{assembly_summary});
-	&RSAT::message::Info("Assembly summary file columns\t", $assembly_columns);
+	&RSAT::message::Info("Assembly summary file columns\t", $outfile{assembly_columns});
     }
-    return($outfile{assembly_summary});
-
 }
-# ################################################################
-# ## Dowload the assembly file for the group
-# sub DownloadAssemblySummary {
-#     my ($group) = @_;
-
-
-#     # &RSAT::message::Info("Assembly summary file\t", $outfile{assembly_summary}) if ($main::verbose >= 1);
-#     # &RSAT::message::Info("Assembly summary file columns\t", $assembly_columns) if ($main::verbose >= 1);
-
-#     my $assembly_summary_url = join("/", "rsync://ftp.ncbi.nlm.nih.gov", "genomes", "refseq", $group, "assembly_summary.txt");
-    
-#     if ($main::verbose >= 1) {
-# 	&RSAT::message::TimeWarn("Downloading NCBI assembly summary file for group\t", $group);
-#      	&RSAT::message::Info("\t".$assembly_url);
-#     }    
-#     &RSAT::util::CheckOutDir($dir{downloads});
-#     # my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
-#     my $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-#     $command .= "head -2 ${assembly_file} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
-#     &doit($command, $dry, $die_on_error, $main::verbose);
-#     &RSAT::message::TimeWarn("Downloaded group assembly summary file", $dir{downloads}, "\n;\t", $outfile{assembly_summary}) if ($main::verbose >= 1);
-#     return($outfile{assembly_summary});
-# }
 
 
 ################################################################
@@ -2809,7 +2774,7 @@ sub ReadAssemblySummary {
 	    for my $f (0..$#fields) {
 		$strain_info{$strain}->{$header[$f]} = $fields[$f];
 	    }
-	    if (($main::verbose >= 3) && ($l <= 50)) {
+	    if (($main::verbose >= 3) && ($l <= 10)) {
 		print join("\t",
 			   $l,
 			   $strain,
