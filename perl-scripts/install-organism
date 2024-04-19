@@ -59,6 +59,7 @@ package main;
       genome_segments
       upstream_freq
       genome_freq
+      protein_seq
       protein_freq
       protein_len
       oligos
@@ -490,6 +491,12 @@ package main;
       }
   }
 
+
+  ## Select all organisms
+  if ($main::all_organisms) {
+      @organisms = &RSAT::OrganismManager::get_supported_organisms();
+  }
+  
 #### option  -all_organisms is not supported anymore
 #   if ($main::all_organisms) {
 #     @organisms_dirs = glob($dir{refseq}."/*_*");
@@ -640,47 +647,45 @@ package main;
 	      $organism_full_name =~ s/\_/ /g;
 	  }
       }
-#      $organism->set_attribute("name", $organism_short_name);
+      #      $organism->set_attribute("name", $organism_short_name);
       $organism->set_attribute("name", $organism_full_name);
       $organism_full_name{$organism_short_name} = $organism_full_name;
-#      die "HELLO1";
       
       
-	################################################################
-	## Installation directories and files
-	umask 0002;
-
+      ################################################################
+      ## Installation directories and files
+      umask 0002;
+      
       ## TO DO (JvH, 2017-12-12): below and elsewhere in the script,
       ## replace the global hash tables by attributes set on the
       ## organism object;
       
-	if ($install_dir) {
-	    $dir{install} = $install_dir;
-	    &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 3);
-	} elsif ($supported_organism{$organism_short_name}->{'data'}) {
-	    $dir{install} = $supported_organism{$organism_short_name}->{'data'};
-	    &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 3);
-	} else {
-	    $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
-	    &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
-	}
-     
-
-	$dir{genome} = $dir{install}."/genome";
-	$dir{oligos} = $dir{install}."/oligo-frequencies";
-	$outfile{features} = $dir{genome}."/feature.tab";
-	$outfile{synonyms} = $dir{genome}."/feature_names.tab";
-	$outfile{genome} = $dir{genome}."/contigs.txt";
-	$outfile{fasta_genome} = $dir{genome}."/".$organism_short_name.".dna.genome.fa";
-	$outfile{chrom_sizes} = $dir{genome}."/".$organism_short_name."_chrom_sizes.txt";
-	$outfile{fasta_genome_rm} = $dir{genome}."/".$organism_short_name.".dna_rm.genome.fa";
-
-	## Create output directoryies if required
-	unless ($dry) {
-	    &RSAT::util::CheckOutDir($dir{install});
-	    &RSAT::util::CheckOutDir($dir{genome});
-	    &RSAT::util::CheckOutDir($dir{oligos});
-	}
+      if ($install_dir) {
+	  $dir{install} = $install_dir;
+	  &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 3);
+      } elsif ($supported_organism{$organism_short_name}->{'data'}) {
+	  $dir{install} = $supported_organism{$organism_short_name}->{'data'};
+	  &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 3);
+      } else {
+	  $dir{install} = $ENV{RSAT}."/public_html/data/genomes/".$organism_short_name;
+	  &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 3);
+      }
+      
+      $dir{genome} = $dir{install}."/genome";
+      $dir{oligos} = $dir{install}."/oligo-frequencies";
+      $outfile{features} = $dir{genome}."/feature.tab";
+      $outfile{synonyms} = $dir{genome}."/feature_names.tab";
+      $outfile{genome} = $dir{genome}."/contigs.txt";
+      $outfile{fasta_genome} = $dir{genome}."/".$organism_short_name.".dna.genome.fa";
+      $outfile{chrom_sizes} = $dir{genome}."/".$organism_short_name."_chrom_sizes.txt";
+      $outfile{fasta_genome_rm} = $dir{genome}."/".$organism_short_name.".dna_rm.genome.fa";
+      
+      ## Create output directoryies if required
+      unless ($dry) {
+	  &RSAT::util::CheckOutDir($dir{install});
+	  &RSAT::util::CheckOutDir($dir{genome});
+	  &RSAT::util::CheckOutDir($dir{oligos});
+      }
     }
     
     ################################################################
@@ -711,16 +716,20 @@ package main;
 
       &FastaGenomeAndBedtoolsIndex() if ($task{fasta_genome} || $task{chrom_sizes} || $task{index_bedtools});
 
+      &CleanProteinSequences() if ($task{protein_seq});
+	
       &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
       
       # New name for peptidic sequence file (Sept 2015). I suppress
       # organism name from sequence file name.
-      my $peptidic_seq_file = "peptidic_sequences.fasta";
-      unless (-e $dir{genome}."/".$peptidic_seq_file) {
+#      my $peptidic_seq_file = "peptidic_sequences.fasta";
+#      unless (-e $dir{genome}."/".$peptidic_seq_file) {
 	## Previous name for the peptidic sequence file
-	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
-      }
+#	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
+#      }
 
+      ## Compute length distribution of protein sequence
+      my $peptidic_seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
       if ($task{protein_len}) {
 	  my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000);
 	  &doit($command, $dry, $die_on_error, $main::verbose);
@@ -784,7 +793,8 @@ sub OrgParameters {
     printf $out ";    %-25s\t%s\n", "strain", $strain;
     if ($strain_info{$strain}) {
 	for my $field (qw(assembly_accession
-                          taxid species_taxid
+                          taxid
+			  species_taxid
                           organism_name
                           infraspecific_name
                           version_status
@@ -802,23 +812,8 @@ sub OrgParameters {
 	    printf $out ";    %-25s\t%s\n", $field, $strain_info{$strain}->{$field};
 	}
     }
-#    die "HELLO"
   }
   
-  # print $out ";\n; Directories and files:\n";
-  # if ($task{genome}) {
-  #   printf $out ";    %-25s\t%s\n", "genome sequence format", $seq_format;
-  #   printf $out ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
-  # }
-  # printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
-  # printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
-  # printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
-  # printf $out ";    %-25s\t%s\n", "Refseq dir", $dir{refseq};
-  # printf $out ";    %-25s\t%s\n", "Installation directory", $dir{install};
-  # printf $out ";    %-25s\t%s\n", "Genome directory", $dir{genome};
-  #   printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
-  # printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
-  # printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
 
   ## Directories
   print $out "; Directories\n";
@@ -837,7 +832,6 @@ sub OrgParameters {
   for my $f (sort(keys(%outfile))) {
       printf $out ";    %-25s\t%s\n", $f, $outfile{$f};
   }
-  #    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
 }
 
 
@@ -1531,6 +1525,8 @@ sub CalcFrequencies {
     }
   }
 
+  ################################################################
+  ## Specific tasks for genomes downloaded from Ensembl
   if ($task{ensembl_freq}) {
 
     unless (defined($up_from)) {
@@ -1638,27 +1634,19 @@ sub CalcFrequencies {
     &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
   }
 
+
+  
   ################################################################
   # Calculate oligopeptide frequencies in all protein sequences
   if ($task{protein_freq}) {
-    $seq_type = "protein";
-    &RSAT::message::TimeWarn("Calculating oligopeptide frequencies") if ($main::verbose >= 2);
-    # New name for peptidic sequence file (Sept 2015). I suppress
-    # organism name from sequence file name.
-    my $seq_file = $dir{genome}."/peptidic_sequences.fasta";
-    unless (-e $seq_file) {
-      ## Previous name for the peptidic sequence file
-      $seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
-    }
-
-    if (-e $seq_file) {
+      $seq_type = "protein";
+      &RSAT::message::TimeWarn("Calculating oligopeptide frequencies") if ($main::verbose >= 2);
       $seq_format = "fasta";
       &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
-    } else {
+  } else {
       &RSAT::message::Warning("Skipping oligopeptide frequencies because peptidic sequence file is missing", $seq_file);
-    }
   }
-
+  
   chdir $dir{main};
 }
 
@@ -2288,7 +2276,7 @@ EXAMPLES
 	install-organism -v 1 \
 	    -org_file fungi_downloaded_orgnanisms.txt \
 	    -task start_stop,allup,seq_len_distrib,genome_segments \
-	    -task protein_len,fasta_genome,fasta_genome_rm \
+	    -task protein_seq, protein_len,fasta_genome,fasta_genome_rm \
 	    -task chrom_sizes,index_bedtools \
 	    -batch
 
@@ -2790,3 +2778,21 @@ sub ReadAssemblySummary {
     return(@strain_info);
 }
 
+## Suppress empty rows from peptidic sequence files (present in NCBI
+## genomes) because the first empty row raises a bug with diamond
+## formatdb and blastall.
+sub CleanProteinSequences {
+    my $peptidic_seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
+    
+    if (-e $peptidic_seq_file) {
+	my $empty_rows = `grep '^\$' ${peptidic_seq_file} | wc -l `;
+	$empty_rows =~ s/\s//g; 
+	if ($empty_rows > 0) {
+	    &RSAT::message::Warning("Peptidic sequence file contains ".$empty_rows." empty rows");
+	    &RSAT::message::Info("Cleaning  ".$empty_rows." empty rows from peptidic sequence".$empty_rows);
+	    &doit('perl -pi -e "s/^\n$//" '.$peptidic_seq_file);
+	}
+    } else {
+	&RSAT::message::Warning("Peptidic sequence file is missing", $peptidic_seq_file);
+    }
+}
