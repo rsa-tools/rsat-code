@@ -2935,7 +2935,7 @@ sub ListAssemblies {
     } elsif ($list_format eq "bash") {
 	## Print a bash file with the instructions to download and install the selected genomes from
 	print $out "#!bash\n";
-	print $out "\$TASKS=download,parse,config,default\n";
+	print $out "export TASKS=download,parse,config,default\n";
 	for my $strain (@sorted_strains) {
 	    if ($strain_info{$strain}->{"genus_species"}) {
 		print $out "install-organism -v 1 -group ", $group, " -task \$TASKS",
