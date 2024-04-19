@@ -242,6 +242,14 @@ package main;
     &RSAT::message::Info(scalar(@species), "species read from file", $infile{species}) if ($main::verbose >= 1);
   }
 
+
+  ## Index the selected species
+  our %selected_species = ();
+  for my $species (@species) {
+      $selected_species{$species} = 1;
+  }
+  &RSAT::message::Info("Selected species",  join("; ", keys(%selected_species))) if ($main::verbose >= 0);
+  
   ################################################################
   ## Define the local download directory for NCBI Refseq files
   #$source = "NCBI-Refseq";
@@ -257,7 +265,7 @@ package main;
 
   ################################################################
   ## Check consistency of arguments for download/list/parse tasks.
-  if ($task{parse} || $task{download} || $task{list} || ($task{config} && ($group))) {
+  if ($task{parse} || $task{download} || ($task{config} && ($group))) {
     ## Check that all required parameters are defined
 
     ## One taxonomic group
@@ -337,7 +345,7 @@ package main;
 
 
   ## Read assembly summary table
-  our @strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+  our %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
   
     
   ################################################################
@@ -570,10 +578,8 @@ package main;
   ## Check that at least one organism has been specified
   unless ($task{list}) { 
       unless ((scalar(@organisms) > 0) || ($task{parse})) {
-#	  die("species=", $species[0],"strain=", $strain);
 	  if ($strain && $species[0]) {
 	      @organisms = (join("_", $species, $strain));
-#	      die("HELLO");
 	  } else {
 	      &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)")
 	  }
@@ -1938,6 +1944,30 @@ OPTIONS
 		command line to iterate the installation over multiple
 		taxa.
 
+    ARGUMENTS TO FILTER ASSEMBLIES
+
+        -filter field value
+
+		Filter assemblies based on specitied values for one or
+		several fields, in order to select a subset of
+		relevant assemblies for installation.
+
+		This argument can be used iteratively to specify
+		several filtering fields. 
+
+		Example 1: list the reference genomes
+
+		install-organism -v 1 -group bacteria  -task list \
+		    -filter  refseq_category "reference genome"
+
+		Example 2: select major releases of complete genomes
+		belonging to the category "representative".
+
+		install-organism -v 1 -group bacteria  -task list \
+		    -filter  refseq_category "representative genome" \
+		    -filter assembly_level "Complete Genome" \
+		    -filter release_type Major
+
     SPECIFIC ARGUMENTS FOR THE DOWNLOAD AND PARSE TASK
 
         -group taxonomic group according to the NCBI/Refseq ftp/rsync
@@ -2320,7 +2350,6 @@ SEE ALSO
 
 
     genome-blast
-
 	run blast for all the peptidic sequences of a query organism
 	against those of a reference organism (db), and generate a
 	table with all the detected similarities.
@@ -2372,6 +2401,7 @@ install_organism options
 -prefid feattype idname     passed to parse-genbank.pl
 -date 		 force last_update to a given date (for synchro between server and local installation)
 -img_format	 image format for the graphs of sequence length distribution
+
 End_short_help
   close HELP;
   exit;
@@ -2458,6 +2488,13 @@ sub ReadArguments {
     } elsif ($arg eq "-all_organisms") {
       $main::all_organisms = 1;
 
+      ## Filter assemblies based on one or more criteria
+    } elsif ($arg eq "-filter") {
+	my $filter_field = shift(@arguments);
+	my $filter_value = shift(@arguments);
+	$filter{$filter_field} = $filter_value;
+      
+      
       ## Skip the N first organisms of the list (can be useful if the
       ## task was interrupted).
     } elsif ($arg eq "-skip") {
@@ -2483,7 +2520,6 @@ sub ReadArguments {
       $main::last_species = shift(@arguments);
       &RSAT::error::FatalError($main::last_species, "Invalid value for option -last_species, should be a Natural number") 
 	  unless (&IsNatural($main::last_species));
-
 
       ## Full organism name (may include spaces)
     } elsif ($arg eq "-organism") {
@@ -2748,9 +2784,10 @@ sub ReadAssemblySummary {
 
     ## Parse the file
     my @header;
-    my @strain_info = {};
+    my %strain_info = {};
     &RSAT::message::TimeWarn("Reading assembly summary table\t", $file);
-    my $l = 0;
+    my $l = 0; ## Line number in the assembly file
+    my $selected = 0; ## Number of selected assemblies
     my ($asmb) = &OpenInputFile($file);
     my @column_index;
     while (<$asmb>) {
@@ -2776,26 +2813,81 @@ sub ReadAssemblySummary {
 	    }
 	} else {
 	    my @fields = split("\t");
+	    ## Compute some fields by combining extracted field
 	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
+	    my ($genus, $species) = split(" ", $fields[$column_index{"organism_name"}]);
+	    my $genus_species = $genus."_".$species;
+	    my $organism = join("_", $genus, $species, $strain);
+
+	    ## Filter on species
+	    if (scalar(@species) > 0) {
+		unless ($selected_species{$genus_species}) {
+		    next;
+		}
+	    }
+
+	    ## Run filters on the other fields
+	    my $pass_filter = 1;
+	    for my $field (sort(keys(%filter))) {
+		unless ($fields[$column_index{$field}] =~ /$filter{$field}/) {
+		    $pass_filter = 0;
+		    last;
+		}
+	    }
+	    next unless $pass_filter;	    
+	    
+	    ## Create an entry for this assembly in the strain_info hash
+	    $selected += 1;
 	    for my $f (0..$#fields) {
 		$strain_info{$strain}->{$header[$f]} = $fields[$f];
 	    }
-	    if (($main::verbose >= 3) && ($l <= 10)) {
+	    $strain_info{$strain}->{"genus"} = $genus;
+	    $strain_info{$strain}->{"species"} = $species;
+	    $strain_info{$strain}->{"genus_species"} = $genus_species;
+	    $strain_info{$strain}->{"strain"} = $strain;
+	    $strain_info{$strain}->{"organism"} = $organism;
+	    $strain_info{$strain}->{"organism"} =~ s/ //g;
+
+	    ## For debugging, report the 10 first assemblies
+	    if (($main::verbose >= 3) && ($selected <= 10)) {
 		print join("\t",
+			   ";",
+			   $selected,
 			   $l,
-			   $strain,
+			   $strain_info{$strain}->{"organism"},
 			   $strain_info{$strain}->{"organism_name"},
+			   $strain_info{$strain}->{"genus"},
+			   $strain_info{$strain}->{"species"},
 			   $strain_info{$strain}->{"assembly_accession"},
 			   $strain_info{$strain}->{"asm_name"},
-			   $strain_info{$strain}->{"asm_name"},		      
+			   $strain_info{$strain}->{"genus_species"},
+			   $strain_info{$strain}->{"strain"},
 		    ), "\n";
 	    }
 	}
     }
-    &RSAT::message::TimeWarn("Read ", $l," assemblies") if ($main::verbose >= 1);
-    return(@strain_info);
+
+    if ($main::verbose >= 1) {
+	&RSAT::message::TimeWarn("Read assembly summaries");
+	&RSAT::message::Info($l, "lines");
+	&RSAT::message::Info($selected, "selected assemblies");
+    }
+    return(%strain_info);
 }
 
+
+################################################################
+## Select a subset of the assemblies based on filters
+sub FilterAssemblies {
+    my (%strain_info) = @_;
+    &RSAT::message::Info("Filtering assemblies") if ($main::verbose >= 1);
+
+    ## Run each filter on each assembly
+    
+    return @selected_strains;
+}
+
+################################################################
 ## Suppress empty rows from peptidic sequence files (present in NCBI
 ## genomes) because the first empty row raises a bug with diamond
 ## formatdb and blastall.
@@ -2807,7 +2899,7 @@ sub CleanProteinSequences {
 	$empty_rows =~ s/\s//g; 
 	if ($empty_rows > 0) {
 	    &RSAT::message::Warning("Peptidic sequence file contains ".$empty_rows." empty rows");
-	    &RSAT::message::Info("Cleaning  ".$empty_rows." empty rows from peptidic sequence".$empty_rows);
+	    &RSAT::message::Info("Cleaning  ".$empty_rows." empty rows from peptidic sequence fasta file");
 	    &doit('perl -pi -e "s/^\n$//" '.$peptidic_seq_file);
 	}
     } else {
