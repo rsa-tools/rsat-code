@@ -113,6 +113,12 @@ package main;
   @taxa = ();
   our %infile = ();
 
+  ## Export format for the lists of organisms or assemblies
+  our $list_format = "bash"; # Supported: org, table, bash
+  %supported_list_format = ("org" => 1,
+			    "table" => 1,
+			    "bash" => 1);
+  
   ## File containing a list of organisms to install
   $infile{organisms} = "";
 
@@ -275,7 +281,7 @@ package main;
 
     ## At least one species is required
     unless (scalar(@species) >= 1) {
-      &RSAT::error::FatalError("Tasks download, list, parse and config require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli). To get a list of available species, use option '-task available'. ");
+      &RSAT::error::FatalError("Tasks download, list, parse and config require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli). To get a list of available species, use option '-task> available'. ");
     }
 
     ## If strain is specified, check that only one species has been requested
@@ -351,7 +357,7 @@ package main;
 
   ## List assemblies if requested
   if ($task{list}) {
-      &ListAssemblies(%strain_info);
+      &ListAssemblies($list_format, %strain_info);
   }
 
 
@@ -1975,6 +1981,24 @@ OPTIONS
 		    -filter assembly_level "Complete Genome" \\
 		    -filter release_type Major
 
+        -list_format
+
+		Format to export the list of selected assemblies /
+		organisms.
+
+		Supported list formats:
+
+		org: organisms in RSAT format (concatenation of
+		Genus, species, assembly_accession and asm_name,
+		separated by underscores). One organism per row.
+
+		table: table with one row per assembly/organism and
+		selected output columns.
+
+		bash: bash script with the commands to download and
+		install the selected organisms.
+
+
     SPECIFIC ARGUMENTS FOR THE DOWNLOAD AND PARSE TASK
 
         -group taxonomic group according to the NCBI/Refseq ftp/rsync
@@ -2500,7 +2524,15 @@ sub ReadArguments {
 	my $filter_field = shift(@arguments);
 	my $filter_value = shift(@arguments);
 	$filter{$filter_field} = $filter_value;
-      
+	
+      ## Format to export lists of selected assemblies / organisms
+    } elsif ($arg eq "-list_format") {
+	$list_format = shift(@arguments);
+	unless ($supported_list_format{$list_format}) {
+	    &RSAT::error::FatalError($list_format,
+				     "is not a valid value for option -list_format. Supported: ",
+				     join(", ", keys %supported_list_format));
+	}
       
       ## Skip the N first organisms of the list (can be useful if the
       ## task was interrupted).
@@ -2819,9 +2851,13 @@ sub ReadAssemblySummary {
 		next; ## Skip comment rows
 	    }
 	} else {
+
+	    my $pass_filter = 1;
+
 	    my @fields = split("\t");
 	    ## Compute some fields by combining extracted field
 	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
+	    next unless $strain;
 	    my ($genus, $species) = split(" ", $fields[$column_index{"organism_name"}]);
 	    my $genus_species = $genus."_".$species;
 	    my $organism = join("_", $genus, $species, $strain);
@@ -2834,7 +2870,6 @@ sub ReadAssemblySummary {
 	    }
 
 	    ## Run filters on the other fields
-	    my $pass_filter = 1;
 	    for my $field (sort(keys(%filter))) {
 		unless ($fields[$column_index{$field}] =~ /$filter{$field}/) {
 		    $pass_filter = 0;
@@ -2886,25 +2921,49 @@ sub ReadAssemblySummary {
 ################################################################
 ## Export a table with a subset of the fields for selected organisms
 sub ListAssemblies {
-    my %strain_info = @_;
-    my @fields = qw(
-    	organism
-	genus
-	species
-	assembly_accession
-	asm_name
-	genus_species
-	strain
-	);
+    my ($list_format, %strain_info) = @_;
 
-
-    print $out join("\t", @fields), "\n";
-    for my $strain (sort keys(%strain_info)) {
-	my @values = ();
-	for my $field (@fields) {
-	    push @values, $strain_info{$strain}->{$field};
+#    my @sorted_strains = sort {$strain_info{$a}->{"organism"} <=> $strain_info{$b}->{"organism"}} keys(%strain_info);
+    my @sorted_strains = sort keys(%strain_info);
+    
+    if ($list_format eq "org") {
+	for my $strain (@sorted_strains) {
+	    print $out $strain_info{$strain}->{"organism"}, "\n" if ($strain);
 	}
+
+	
+    } elsif ($list_format eq "bash") {
+	## Print a bash file with the instructions to download and install the selected genomes from
+	print $out "#!bash\n";
+	print $out "\$TASKS=download,parse,config,default\n";
+	for my $strain (@sorted_strains) {
+	    if ($strain_info{$strain}->{"genus_species"}) {
+		print $out "install-organism -v 1 -group ", $group, " -task \$TASKS",
+		    " -species ", $strain_info{$strain}->{"genus_species"},
+		    " -strain ", $strain_info{$strain}->{"strain"},
+		    "\n";
+	    }
+	}
+
+    } else {
+	## Print a table with selected fields
+	my @fields = qw(
+	    genus_species
+	    strain
+	    organism
+	    genus
+	    species
+	    assembly_accession
+	    asm_name
+	    );
+	print $out join("\t", @fields), "\n";
+	for my $strain (@sorted_strains) {
+	    my @values = ();
+	    for my $field (@fields) {
+		push @values, $strain_info{$strain}->{$field};
+	    }
 	print $out join("\t", @values), "\n";
+	}
     }
 }
 
