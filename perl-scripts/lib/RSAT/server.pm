@@ -82,13 +82,13 @@ sub GetProgramPath {
   
   my $path_found = 0;
   foreach my $dir (@rsat_path) {
-    my $possible_path = $dir."/".$program_name;
-    $possible_path =~ s|/+|/|g;
-#      &RSAT::message::Debug("GetProgramPath()", "testing", $program_name, $possible_path) if ($main::verbose >= 10);
-    if (-e $possible_path) {
-      $program_path = $possible_path;
-      last;
-    }
+      my $possible_path = $dir."/".$program_name;
+      $possible_path =~ s|/+|/|g;
+      #      &RSAT::message::Debug("GetProgramPath()", "testing", $program_name, $possible_path) if ($main::verbose >= 10);
+      if (-e $possible_path) {
+	  $program_path = $possible_path;
+	  last;
+      }
   }
 
   ## Test if the command is known as rsat subcommand
