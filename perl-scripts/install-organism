@@ -280,9 +280,9 @@ package main;
     }
 
     ## At least one species is required
-    unless (scalar(@species) >= 1) {
-      &RSAT::error::FatalError("Tasks download, list, parse and config require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli). To get a list of available species, use option '-task> available'. ");
-    }
+#    unless (scalar(@species) >= 1) {
+#      &RSAT::error::FatalError("Tasks download, list, parse and config require to specify at least one species (e.g. Saccharomyces_cerevisiae, Escherichia_coli). To get a list of available species, use option '-task> available'. ");
+#    }
 
     ## If strain is specified, check that only one species has been requested
     if ($strain) {
@@ -290,7 +290,7 @@ package main;
     }
   }
 
-
+  
   ################################################################
   ## Define the name of the assembly summary file
   ## File containing the assembly summary downloaded from NCBI
@@ -354,17 +354,14 @@ package main;
   
   ## Read assembly summary table
   our %strain_info;
-  if ($task{"download"} || $task{"parse"} || $task{"parse"}) {
-      %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
-  }
+#  if ($task{"download"} || $task{"parse"} || $task{"list"}) {
+  %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+#  }
 
-#  die(join("\t", "HELLO", sort(keys(%strain_info))), "\n");
-      
   ## List assemblies if requested
   if ($task{list}) {
       &ListAssemblies($list_format, %strain_info);
   }
-
 
   ################################################################
   ## Download the required files from NCBI FTP site
@@ -381,6 +378,7 @@ package main;
 	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $strains_to_download) if ($main::verbose >= 1);
 	      last;
 	  }
+
 
 	  ## Define source URL for download
 	  my $URL = $strain_info{$strain}->{"ftp_path"};
@@ -410,18 +408,20 @@ package main;
       }
   }
 
-  for my $strain (sort keys %strain_info) {
-      # die join("\t", "HELLO", $strain, $strain_info{$strain},
-      # 	       $strain_info{$strain}->{"organism"},
-      # 	       $strain_info{$strain}->{"downloads"}), "\n";
-      my $organism_name = $strain_info{$strain}->{"organism"};
-      my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
-      &ParseGenome($strain_info{$strain}->{"species"},
-		   $strain,
-		   $organism_name,
-		   $strain_info{$strain}->{"downloads"}, $genome_dir, $org_nb);
+
+  ## Parse 
+  if ($task{parse}) {
+      for my $strain (sort keys %strain_info) {
+	  my $organism_name = $strain_info{$strain}->{"organism"};
+	  my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
+	  &ParseGenome($strain_info{$strain}->{"species"},
+		       $strain,
+		       $organism_name,
+		       $strain_info{$strain}->{"downloads"}, $genome_dir, $org_nb);
+      }
   }
-  
+
+
   ## For parsing task, build organism names from species names +
   ## strains (as sub-directories of the NCBI/Refseq
   ## latest_assembly_versions)
@@ -456,7 +456,6 @@ package main;
 # 	  my @strain_dirs;
 # 	  if ($strain) {
 # 	      @strain_dirs = glob($latest_assembly_dir."/".$strain);
-# #	      die "HELLO\t", $strain, "\t", join("\n\t", @strain_dirs);
 # 	  } else {
 # 	      @strain_dirs = glob($latest_assembly_dir."/*");
 # 	  }
@@ -516,11 +515,62 @@ package main;
 #   }
 
 
-  ## Select all organisms
+  ################################################################
+  ## Select organisms to install
   if ($main::all_organisms) {
+      ## Select all organisms
       @organisms = &RSAT::OrganismManager::get_supported_organisms();
-  }
+
+  } elsif ($infile{organisms}) {
+      ## If an organism file has been specified, read organism list
+      my ($orgs) = &OpenInputFile($infile{organisms});
+      while (<$orgs>) {
+	  next unless (/\S/); ## Skip empty rows
+	  next if (/^;/); ## Skip comment rows
+	  next if (/^#/); ## Skip header rows
+	  chomp();
+	  my ($org) = split /\s+/;
+	  push @organisms, $org;
+      }
+
+  } elsif (scalar(@taxa) > 0) {
+      
+      ## If a taxon has been specified, collect the list of
+      ## organisms belonging to this taxon in the RSAT-supported
+      ## organisms
+      if ($task{parse}) {
+	  &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
+      }
+      
+      $tree = new RSAT::Tree();
+      $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+      
+      foreach my $taxon (@taxa) {
+	  my $taxon_node = $tree->get_node_by_id($taxon);
+	  my @taxon_organisms = $taxon_node->get_all_descendents("DFS","leaf",undef,undef);
+	  &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 1);
+	  foreach my $org_node (@taxon_organisms) {
+	      my $short_organism_name = $org_node->getid();
+	      push @organisms, $short_organism_name;
+	  }
+      }   
+      @organisms = sort (@organisms);
   
+  } else {
+      ## Install all organisms found in assembly summary and that
+      ## passed the filters if specified
+      for my $strain (sort(keys(%strain_info))) {
+	  push @organisms, $strain_info{$strain}->{"organism"};
+      }
+  }
+  &RSAT::message::Info("Organisms to install", scalar(@organisms)) if ($main::verbose >= 1);
+#  &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
+
+  if ($main::verbose >= 0) {
+      &RSAT::message::Info(join("; ", @organisms));
+  }
+
+
 #### option  -all_organisms is not supported anymore
 #   if ($main::all_organisms) {
 #     @organisms_dirs = glob($dir{refseq}."/*_*");
@@ -553,43 +603,7 @@ package main;
 #     }
 #   }
 
-  ## If an organism file has been specified, read organism list
-  if ($infile{organisms}) {
-    my ($orgs) = &OpenInputFile($infile{organisms});
-    while (<$orgs>) {
-      next unless (/\S/); ## Skip empty rows
-      next if (/^;/); ## Skip comment rows
-      next if (/^#/); ## Skip header rows
-      chomp();
-      my ($org) = split /\s+/;
-      push @organisms, $org;
-    }
-  }
 
-
-  ## If a taxon has been specified, collect the list of organisms belonging to this taxon in the RSAT-supported organisms
-  if (scalar(@taxa) > 0) {
-    if ($task{parse}) {
-      &RSAT::message::Warning("With the option -taxon, the parse option will only re-parse previously installed organisms from the selected taxon");
-    }
-
-    $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
-
-    foreach my $taxon (@taxa) {
-      my $taxon_node = $tree->get_node_by_id($taxon);
-      my @taxon_organisms = $taxon_node->get_all_descendents("DFS","leaf",undef,undef);
-      &RSAT::message::TimeWarn("Collected", scalar(@taxon_organisms), "organisms for taxon", $taxon, $taxon_node) if ($main::verbose >= 1);
-      foreach my $org_node (@taxon_organisms) {
-	my $short_organism_name = $org_node->getid();
-	push @organisms, $short_organism_name;
-      }
-    }
-
-    @organisms = sort (@organisms);
-  }
-
-  &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
   ## Check that at least one organism has been specified
   unless ($task{list}) { 
@@ -601,7 +615,9 @@ package main;
 	  }
       }
   }
-  
+
+
+
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
       &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.")
@@ -611,6 +627,7 @@ package main;
       &RSAT::message::FatalError("The option -syn (synonym table) is not valid when multiple organisms are selected.")
 	  if ($outfile{synonyms});
   }
+
 
   ################################################################
   ## Check if any task has to be done on organisms (and not just to
@@ -810,7 +827,6 @@ sub OrgParameters {
   } else {
     printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
     printf $out ";    %-25s\t%s\n", "Name", $organism_full_name{$organism_short_name}; ## THIS IS WRONG (JvH, 2017-12-12)
-#    die "HELLO2";
     printf $out ";    %-25s\t%s\n", "Update date", $install_date;
     printf $out ";    %-25s\t%s\n", "Data source", $source;
     printf $out ";    %-25s\t%s\n", "strain", $strain;
@@ -2836,6 +2852,7 @@ sub DownloadAssemblySummary {
 sub ReadAssemblySummary {
     my ($file) = @_;
 
+    
     ## Check if the file exists
     if (-e $file) {
     } else {
