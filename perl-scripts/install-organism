@@ -377,7 +377,7 @@ package main;
 	      next;
 	  }
 	  if (($last > 0) && ($strain_nb > $last)) {
-	      &RSAT::message::TimeWarn("Stopping after assembly", $strain_nb."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+	      &RSAT::message::TimeWarn("Stopping after assembly", ($strain_nb-1)."/".$strains_to_download, $strain_info{$strain}->{"organism"})
 		  if ($main::verbose >= 1);
 	      last;
 	  }
@@ -433,7 +433,7 @@ package main;
 	      next;
 	  }
 	  if (($last > 0) && ($strain_nb > $last)) {
-	      &RSAT::message::TimeWarn("Stopping after assembly", $strain_nb."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+	      &RSAT::message::TimeWarn("Stopping after assembly", ($strain_nb-1)."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
 		  if ($main::verbose >= 1);
 	      last;
 	  }
