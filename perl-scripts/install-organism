@@ -371,7 +371,20 @@ package main;
 
       for my $strain (sort(keys(%strain_info))) {
 	  $strain_nb++; 
-	  ## Restrict the number of strains if requested
+	  if (($skip > 0) && ($strain_nb <= $skip)) {
+	      &RSAT::message::TimeWarn("Skipping assembly", $strain_nb."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+		  if ($main::verbose >= 1);
+	      next;
+	  }
+	  if (($last > 0) && ($strain_nb > $last)) {
+	      &RSAT::message::TimeWarn("Stopping after assembly", $strain_nb."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+		  if ($main::verbose >= 1);
+	      last;
+	  }
+	  &RSAT::message::TimeWarn("Downloading strain", $strain_nb."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+	      if ($main::verbose >= 1);
+
+	  ## Restrictw the number of strains if requested
 	  if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 	      my $remaining_strains = $strains_to_download - $strain_nb + 1;
 	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $strains_to_download) if ($main::verbose >= 1);
@@ -410,7 +423,22 @@ package main;
 
   ## Parse 
   if ($task{parse}) {
+      my $strain_nb = 0;
+      my $strains_to_parse = scalar(keys(%strain_info));
       for my $strain (sort keys %strain_info) {
+	  $strain_nb++; 
+	  if (($skip > 0) && ($strain_nb <= $skip)) {
+	      &RSAT::message::TimeWarn("Skipping assembly", $strain_nb."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+		  if ($main::verbose >= 1);
+	      next;
+	  }
+	  if (($last > 0) && ($strain_nb > $last)) {
+	      &RSAT::message::TimeWarn("Stopping after assembly", $strain_nb."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+		  if ($main::verbose >= 1);
+	      last;
+	  }
+	  &RSAT::message::TimeWarn("Downloading strain", $strain_nb."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+	      if ($main::verbose >= 1);
 	  my $organism_name = $strain_info{$strain}->{"organism"};
 	  my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
 	  &ParseGenome($strain_info{$strain}->{"species"},
@@ -2119,18 +2147,10 @@ OPTIONS
 		It also allows to organize the installation by chunks
 		of organisms.
 
-	-skip_species # skip the first # of the list of NCBI species. 
-
-	        Note that one species can correspond to several
-	        organisms, if several strains have been sequenced.
-
 	-last #	Stop after the first # organisms of the list.
 
 		This option can be used to organize the installation
 		by chunks of organisms.
-
-	-last_species # Stop after the first # species of the NCBI
-	        list.
 
 	-organism Full name of the organism (e.g. 'Saccharomyces
 		cerevisiae'). This option is only valid when a single
@@ -2443,9 +2463,7 @@ install_organism options
 -strain         strain (for task parse)
 -max_strains    max number of strains per species to be parsed / installed
 -skip #         Skip the # first organisms (convenient to resume interrupted list) 
--skip_species # Skip the # first species of the NCBI list
 -last #         Stop after the # first organisms (convenient to install by chunks) 
--last_species # Stop after the # first species of the NCBI list
 -source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
@@ -2573,12 +2591,6 @@ sub ReadArguments {
       &RSAT::error::FatalError($main::skip, "Invalid value for option -skip, should be a Natural number") 
 	  unless (&IsNatural($main::skip));
 
-      ## Skip the N first species of the NCBI list
-    } elsif ($arg eq "-skip_species") {
-      $main::skip_species = shift(@arguments);
-      &RSAT::error::FatalError($main::skip_species, "Invalid value for option -skip_species, should be a Natural number") 
-	  unless (&IsNatural($main::skip_species));
-
       ## Stop after the N first organisms of the list (can be useful
       ## for tests on a subset of the list of oganisms).
     } elsif ($arg eq "-last") {
@@ -2586,11 +2598,6 @@ sub ReadArguments {
       &RSAT::error::FatalError($main::last, "Invalid value for option -last, should be a Natural number") 
 	  unless (&IsNatural($main::last));
 
-      ## Stop after the N first species of the NCBI list
-    } elsif ($arg eq "-last_species") {
-      $main::last_species = shift(@arguments);
-      &RSAT::error::FatalError($main::last_species, "Invalid value for option -last_species, should be a Natural number") 
-	  unless (&IsNatural($main::last_species));
 
       ## Full organism name (may include spaces)
     } elsif ($arg eq "-organism") {
