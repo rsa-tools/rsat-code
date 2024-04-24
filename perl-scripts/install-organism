@@ -310,37 +310,34 @@ package main;
   &Verbose() if ($main::verbose >= 1);
 
   ## Download or update the assembly summary table for the selected group
-  if (($task{download}) || ($task{available})) {
+  if ($task{available}) {
       &DownloadAssemblySummary($group);
   }
   
   
-  ################################################################
-  ## Get the list of available species for the selected group
-  if ($task{available}) {
-    die "Sorry, task available must be revised completely - 2024-04-21\n";
-    &RSAT::message::TimeWarn("Getting available species for group", $group) if ($main::verbose >= 2);
-    unless ($group) {
-      &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
-    }
+  # ################################################################
+  # ## Get the list of available species for the selected group
+  # if ($task{available}) {
+  #   die "Sorry, task available must be revised completely - 2024-04-21\n";
+  #   &RSAT::message::TimeWarn("Getting available species for group", $group) if ($main::verbose >= 2);
+  #   unless ($group) {
+  #     &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
+  #   }
     
-    my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
-    if ($main::versbose >= 1) {
-	&RSAT::message::Info("; Getting available species from NCBI; \t", $refseq_folder_url, "\n");
-    }
-    
-    my $command = 'rsync --copy-links  --times  --list-only rsync://'.$refseq_folder_url.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
-
-    &RSAT::message::TimeWarn("Running command\n".$command) if ($main::verbose >= 0);
-    #    my $available_species = `$command`;
-    #    print $main::out $available_species;
-    &doit($command, $dry, $die_on_error, $main::verbose);
-    
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-    print $main::out $exec_time if ($main::verbose >= 1);
-    close $main::out if ($outputfile);
-    exit(0); # Available species is not compatible with any other task
-  }
+  #   my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
+  #   if ($main::versbose >= 1) {
+  # 	&RSAT::message::Info("; Getting available species from NCBI; \t", $refseq_folder_url, "\n");
+  #   }
+  #   my $command = 'rsync --copy-links  --times  --list-only rsync://'.$refseq_folder_url.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
+  #   &RSAT::message::TimeWarn("Running command\n".$command) if ($main::verbose >= 0);
+  #   #    my $available_species = `$command`;
+  #   #    print $main::out $available_species;
+  #   &doit($command, $dry, $die_on_error, $main::verbose);    
+  #   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  #   print $main::out $exec_time if ($main::verbose >= 1);
+  #   close $main::out if ($outputfile);
+  #   exit(0); # Available species is not compatible with any other task
+  # }
 
     
   ## Rewrite config table
@@ -348,7 +345,6 @@ package main;
       &RewriteConfigTab();
       exit();
   }
-
   ################################################################
   ## Assembllies
   
@@ -363,6 +359,7 @@ package main;
       &ListAssemblies($list_format, %strain_info);
   }
 
+
   ################################################################
   ## Download the required files from NCBI FTP site
   if ($task{download}) {
@@ -370,6 +367,8 @@ package main;
       ## Download each selected strain
       my $strain_nb = 0;
       my $strains_to_download = scalar(@strain_info);
+      &RSAT::message::Info("Downloading", $strains_to_download, "assemblies from NCBII") if ($main::verbose >= 1);
+
       for my $strain (sort(keys(%strain_info))) {
 	  $strain_nb++; 
 	  ## Restrict the number of strains if requested
@@ -566,10 +565,9 @@ package main;
   &RSAT::message::Info("Organisms to install", scalar(@organisms)) if ($main::verbose >= 1);
 #  &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
 
-  if ($main::verbose >= 0) {
-      &RSAT::message::Info(join("; ", @organisms));
-  }
-
+  # if ($main::verbose >= 10) {
+  #     &RSAT::message::Info(join("; ", @organisms));
+  # }
 
 #### option  -all_organisms is not supported anymore
 #   if ($main::all_organisms) {
@@ -2068,15 +2066,15 @@ OPTIONS
 		particular bacterial species for which thousands of
 		strains have been sequenced (e.g. Escherichia coli).
 
-	-strain restrict the download to a single strain or
+	-strain restricts the download and installation to a single
                 assembly. By default all strains of the selected
                 species are downloaded, but this can be heavy for some
                 bacterial species where thousands of strains have been
                 sequenced (e.g. Escherichia coli).
 
 	      Note: the RSAT organism name is automatically built by
-	      concatenating the NCBI species name and strain
-	      identifier.
+	      concatenating the NCBI genus + species name + assembly
+	      accession + assembly name.
 
 	-assembly_table
 
@@ -2844,6 +2842,11 @@ sub DownloadAssemblySummary {
 	&RSAT::message::Info("Assembly summary file\t", $outfile{assembly_summary});
 	&RSAT::message::Info("Assembly summary file columns\t", $outfile{assembly_columns});
     }
+    my $available_assemblies = `grep -v '^#' $outfile{assembly_summary} | wc -l`;
+    printf $out (";    %-25s\t%s\n", "Assembly summary file", $outfile{assembly_summary});
+    printf $out (";    %-25s\t%s\n", "Assembly summary columns", $outfile{assembly_columns});
+    printf $out (";    %-25s\t%s\n", "Available assemblies", $available_assemblies);
+    
 }
 
 
@@ -2894,8 +2897,14 @@ sub ReadAssemblySummary {
 
 	    my @fields = split("\t");
 	    ## Compute some fields by combining extracted field
-	    my $strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
-	    next unless $fields[$column_index{'assembly_accession'}] && $fields[$column_index{'asm_name'}] && $strain;
+	    my $current_strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
+
+	    ## Check is current strain corresponds to selected strain
+	    if ($strain) {
+		next unless $current_strain eq $strain;
+	    }
+	    
+	    next unless $fields[$column_index{'assembly_accession'}] && $fields[$column_index{'asm_name'}] && $current_strain;
 
 	    ## Fix a problem with some organism names that contain
 	    ## brackets (no apparent reason), which makes problems for
@@ -2933,41 +2942,41 @@ sub ReadAssemblySummary {
 	    ## Create an entry for this assembly in the strain_info hash
 	    $selected += 1;
 	    for my $f (0..$#fields) {
-		$strain_info{$strain}->{$header[$f]} = $fields[$f];
+		$strain_info{$current_strain}->{$header[$f]} = $fields[$f];
 		# &RSAT::message::Debug(
 		#     $f,
 		#     $header[$f],
-		#     $strain_info{$strain},
+		#     $strain_info{$current_strain},
 		#     join(";", sort(keys(%strain_info))),
 		#     $fields[$f],
-		#     $strain_info{$strain}->{$header[$f]},
+		#     $strain_info{$current_strain}->{$header[$f]},
 		#     ) if ($main::verbose >= 10);
 	    }
 
-	    # die (join("\t", "BOUM", $strain,
-	    # 	      $strain_info{$strain},
+	    # die (join("\t", "BOUM", $current_strain,
+	    # 	      $strain_info{$current_strain},
 	    # 	      join("; ", sort(keys(%strain_info)))),
 	    # 	      "\n");
 	    
 	    ## Define some extra fields
-	    $strain_info{$strain}->{"genus"} = $genus;
-	    $strain_info{$strain}->{"species"} = $species;
-	    $strain_info{$strain}->{"genus_species"} = $genus_species;
-	    $strain_info{$strain}->{"strain"} = $strain;
-	    $strain_info{$strain}->{"organism"} = join("_", $genus, $species, $strain);
-	    $strain_info{$strain}->{"organism"} =~ s/ //g;
+	    $strain_info{$current_strain}->{"genus"} = $genus;
+	    $strain_info{$current_strain}->{"species"} = $species;
+	    $strain_info{$current_strain}->{"genus_species"} = $genus_species;
+	    $strain_info{$current_strain}->{"strain"} = $current_strain;
+	    $strain_info{$current_strain}->{"organism"} = join("_", $genus, $species, $current_strain);
+	    $strain_info{$current_strain}->{"organism"} =~ s/ //g;
 	    
 	    ## Define download directory for this assembly
 	    ## Will be used for both tasks download and parse
-	    $strain_info{$strain}->{"downloads"} =
+	    $strain_info{$current_strain}->{"downloads"} =
 		join("/",
 		     $ENV{RSAT},
 		     "downloads",
 		     "refseq",
 		     $group,
-		     $strain_info{$strain}->{"genus"},
-		     $strain_info{$strain}->{"genus_species"},
-		     $strain);
+		     $strain_info{$current_strain}->{"genus"},
+		     $strain_info{$current_strain}->{"genus_species"},
+		     $current_strain);
 	    
 	    ## For debugging, report the 10 first assemblies
 	    if (($main::verbose >= 3) && ($selected <= 10)) {
@@ -2975,14 +2984,14 @@ sub ReadAssemblySummary {
 			   ";",
 			   $selected,
 			   $l,
-			   $strain_info{$strain}->{"organism"},
-			   $strain_info{$strain}->{"organism_name"},
-			   $strain_info{$strain}->{"genus"},
-			   $strain_info{$strain}->{"species"},
-			   $strain_info{$strain}->{"assembly_accession"},
-			   $strain_info{$strain}->{"asm_name"},
-			   $strain_info{$strain}->{"genus_species"},
-			   $strain_info{$strain}->{"strain"},
+			   $strain_info{$current_strain}->{"organism"},
+			   $strain_info{$current_strain}->{"organism_name"},
+			   $strain_info{$current_strain}->{"genus"},
+			   $strain_info{$current_strain}->{"species"},
+			   $strain_info{$current_strain}->{"assembly_accession"},
+			   $strain_info{$current_strain}->{"asm_name"},
+			   $strain_info{$current_strain}->{"genus_species"},
+			   $strain_info{$current_strain}->{"strain"},
 		    ), "\n";
 	    }
 	}
@@ -3006,8 +3015,8 @@ sub ListAssemblies {
     my @sorted_strains = sort keys(%strain_info);
     
     if ($list_format eq "org") {
-	for my $strain (@sorted_strains) {
-	    print $out $strain_info{$strain}->{"organism"}, "\n" if ($strain);
+	for my $current_strain (@sorted_strains) {
+	    print $out $strain_info{$current_strain}->{"organism"}, "\n" if ($current_strain);
 	}
 
 	
@@ -3015,11 +3024,11 @@ sub ListAssemblies {
 	## Print a bash file with the instructions to download and install the selected genomes from
 	print $out "#!bash\n";
 	print $out "TASKS=download,parse,config,default\n";
-	for my $strain (@sorted_strains) {
-	    if ($strain_info{$strain}->{"genus_species"}) {
+	for my $current_strain (@sorted_strains) {
+	    if ($strain_info{$current_strain}->{"genus_species"}) {
 		print $out "install-organism -v 1 -group ", $group, " -task \$TASKS",
-		    " -species ", $strain_info{$strain}->{"genus_species"},
-		    " -strain ", $strain_info{$strain}->{"strain"},
+		    " -species ", $strain_info{$current_strain}->{"genus_species"},
+		    " -strain ", $strain_info{$current_strain}->{"strain"},
 		    "\n";
 	    }
 	}
@@ -3038,12 +3047,12 @@ sub ListAssemblies {
 	    asm_name
 	    );
 	print $out join("\t", @fields), "\n";
-	for my $strain (@sorted_strains) {
+	for my $current_strain (@sorted_strains) {
 	    my @values = ();
 	    for my $field (@fields) {
-		push @values, $strain_info{$strain}->{$field};
+		push @values, $strain_info{$current_strain}->{$field};
 	    }
-	print $out join("\t", @values), "\n";
+	    print $out join("\t", @values), "\n";
 	}
     }
 }
