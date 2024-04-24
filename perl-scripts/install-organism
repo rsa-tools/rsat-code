@@ -366,7 +366,7 @@ package main;
 
       ## Download each selected strain
       my $strain_nb = 0;
-      my $strains_to_download = scalar(@strain_info);
+      my $strains_to_download = scalar(keys(%strain_info));
       &RSAT::message::Info("Downloading", $strains_to_download, "assemblies from NCBII") if ($main::verbose >= 1);
 
       for my $strain (sort(keys(%strain_info))) {
