@@ -2915,6 +2915,8 @@ sub ReadAssemblySummary {
 	    $organism_name =~ s/\]//g;
 	    $organism_name =~ s/\'//g;
 	    $organism_name =~ s/\"//g;
+	    $organism_name =~ s/\)//g;
+	    $organism_name =~ s/\(//g;
 
 	    if ($fields[$column_index{'organism_name'}] ne $organism_name) {
 		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 3); 
