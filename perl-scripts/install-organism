@@ -670,12 +670,12 @@ package main;
   foreach our $organism_short_name (@organisms) {
     $i++;
     if (($skip > 0) && ($i <= $skip)) {
-      &RSAT::message::TimeWarn("Skipping organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
-      next;
+	&RSAT::message::TimeWarn("Skipping organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+	next;
     }
     if (($last > 0) && ($i > $last)) {
-      &RSAT::message::TimeWarn("Stopping after organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
-      last;
+	&RSAT::message::TimeWarn("Stopping after organism", ($i-1)."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
+	last;
     }
     &RSAT::message::TimeWarn("Installing organism", $i."/".scalar(@organisms), $organism_short_name) if ($main::verbose >= 1);
 
@@ -694,6 +694,7 @@ package main;
       ## serialized files are suppressed.
       &RSAT::message::Info("Cleaning previous serialized files") if ($main::verbose >= 3);
       $organism->delete_serial_files();
+
 
       ################################################################
       ## Automatic full name specification
@@ -2903,8 +2904,33 @@ sub ReadAssemblySummary {
 	    my $pass_filter = 1;
 
 	    my @fields = split("\t");
+
+	    ################################################################
+	    ## Fix problems with some organism or assembly names that contain
+	    ## problematic characters for folder names (brackets,
+	    ## parentheses, quotes, ...).
+	    my $organism_name = &CleanPathName($fields[$column_index{'organism_name'}]);
+	    if ($fields[$column_index{'organism_name'}] ne $organism_name) {
+		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 3); 
+		$fields[$column_index{'organism_name'}] = $organism_name;
+	    }
+
+	    my $assembly_accession = &CleanPathName($fields[$column_index{'assembly_accession'}]);
+	    if ($fields[$column_index{'assembly_accession'}] ne $assembly_accession) {
+		&RSAT::message::Warning("Assembly accession", $fields[$column_index{'assembly_accession'}],  $assembly_accession) if ($main::verbose >= 3); 
+		$fields[$column_index{'assembly_accession'}] = $assembly_accession;
+	    }
+
+	    my $asm_name = &CleanPathName($fields[$column_index{'asm_name'}]);
+	    if ($fields[$column_index{'asm_name'}] ne $asm_name) {
+		&RSAT::message::Warning("Assembly name fixed", $fields[$column_index{'asm_name'}],  $asm_name) if ($main::verbose >= 3); 
+		$fields[$column_index{'asm_name'}] = $asm_name;
+	    }
+
+	    ################################################################
 	    ## Compute some fields by combining extracted field
 	    my $current_strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
+#	    $current_strain =~s/ /_/g; ## Fix problem with some spaces in asm_name
 
 	    ## Check is current strain corresponds to selected strain
 	    if ($strain) {
@@ -2913,26 +2939,9 @@ sub ReadAssemblySummary {
 	    
 	    next unless $fields[$column_index{'assembly_accession'}] && $fields[$column_index{'asm_name'}] && $current_strain;
 
-	    ## Fix a problem with some organism names that contain
-	    ## brackets (no apparent reason), which makes problems for
-	    ## folder names.
-	    my $organism_name = $fields[$column_index{'organism_name'}];
-	    # suppress problematic characters
-	    $organism_name =~ s/\[//g;
-	    $organism_name =~ s/\]//g;
-	    $organism_name =~ s/\'//g;
-	    $organism_name =~ s/\"//g;
-	    $organism_name =~ s/\)//g;
-	    $organism_name =~ s/\(//g;
-
-	    if ($fields[$column_index{'organism_name'}] ne $organism_name) {
-		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 3); 
-		$fields[$column_index{'organism_name'}] = $organism_name;
-	    }
-
 	    ## Split organism_name into genus and species
-	    my ($genus, $species) = split(" ", $organism_name, 2);
-	    $species =~ s/ /_/g; ## Replace remaining spaces by underscores
+	    my ($genus, $species) = split("_", $organism_name, 2);
+#	    $species =~ s/ /_/g; ## Replace remaining spaces by underscores
 	    my $genus_species = $genus."_".$species;
 	    
 	    ## Filter on species
@@ -2977,6 +2986,8 @@ sub ReadAssemblySummary {
 	    $strain_info{$current_strain}->{"strain"} = $current_strain;
 	    $strain_info{$current_strain}->{"organism"} = join("_", $genus, $species, $current_strain);
 	    $strain_info{$current_strain}->{"organism"} =~ s/ //g;
+
+#	    die (join("'\t'", "HELLO", $organism_name, $genus, $species, $assembly_accession, $asm_name, $current_strain, $strain_info{$current_strain}->{"organism"}), "\n");
 	    
 	    ## Define download directory for this assembly
 	    ## Will be used for both tasks download and parse
@@ -3087,4 +3098,19 @@ sub CleanProteinSequences {
     } else {
 	&RSAT::message::Warning("Peptidic sequence file is missing", $peptidic_seq_file);
     }
+}
+
+
+sub CleanPathName {
+    my ($name) = @_;
+    # suppress problematic characters
+    $name =~ s/ /_/g;
+    $name =~ s/\[//g;
+    $name =~ s/\]//g;
+    $name =~ s/\'//g;
+    $name =~ s/\"//g;
+    $name =~ s/\)//g;
+    $name =~ s/\(//g;
+    $name =~ s/\///g;
+    return ($name);
 }
