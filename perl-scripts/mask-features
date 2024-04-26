@@ -770,19 +770,19 @@ sub OpenInputContigs{
 				}
 	    }
 
-	    &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular",$circular) )
-		if ($main::verbose >= 2);
-		$main::infile{$contig_id} = $seq_file;
-
-		## Open the contig as a SequenceOnDisk object
-		$contig_seq{$contig_id} = new RSAT::SequenceOnDisk(
-							filename=>  $seq_dir.$seq_file,
-						       id=>        $contig_id,
-						       circular=>  $circular,
-						      organism=>  "");
-    	}
-    close $in;
-
+	&RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular",$circular) )
+	    if ($main::verbose >= 2);
+	$main::infile{$contig_id} = $seq_file;
+	
+	## Open the contig as a SequenceOnDisk object
+	$contig_seq{$contig_id} = new RSAT::SequenceOnDisk(
+	    filename=>  $seq_dir.$seq_file,
+	    id=>        $contig_id,
+	    circular=>  $circular,
+	    organism=>  "");
+		}
+		close $in;
+		
     ## if some contig ids need to be changed, write here to a new file
    if ($id_to_change){
 
