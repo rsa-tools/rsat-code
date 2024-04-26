@@ -298,7 +298,10 @@ package main;
   #  my $today = &trim(`date +%Y-%m-%d`);
   #  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";  
   # $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
-  $dir{assembly_summary} = join("/", $dir{downloads}."refseq", ${group});
+  unless ($group) {
+      &RSAT::error::FatalError("Use the option -group to specify the taxonomic group");
+  }
+  $dir{assembly_summary} = join("/", $dir{downloads}."refseq", $group);
   $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "assembly_summary.txt");
   $outfile{assembly_columns} = $outfile{assembly_summary}; 
   $outfile{assembly_columns} =~ s/\.txt/_colums.tsv/;
@@ -349,10 +352,13 @@ package main;
   ## Assembllies
   
   ## Read assembly summary table
-  our %strain_info;
+#  our %strain_info;
 #  if ($task{"download"} || $task{"parse"} || $task{"list"}) {
-  %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+  our %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
 #  }
+  our @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
+
+  our $selected_strains = scalar(keys(%strain_info));
 
   ## List assemblies if requested
   if ($task{list}) {
@@ -366,28 +372,27 @@ package main;
 
       ## Download each selected strain
       my $strain_nb = 0;
-      my $strains_to_download = scalar(keys(%strain_info));
-      &RSAT::message::Info("Downloading", $strains_to_download, "assemblies from NCBII") if ($main::verbose >= 1);
+      &RSAT::message::Info("Downloading", $selected_strains, "assemblies from NCBII") if ($main::verbose >= 1);
 
-      for my $strain (sort(keys(%strain_info))) {
+      for my $strain (@sorted_strains) {
 	  $strain_nb++; 
 	  if (($skip > 0) && ($strain_nb <= $skip)) {
-	      &RSAT::message::TimeWarn("Skipping assembly", $strain_nb."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+	      &RSAT::message::TimeWarn("Skipping assembly", $strain_nb."/".$selected_strains, $strain_info{$strain}->{"organism"})
 		  if ($main::verbose >= 1);
 	      next;
 	  }
 	  if (($last > 0) && ($strain_nb > $last)) {
-	      &RSAT::message::TimeWarn("Stopping after assembly", ($strain_nb-1)."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+	      &RSAT::message::TimeWarn("Stopping after assembly", ($strain_nb-1)."/".$selected_strains, $strain_info{$strain}->{"organism"})
 		  if ($main::verbose >= 1);
 	      last;
 	  }
-	  &RSAT::message::TimeWarn("Downloading strain", $strain_nb."/".$strains_to_download, $strain_info{$strain}->{"organism"})
+	  &RSAT::message::TimeWarn("Downloading strain", $strain_nb."/".$selected_strains, $strain_info{$strain}->{"organism"})
 	      if ($main::verbose >= 1);
 
 	  ## Restrictw the number of strains if requested
 	  if (($max_strains > 0) && ($strain_nb > $max_strains)) {
-	      my $remaining_strains = $strains_to_download - $strain_nb + 1;
-	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $strains_to_download) if ($main::verbose >= 1);
+	      my $remaining_strains = $selected_strains - $strain_nb + 1;
+	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $selected_strains) if ($main::verbose >= 1);
 	      last;
 	  }
 
@@ -424,20 +429,21 @@ package main;
   ## Parse 
   if ($task{parse}) {
       my $strain_nb = 0;
-      my $strains_to_parse = scalar(keys(%strain_info));
-      for my $strain (sort keys %strain_info) {
+#      my $selected_strains = scalar(keys(%strain_info));
+
+      for my $strain (@sorted_strains) {
 	  $strain_nb++; 
 	  if (($skip > 0) && ($strain_nb <= $skip)) {
-	      &RSAT::message::TimeWarn("Skipping assembly", $strain_nb."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+	      &RSAT::message::TimeWarn("Skipping assembly", $strain_nb."/".$selected_strains, $strain_info{$strain}->{"organism"})
 		  if ($main::verbose >= 1);
 	      next;
 	  }
 	  if (($last > 0) && ($strain_nb > $last)) {
-	      &RSAT::message::TimeWarn("Stopping after assembly", ($strain_nb-1)."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+	      &RSAT::message::TimeWarn("Stopping after assembly", ($strain_nb-1)."/".$selected_strains, $strain_info{$strain}->{"organism"})
 		  if ($main::verbose >= 1);
 	      last;
 	  }
-	  &RSAT::message::TimeWarn("Downloading strain", $strain_nb."/".$strains_to_parse, $strain_info{$strain}->{"organism"})
+	  &RSAT::message::TimeWarn("Parsing strain", $strain_nb."/".$selected_strains, $strain_info{$strain}->{"organism"})
 	      if ($main::verbose >= 1);
 	  my $organism_name = $strain_info{$strain}->{"organism"};
 	  my $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
@@ -586,7 +592,7 @@ package main;
   } else {
       ## Install all organisms found in assembly summary and that
       ## passed the filters if specified
-      for my $strain (sort(keys(%strain_info))) {
+      for my $strain (@sorted_strains) {
 	  push @organisms, $strain_info{$strain}->{"organism"};
       }
   }
@@ -2018,14 +2024,16 @@ OPTIONS
 		Example 1: list the organisms labelled as reference
 		genomes
 
-		install-organism -v 1 -group bacteria  -task list \\
+		install-organism -v 1 -group bacteria  \\
+                    -task available,list \\
 		    -list_format org   \\
 		    -filter  refseq_category "reference genome" 
 
 		Example 2: select major releases of complete genomes
 		belonging to the category "representative".
 
-		install-organism -v 1 -group bacteria  -task list \\
+		install-organism -v 1 -group bacteria  \\
+                    -task available,list \\
 		    -list_format table \\
 		    -filter refseq_category "representative genome" \\
 		    -filter assembly_level "Complete Genome" \\
@@ -2035,7 +2043,8 @@ OPTIONS
 		Example 3: same as before, but export the result as a
 		bash file to run the installations. 
 
-		install-organism -v 1 -group bacteria  -task list \\
+		install-organism -v 1 -group bacteria  \\
+                    -task available,list \\
 		    -list_format bash \\
 		    -filter  refseq_category "representative genome" \\
 		    -filter assembly_level "Complete Genome" \\
@@ -2793,6 +2802,7 @@ sub ParseGenome {
   $command .= " -source '$source'";
   #    }
   $command .= " -o ".$genome_dir;
+
   &doit($command, $dry, $die_on_error, $main::verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);
 }
 
@@ -2851,6 +2861,7 @@ sub DownloadAssemblySummary {
 	&RSAT::message::Info("Assembly summary file columns\t", $outfile{assembly_columns});
     }
     my $available_assemblies = `grep -v '^#' $outfile{assembly_summary} | wc -l`;
+    chomp($available_assemblies);
     printf $out (";    %-25s\t%s\n", "Assembly summary file", $outfile{assembly_summary});
     printf $out (";    %-25s\t%s\n", "Assembly summary columns", $outfile{assembly_columns});
     printf $out (";    %-25s\t%s\n", "Available assemblies", $available_assemblies);
@@ -2866,7 +2877,9 @@ sub ReadAssemblySummary {
     
     ## Check if the file exists
     if (-e $file) {
+	&RSAT::message::TimeWarn("Reading assembly summary file\t", $file) if ($main::verbose >= 1);
     } else {
+#	die"HELLO";
 	&RSAT::error::FatalError("Missing assembly summary file\t", $file);
     }
 
@@ -2980,6 +2993,7 @@ sub ReadAssemblySummary {
 	    # 	      "\n");
 	    
 	    ## Define some extra fields
+	    $strain_info{$current_strain}->{"n"} = $selected;
 	    $strain_info{$current_strain}->{"genus"} = $genus;
 	    $strain_info{$current_strain}->{"species"} = $species;
 	    $strain_info{$current_strain}->{"genus_species"} = $genus_species;
@@ -3034,8 +3048,9 @@ sub ReadAssemblySummary {
 sub ListAssemblies {
     my ($list_format, %strain_info) = @_;
 
-#    my @sorted_strains = sort {$strain_info{$a}->{"organism"} <=> $strain_info{$b}->{"organism"}} keys(%strain_info);
-    my @sorted_strains = sort keys(%strain_info);
+    my @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
+#    my @sorted_strains = sort {$strain_info{$a}->{"n"} <=> $strain_info{$b}->{"n"}} keys(%strain_info);
+#    my @sorted_strains = sort keys(%strain_info);
     
     if ($list_format eq "org") {
 	for my $current_strain (@sorted_strains) {
@@ -3059,7 +3074,7 @@ sub ListAssemblies {
     } else {
 	## Print a table with selected fields
 	my @fields = qw(
-	    organism
+ 	    organism
 	    taxid
 	    species_taxid
 	    genus_species
@@ -3068,13 +3083,17 @@ sub ListAssemblies {
 	    species
 	    assembly_accession
 	    asm_name
+            n
 	    );
-	print $out join("\t", @fields), "\n";
+	print $out "#", join("\t", @fields, "n"), "\n";
+	$n = 0;
 	for my $current_strain (@sorted_strains) {
+#	    $n++;
 	    my @values = ();
 	    for my $field (@fields) {
 		push @values, $strain_info{$current_strain}->{$field};
 	    }
+#	    push @values, $n;
 	    print $out join("\t", @values), "\n";
 	}
     }
