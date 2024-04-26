@@ -309,22 +309,19 @@ package main;
 
     close $fasta_handle unless ($no_fasta);
     
-
     ## Export masked sequences
    
-    ## If the genome is attached in a fasta file take it from there and move it to the outfolder
- 
+    ## If the genome is attached in a fasta file take it from there
+    ## and move it to the outfolder 
    if ($fasta_genome){
        foreach my $file (@genbank_files) {
-	   $fasta_genome_file=$file;
+	   $fasta_genome_file = $file;
 	   $fasta_genome_file =~ s/\Q$ext\E/fna/;
-	   $original_path=$ENV{PWD};
-	   $convert_seq_cmd="cd $dir{output} ; convert-seq -from fasta -to filelist -mask non-dna -i ". $fasta_genome_file ." ; cd ".$original_path;
-	   &RSAT::message::Debug("Genome stored in Fasta will be converted to raw format",  $convert_seq_cmd ) if ($main::verbose >= 0);
-	   system( $convert_seq_cmd);
-
+	   $original_path = $ENV{PWD};
+	   $convert_seq_cmd = "cd $dir{output} ; convert-seq -from fasta -to filelist -mask non-dna -i ". $fasta_genome_file ." ; cd ".$original_path;
+	   &RSAT::message::Debug("Genome stored in Fasta will be converted to raw format",  $convert_seq_cmd ) if ($main::verbose >= 2);
+	   system($convert_seq_cmd);
        }
-
     }
     
     my @repeats = $repeat_regions->get_objects();
@@ -824,7 +821,7 @@ sub ExportMaskedSequences {
 	&RSAT::message::TimeWarn(join("\t", "Masking sequence",
 				      "contig",
 				      $contig_id,$path,
-				      "length", $contig_len, $file)) if ($main::verbose >= 0);
+				      "length", $contig_len, $file)) if ($main::verbose >= 2);
 
 	foreach my $region ($repeat_regions->get_objects) {
 	    my $contig_len = length($sequence);
@@ -851,7 +848,7 @@ sub ExportMaskedSequences {
  				  "len=".$len,
 # ##				  $before,
 # ##				  $after,
- 				  ) if ($main::verbose >= 0);
+ 				  ) if ($main::verbose >= 2);
 
 	    substr($sequence, $offset, $len) = "n"x$len;
 	}
