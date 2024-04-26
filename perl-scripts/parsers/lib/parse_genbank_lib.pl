@@ -384,7 +384,7 @@ sub ParseGenbankFile {
 	  $current_contig->set_attribute("file", $seq_file);
 	  my $seq_file_path = $args{seq_dir}."/".$seq_file;
       
-	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 0);
+	  &RSAT::message::Debug ("Contig sequence file", $current_contig->get_attribute("id"), $seq_file) if ($main::verbose >= 2);
 
 	}
 
