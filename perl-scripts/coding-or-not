@@ -499,7 +499,7 @@ sub ReadArguments {
 sub PrintVerbose {
     printf "; %-16s\t%s\n", "Organism", $supported_organism{$organism_name}->{'name'};
     printf "; %-16s\t%-12s\t%s\n", "feature file", $supported_organism{$organism_name}->{'features'};
-    printf "; contig sequence file(s)\n";
+    printf "; Contig sequence file(s)\n";
     printf "; %-16s\t%-12s\t%s\n", , "genes in total", $gene_count;
     printf "; chr\tlength\tgenes\n";
 }
