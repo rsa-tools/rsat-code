@@ -63,15 +63,15 @@ chomp $output_dir;
 
 #### verbose ####
 if ($verbose) {
-    print ";convert-seq result\n";
+    print "; convert-seq result\n";
     if ($inputfile ne "") {
-	print ";Input file	$inputfile\n";
+	print "; Input file	$inputfile\n";
     }
     if ($outputfile ne "") {
-	print ";Output file	$outputfile\n";
+	print "; Output file	$outputfile\n";
     }
-    print ";Input format\t$in_format\n";
-    print ";Output format\t$out_format\n";
+    print "; Input format\t$in_format\n";
+    print "; Output format\t$out_format\n";
 }
 
 if ($skip) {
@@ -195,7 +195,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	    || die "Error: cannot write file ${output_dir}/$one_seq_file\n";
 	&PrintNextSequence(RAW, "raw", 0, $current_seq, $current_id);
 	close RAW;
-	print $out "$one_seq_file\t$current_id\n";
+	print $out "$one_seq_file\t$current_id\n" if ($main=::verbose >= 2);
     } else {
 #      &RSAT::message::Debug("Printing sequence", $current_id, $comments[0]) if ($main::verbose >= 10);
       &PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
