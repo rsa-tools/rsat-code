@@ -1125,7 +1125,7 @@ sub CountDyads {
 
     ## Count dyad occurrences
     &RSAT::message::TimeWarn("Counting dyad occurrences") if ($main::verbose >= 2);
-    %patterns = &CountWords();
+    %patterns = &CountWords("input_format"=>$input_format);
 
 
   } else {
