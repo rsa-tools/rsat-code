@@ -1088,7 +1088,7 @@ sub CountDyads {
     ## and with overlaps, because self-overlapping occurrences may be
     ## used to generate distinct dyads.
     &RSAT::message::TimeWarn("Counting monad occurrences") if ($main::verbose >= 2);
-    %oligo = &CountWords("pattern_type"=>"oligos", "strands"=>"-1str", "noov"=>"-ovlp");
+    %oligo = &CountWords("pattern_type"=>"oligos", "strands"=>"-1str", "noov"=>"-ovlp", "input_format"=>$input_format);
     $sum_oligo_count = 0;
     foreach my $oligo_seq (sort keys %oligo) {
       $sum_oligo_count += $oligo{$oligo_seq}->{occ};
