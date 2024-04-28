@@ -380,13 +380,18 @@ package main;
       exit();
   }
   ################################################################
-  ## Assembllies
+  ## Assemblies
   
   ## Read assembly summary table
-  our %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
-  our @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
+  our %strain_info;
+  our @sorted_strains;
+  our $selected_strains;
+  if ((scalar(@organisms) == 0) || $task{available} || $task{list} || $task{download} || $task{parse}) {
+      %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+      @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
+      $selected_strains = scalar(keys(%strain_info));
+  }
 
-  our $selected_strains = scalar(keys(%strain_info));
 
   ## List assemblies if requested
   if ($task{list}) {
@@ -525,7 +530,7 @@ package main;
       }   
       @organisms = sort (@organisms);
   
-  } else {
+  } elsif (scalar(@organisms) < 1) {
       ## Install all organisms found in assembly summary and that
       ## passed the filters if specified
       for my $strain (@sorted_strains) {
