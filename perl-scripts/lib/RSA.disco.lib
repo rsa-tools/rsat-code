@@ -114,7 +114,7 @@ sub CountWords {
   my (%args) = @_;
   local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
 
-  my $in_format = $args{in_format};
+  my $input_format = $args{input_format};
 
   my $strands = $args{strands} || $main::strands;
   my $pattern_type = $args{pattern_type} || $main::pattern_type;
@@ -133,12 +133,12 @@ sub CountWords {
   ## uncompress on the flight. If the input format is different from
   ## fasta, or if the file is compressed, pipe convert-seq with
   ## count-words.
-  if (($infile{input} =~ /.gz/) || ($in_format ne "fasta")) {
+  if (($infile{input} =~ /.gz/) || ($input_format ne "fasta")) {
       my $convert_seq_cmd = &RSAT::server::GetProgramPath("convert-seq");
       &RSAT::message::Warning("Converting to uncompessed fasta before sending to count-words") if ($main::verbose >= 2);
       $cmd = $convert_seq_cmd;
       $cmd .= " -i ".$infile{input}; 
-      $cmd .= " -from ".$in_format;
+      $cmd .= " -from ".$input_format;
       $cmd .= " -to fasta";
       $cmd .= " | ".$count_words_cmd." -v ".$cw_verbose;
   } else {
