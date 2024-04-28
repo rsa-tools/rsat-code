@@ -713,8 +713,17 @@ package main;
 
       &FastaGenomeAndBedtoolsIndex() if ($task{fasta_genome} || $task{chrom_sizes} || $task{index_bedtools});
 
-      &CleanProteinSequences() if ($task{protein_seq});
+      ## Suppress empty lines in protein sequence files
+      our $peptidic_seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
+      &CleanProteinSequences($peptidic_seq_file) if ($task{protein_seq});
 	
+      ## Compute length distribution of protein sequence
+      if ($task{protein_len}) {
+	  my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000);
+	  &doit($command, $dry, $die_on_error, $main::verbose);
+      }
+
+
       &CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
       
       # New name for peptidic sequence file (Sept 2015). I suppress
@@ -724,13 +733,6 @@ package main;
 	## Previous name for the peptidic sequence file
 #	$peptidic_seq_file = ${organism_short_name}."_aa.fasta";
 #      }
-
-      ## Compute length distribution of protein sequence
-      my $peptidic_seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
-      if ($task{protein_len}) {
-	  my $command = &SeqLengthDistributionCmd($peptidic_seq_file, "fasta", "protein", 50, 2000);
-	  &doit($command, $dry, $die_on_error, $main::verbose);
-      }
 
 
 
@@ -1332,15 +1334,11 @@ sub AllUpstream {
 	$command .= " -label ID";
 	$command .= " -format ".$format;
 	$command .= " -o ".$seq_file.".".$format;
-#	&doit($command, $dry, $die_on_error, $main::verbose);
 	&RSAT::message::Info("Exported sequence file", $seq_file.".".$format) if ($main::verbose >= 3);
       }
 
       ## Compute sequence length distributions and generate a frequency plot
       $command .= "; ".&SeqLengthDistributionCmd($seq_file.".fasta", "fasta", $seq_type, 50, 2000) if ($noorf);
-
-      ## Compress sequence file
-      $command .= "; gzip -f ".$seq_file.".fasta";
 
       ## Purge sequences
       if ($purged_frequencies) {
@@ -1348,8 +1346,10 @@ sub AllUpstream {
 	$command .= &PurgeSeqCommand($seq_file.".fasta", "fasta");
       }
 
+      ## Compress sequence file
+      $command .= "; gzip -f ".$seq_file.".fasta";
+
       &doit($command, $dry, $die_on_error, $main::verbose, $batch, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
-#      &doit($command, $dry, $die_on_error, $main::verbose);
 
     }
   }
@@ -1506,17 +1506,25 @@ sub CalcFrequencies {
     foreach my $masking (@masking_modes) {
       foreach my $noorf ("-noorf", "") {
 	$seq_type = "upstream${noorf}${masking}";
+	$seq_format = "fasta";
+	$seq_file = $dir{genome}."/".$organism_short_name."_".$seq_type;
 	if ($purged_frequencies) {
-	  $seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
-	  $seq_format = "fasta";
-	} else {
-	  $seq_file = "${organism_short_name}_${seq_type}.fasta";
-	  $seq_format = "fasta";
+	    $seq_file .= "_purged";
 	}
-	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies", $noorf, $masking) if ($main::verbose >= 2);
-	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
-	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
-	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+	$seq_file .= ".fasta";
+	
+	unless (-e $seq_file) {
+	    if (-e $seq_file.".gz") {
+		$seq_file = $seq_file.".gz";
+	    } else {
+		&RSAT::error::FatalError("Cannot compute upstream frequencies because upstream sequence file is missing:\t", $seq_file);
+	    }
+	}
+
+	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies", $noorf, $masking, $seq_file) if ($main::verbose >= 0);
+	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
+	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
       }
     }
   }
@@ -1635,12 +1643,15 @@ sub CalcFrequencies {
   ################################################################
   # Calculate oligopeptide frequencies in all protein sequences
   if ($task{protein_freq}) {
-      $seq_type = "protein";
-      &RSAT::message::TimeWarn("Calculating oligopeptide frequencies") if ($main::verbose >= 2);
-      $seq_format = "fasta";
-      &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
-  } else {
-      &RSAT::message::Warning("Skipping oligopeptide frequencies because peptidic sequence file is missing", $seq_file);
+      $seq_file = $peptidic_seq_file;
+      if (-e $peptidic_seq_file) {
+	  $seq_type = "protein";
+	  $seq_format = "fasta";
+	  &RSAT::message::TimeWarn("Calculating oligopeptide frequencies") if ($main::verbose >= 2);
+	  &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+      } else {
+	  &RSAT::message::Warning("Skipping oligopeptide frequencies because peptidic sequence file is missing", $seq_file);
+      }
   }
   
   chdir $dir{main};
@@ -1650,9 +1661,15 @@ sub CalcFrequencies {
 ## Calculate oligonucleotide frequencies for a specified sequence
 ## file
 sub CalcOligoFreq {
-  my ($seq_file,$seq_format,$seq_type) = @_;
-  &RSAT::message::TimeWarn("&CalcOligoFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 2);
-
+  my ($seq_file, $seq_format, $seq_type) = @_;
+  &RSAT::message::TimeWarn("&CalcOligoFreq()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 2);
+  unless ($seq_file) {
+      &RSAT::error::FatalError("&CalcOligoFreq() called with empty sequence file name");
+  }
+  unless (-e $seq_file) {
+      &RSAT::error::FatalError("&CalcOligoFreq(): sequence file does not exist\t", $seq_file);
+  }
+  
   my @current_oligo_lengths = @oligo_lengths;
 #  my @current_oligo_lengths = (6);
   my $oligo_seq_type = "dna";
@@ -1777,8 +1794,8 @@ sub CalcOligoDistrib {
 ## calculate dyad frequencies for a specified sequence
 ## file
 sub CalcDyadFreq {
-  my ($seq_file,$seq_format,$seq_type) = @_;
-  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file,$seq_format,$seq_type) if ($main::verbose >= 2);
+  my ($seq_file, $seq_format, $seq_type) = @_;
+  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 0);
   $min_spacing = 0;
   $max_spacing = 20;
   @monad_lengths = (3,2,1);
@@ -3038,7 +3055,7 @@ sub ListAssemblies {
 ## genomes) because the first empty row raises a bug with diamond
 ## formatdb and blastall.
 sub CleanProteinSequences {
-    my $peptidic_seq_file = $dir{genome}."/".${organism_short_name}."_aa.fasta";
+    my ($peptidic_seq_file) = @_;
     
     if (-e $peptidic_seq_file) {
 	my $empty_rows = `grep '^\$' ${peptidic_seq_file} | wc -l `;
