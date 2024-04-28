@@ -332,9 +332,6 @@ package main;
   our @sorted_strains;
   our $selected_strains;
   if ((scalar(@organisms) == 0) || $task{available} || $task{list} || $task{download} || $task{parse}) {
-      %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
-      @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
-      $selected_strains = scalar(keys(%strain_info));
       ################################################################
       ## Define the name of the assembly summary file
       ## File containing the assembly summary downloaded from NCBI
@@ -350,6 +347,11 @@ package main;
       $outfile{assembly_columns} = $outfile{assembly_summary}; 
       $outfile{assembly_columns} =~ s/\.txt/_colums.tsv/;
 #  $outfile{assembly_columns} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
+
+      %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+      @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
+      $selected_strains = scalar(keys(%strain_info));
+
   }
 
   ## List assemblies if requested
@@ -2824,7 +2826,6 @@ sub DownloadAssemblySummary {
 ## Read assembly summary file as provided by NCBI
 sub ReadAssemblySummary {
     my ($file) = @_;
-
     
     ## Check if the file exists
     if (-e $file) {
