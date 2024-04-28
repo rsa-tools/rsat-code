@@ -453,12 +453,12 @@ sub SelectOutput {
 ## - upload a local file from the client computer
 ## - URL of a file (will be downloaded)
 sub MultiInputChoice {
-  my ($in_title, $in_num, $in_type, $in_format) = @_;
+  my ($in_title, $in_num, $in_type, $input_format) = @_;
 
   my $inputChoiceString = "<B>$in_title</B>";
   my $input_file = "";
   $in_type = $in_type || "input";
-  $in_firmat = $in_format || "text";
+  $input_format = $input_format || "text";
 
   if ($input_file = $query->param("input_file")) {
 
@@ -477,7 +477,7 @@ sub MultiInputChoice {
 
     ## Text area to copy-paste the input
     $inputChoiceString .=  "&nbsp;"x5;
-    $inputChoiceString .=  "Paste your ".$in_type." (".$in_format." format)<BR>\n";
+    $inputChoiceString .=  "Paste your ".$in_type." (".$input_format." format)<BR>\n";
     $inputChoiceString .=  $query->textarea(-name=>'input'.$in_num, -id=>'input'.$in_num,
 					    -default=>$default{"input".$in_num},
 					    -rows=>4,
@@ -3215,7 +3215,7 @@ sub CheckWebInput {
 
 
 sub SelectFormat {
-    my($in_format) = lc($_[0]);
+    my($input_format) = lc($_[0]);
 
     #### update the sequence format in a web form
     $form =~  s/ selected>Wconsensus/>Wconsensus/i;
@@ -3224,15 +3224,15 @@ sub SelectFormat {
     $form =~  s/ selected>IG/>IG/i;
     $form =~  s/ selected>raw/>raw/i;
     $form =~  s/ selected>multi/>multi/i;
-    if ($in_format =~ /fasta/i) {
+    if ($input_format =~ /fasta/i) {
 	$form =~  s/\>Fasta/ SELECTED\>Fasta/i;
-    } elsif ($in_format =~ /multi/i) {
+    } elsif ($input_format =~ /multi/i) {
 	$form =~  s/\>multi/ SELECTED\>multi/i;
-    } elsif ($in_format =~ /raw/i) {
+    } elsif ($input_format =~ /raw/i) {
 	$form =~  s/\>raw/ SELECTED\>raw/i;
-    } elsif ($in_format =~ /^wc/i) {
+    } elsif ($input_format =~ /^wc/i) {
 	$form =~  s/\>Wconsensus/ SELECTED\>Wconsensus/i;
-    } elsif ($in_format =~ /ig/i) {
+    } elsif ($input_format =~ /ig/i) {
 	$form =~  s/\>IG/ SELECTED\>IG/i;
     }
 }
@@ -4046,18 +4046,18 @@ End_of_form
 ## Display one or several PSSM on a Web page
 ##
 ## Usage:
-##   my ($out_matrix_file) = &display_matrices_web($in_matrix_file, $in_format, $no_convert);
+##   my ($out_matrix_file) = &display_matrices_web($in_matrix_file, $input_format, $no_convert);
 sub display_matrices_web {
-  my ($in_matrix_file, $in_format, $no_convert, $logo_dir) = @_;
+  my ($in_matrix_file, $input_format, $no_convert, $logo_dir) = @_;
 
   my $public_temp_dir = &RSAT::util::get_pub_temp();
   print "\n<hr/>\n";
 
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
-  &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($in_format);
+  &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($input_format);
 
   my $matrix_prefix = &ShortFileName($in_matrix_file);
-  $matrix_prefix .= s/\.${in_format}$//;
+  $matrix_prefix .= s/\.${input_format}$//;
   my $out_matrix_file;
 
   if ($no_convert) {
@@ -4074,7 +4074,7 @@ sub display_matrices_web {
 
     my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
     $cmd .= " -i ".$in_matrix_file;
-    $cmd .= " -from ".$in_format;
+    $cmd .= " -from ".$input_format;
     $cmd .= " -to tab ";
     $cmd .= " -return counts";
     $cmd .= " -return consensus";
