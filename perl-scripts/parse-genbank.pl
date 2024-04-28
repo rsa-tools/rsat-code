@@ -187,7 +187,6 @@ package main;
     ################################################################
     #### find genbank files in the input directory
     unless ($inputfiles) {
-#	chdir ($dir{input});
 	push @genbank_files, glob($dir{input}."/*.${ext}");
 	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
 
@@ -198,21 +197,10 @@ package main;
 	    push @filtered_genbank_files, $file unless ($file =~/wgsmaster/);
 	}
 	@genbank_files = @filtered_genbank_files;
-	
 
 	if (scalar(@genbank_files) > 1) {
 	    &RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the directory") if ($main::verbose >= 2);
 	}
-
-	# ## If no genbank files were found in the main directory (Bacteria),
-	# ## search in CHR_* directories (eukaryotes)
-	# if (scalar(@genbank_files) ==0 ) {
-	#     push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
-	#     push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
-	#     if (scalar(@genbank_files) > 1) {
-	# 	&RSAT::message::Info(scalar(@genbank_files)." Genbank files found in the CHR_* subdirectories");
-	#     }
-	# }
 
 	################################################################
 	## Filter out undesired files
@@ -223,9 +211,9 @@ package main;
 	    ## Ignore alternative haplotypes (e.g. in Apis_mellifera).
 	    &RSAT::message::Warning("Ignoring mRNA file", $file) if ($main::verbose >= 1);
 
-	  } elsif ($file =~ /_alt_/) {
-	    ## Ignore mRNA files
-	    &RSAT::message::Warning("Ignoring alternative haplotype file", $file) if ($main::verbose >= 1);
+#	  } elsif ($file =~ /_alt_/) {
+#	    ## Ignore mRNA files
+#	    &RSAT::message::Warning("Ignoring alternative haplotype file", $file) if ($main::verbose >= 1);
 
 	  } elsif ($file =~ /CHR_Un/) {
 	    ## Ignore unknown chromosome
@@ -771,7 +759,6 @@ sub ExportProteinSequences {
 
     &RSAT::message::TimeWarn("Exporting translated sequences to file", $out_file{pp})
 	if ($main::verbose >= 2);
-#    die "HELLO\t";
 
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
