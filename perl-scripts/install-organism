@@ -90,20 +90,52 @@ package main;
       list
       parse);
 
+  ## Tasks compatible with batch execution
+  our @batch_tasks = qw(
+      phylogeny
+      start_stop
+      allup
+      seq_len_distrib
+      genome_segments
+      upstream_freq
+      genome_freq
+      protein_seq
+      protein_freq
+      protein_len
+      oligos
+      dyads
+      default
+      fasta_genome
+      fasta_genome_rm
+      chrom_sizes
+      index_bedtools
+      distrib
+      ncf
+      intergenic_freq
+      ensembl_freq
+      );
+  
   our @organism_tasks = (@default_tasks, @extra_tasks);
-  our @supported_tasks = (@species_tasks, @organism_tasks);
-  our %supported_task = ();
-  foreach my $task (@supported_tasks) {
-    $supported_task{$task} = 1;
-  }
-  foreach my $task (@species_tasks) {
-    $species_task{$task} = 1;
-  }
   foreach my $task (@organism_tasks) {
     $organism_task{$task} = 1;
   }
+
+  foreach my $task (@species_tasks) {
+    $species_task{$task} = 1;
+  }
+
+  our @supported_tasks = (@species_tasks, @organism_tasks);
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
   $supported_tasks = join ",", @supported_tasks;
-  %task = ();
+
+  foreach my $task (@batch_tasks) {
+    $batch_task{$task} = 1;
+  }
+
+  our %task = ();
+  our @tasks = ();
   $parse_options = "";
 
   $null = "<NA>";		## NULL value
@@ -114,10 +146,10 @@ package main;
   our %infile = ();
 
   ## Export format for the lists of organisms or assemblies
-  our $list_format = "bash"; # Supported: org, table, bash
   %supported_list_format = ("org" => 1,
 			    "table" => 1,
 			    "bash" => 1);
+  our $list_format = "table"; # Default list format. 
   
   ## File containing a list of organisms to install
   $infile{organisms} = "";
@@ -325,8 +357,7 @@ package main;
   #   &RSAT::message::TimeWarn("Getting available species for group", $group) if ($main::verbose >= 2);
   #   unless ($group) {
   #     &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
-  #   }
-    
+  #   }    
   #   my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
   #   if ($main::versbose >= 1) {
   # 	&RSAT::message::Info("; Getting available species from NCBI; \t", $refseq_folder_url, "\n");
@@ -352,10 +383,7 @@ package main;
   ## Assembllies
   
   ## Read assembly summary table
-#  our %strain_info;
-#  if ($task{"download"} || $task{"parse"} || $task{"list"}) {
   our %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
-#  }
   our @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
 
   our $selected_strains = scalar(keys(%strain_info));
@@ -455,98 +483,6 @@ package main;
   }
 
 
-  ## For parsing task, build organism names from species names +
-  ## strains (as sub-directories of the NCBI/Refseq
-  ## latest_assembly_versions)
-#  if (($task{parse}) || ($task{list})) {
-#   if ($task{parse} || $task{list} || ($task{config} && ($group))) {
-   
-	 
-#       ## Check refseq directory
-#       unless (-d $dir{refseq}) {
-# 	  &RSAT::error::FatalError("Refseq directory ".$dir{refseq}." does not exists");
-#       }
-
-#       # ## Header for species list
-#       # if ($task{list}) {
-#       # 	  print $main::out "#", join("\t", "organism_name", "org_nb",  "species",  "species_nb", "strain", "strain_nb"), "\n";
-#       # }
-      
-#       # Iterate over species
-#       my $org_nb = 0; # Initialize organism counter
-#       my $species_nb = 0; # Initialize species counter
-#       foreach my $species (@species) {
-# 	  $species_nb++;
-# 	  if (($last_species > 0) && ($species_nb > $last_species)) {
-# 	      &RSAT::message::Warning("Stopped after", $last_species, "species") if ($main::verbose >= 1);
-# 	      last;
-# 	  }
-
-# 	  my $latest_assembly_dir = $dir{refseq};
-# 	#  my $latest_assembly_dir = $dir{refseq}."/".$group."/".$species."/all_assembly_versions/suppressed";
-
-
-# 	  my @strain_dirs;
-# 	  if ($strain) {
-# 	      @strain_dirs = glob($latest_assembly_dir."/".$strain);
-# 	  } else {
-# 	      @strain_dirs = glob($latest_assembly_dir."/*");
-# 	  }
-
-# 	  my $strains_for_species = scalar(@strain_dirs);
-
-# 	  # Iterate over each strain of current species
-# 	  my $strain_nb = 0; # Strain counter for current species
-# 	  foreach my $strain_dir (@strain_dirs) {
-	      
-# 	      my $current_strain = &ShortFileName($strain_dir);
-
-# 	      ## User-selected strain
-# 	      if ($strain) {
-# #		  &RSAT::message::Debug($strain, $current_strain) if ($main::verbose >= 10);
-# 		  next unless ($strain eq $current_strain);
-# 	      }
-
-# 	      ## Strain
-# 	      $strain_nb++;
-
-# 	      ## Restrict the number of strains if requested
-# 	      if (($max_strains > 0) && ($strain_nb > $max_strains)) {
-# 		  my $remaining_strains = scalar(@strain_dirs) - $strain_nb + 1;
-# 		  &RSAT::message::Info("Species", $species, "ignoring ", $remaining_strains, "strains of", $strains_for_species) if ($main::verbose >= 2);
-# 		  last;
-# 	      }
-
-# 	      ## Update organism counter
-# 	      $org_nb++;
-
-# 	      ## Skip first N species if requested
-# 	      if (($skip_species > 0) && ($species_nb <= $skip_species)) {
-# 		  &RSAT::message::Warning("Skipping", $skip_species, "species") if (($species_nb == 1) && ($main::verbose >= 1));
-# 		  next;
-# 	      }
-
-# 	      ## Build organism name (concatenation of species + strain)
-# 	      my $organism_name = $species."_".$current_strain;
-
-# 	      ## Add organism to the list
-# 	      push @organisms, $organism_name;
-# 	      &RSAT::message::Info(scalar(@organisms), $species, $current_strain, $organism_name) if ($main::verbose >= 3);
-
-# 	      ## Parse the selected organism if requested
-# 	      $genome_dir = $ENV{RSAT}."/public_html/data/genomes/".$organism_name."/genome";
-
-# 	      # if ($task{list}) {
-# 	      # 	  print $out join("\t", $organism_name, $org_nb, $species, $species_nb, $current_strain, $strain_nb), "\n";
-# 	      # }
-
-# 	      if ($task{parse}) {
-# 		  &ParseGenome($species, $current_strain, $organism_name, $strain_info{$strain}->{"downloads"}, $genome_dir, $org_nb);
-# 	      }
-# 	  }
-#       }
-#   }
-
 
   ################################################################
   ## Select organisms to install
@@ -597,44 +533,9 @@ package main;
       }
   }
   &RSAT::message::Info("Organisms to install", scalar(@organisms)) if ($main::verbose >= 1);
-#  &RSAT::message::Info("organisms", scalar(@organisms)) if ($main::verbose >= 2);
-
   # if ($main::verbose >= 10) {
   #     &RSAT::message::Info(join("; ", @organisms));
   # }
-
-#### option  -all_organisms is not supported anymore
-#   if ($main::all_organisms) {
-#     @organisms_dirs = glob($dir{refseq}."/*_*");
-# #    @organisms_dirs = &glob($dir{genbank}."/*_*");
-#     foreach my $dir (@organisms_dirs) {
-#       my $org = &RSAT::util::ShortFileName($dir);
-#       next if ($org =~ /^readme/i); ## Skip readme file
-#
-#       ## The NCBI dir Bacteria contains some folders starting with
-#       ## "_", I guess these genomes are problematic.
-#       next if ($org =~ /^_/);  ## Skip directories that do not seem to correspond to gene_species
-#       next if ($org =~ /uncultured/);  ## Skip uncultured genomes
-#
-#       ## The NCBI dir Bacteria contains some gzip archives. 
-#       next if ($org =~ /\.gz$/); 
-#
-#       ## The Bacteria dir contains some folders with fuzzy names,
-#       ## starting with a lowercase. I prefer to ignore these genomes
-#       ## (e.g. secondary_endosymbiont_of_Ctenarytaina_eucalypti_uid172737)
-#       next unless ($org =~ /^[A-Z]/); 
-#       push @organisms, $org;
-#     }
-#     &RSAT::message::Info("Installing",scalar(@organisms),
-# 			 "organisms found in the Refseq directory", 
-# 			 $dir{refseq}) if ($main::verbose >= 1);
-#     if ($main::verbose >= 3) {
-#       for my $i (1..scalar(@organisms)) {
-# 	&RSAT::message::Info("", $i, $organisms[$i-1]);
-#       }
-#     }
-#   }
-
 
 
   ## Check that at least one organism has been specified
@@ -649,7 +550,7 @@ package main;
   }
 
 
-
+  ################################################################
   ## Some options are incompatible with multiple organisms
   if (scalar(@organisms) > 1) {
       &RSAT::message::FatalError("The option -organism (organism full name) is not valid when multiple organisms are selected.")
@@ -687,6 +588,25 @@ package main;
 
     $backup_org_table = 0 if ($i > 1); ## When we treat multiple organisms, we don't want to store a backup for each one
     
+    if ($batch_org) {
+	my $command = "install-organism";
+	$command .= " -v ".$main::verbose;
+	$command .= " -group ".$group;
+	$command .= " -org ".$organism_short_name;
+
+	my @tasks_to_batch = ();
+	foreach my $task (@tasks) {
+	    if ($batch_task{$task}) {
+		push @tasks_to_batch, $task;
+	    }
+	}
+	my $org_tasks = join(",", @tasks_to_batch);
+	$command .= " -task ".$org_tasks;
+	&RSAT::message::Info("Organism batch command\t", $command) if ($main::verbose >= 0);
+	&doit($command, $dry, $die_on_error, $main::verbose, $batch_org, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
+	next;
+    }
+
     unless (($task{erase}) || ($task{uninstall})) {
 
       ## Create an object to hold the organism attribtues
@@ -2174,10 +2094,15 @@ OPTIONS
 		installation directory, not the relative path.
 
 	-batch run some tasks (for example the calibration of oligos
-		and dyads) in batch mode.  This options works on our
-		lab cluster, but could be adapted for other
-		configurations by adapting the parameters in
-		RSAT_config.props.
+		and dyads) in batch mode or send them to a job
+		scheduler.  The configuration of the job scheduler /
+		batch mode should be specified with configure_rsat.pl.
+
+
+	-batch_org when multiple organisms have to be installed, send
+		each organism as a separate job to a job
+		scheduler. The configuration of the job scheduler
+		should be specified with configure_rsat.pl.
 
 	-queue  specify a queue to send the job with the option -batch. 
 
@@ -2653,9 +2578,13 @@ sub ReadArguments {
     } elsif ($arg eq "-source") {
       $source = shift(@arguments);
 
-      ## Batch mode
+      ## Batch mode, one job per task
     } elsif ($arg eq "-batch") {
       $batch = 1;
+
+      ## Batch mode, one job per organism
+    } elsif ($arg eq "-batch_org") {
+      $batch_org = 1;
 
       ## Queue for the job scheduler
     } elsif ($arg eq "-queue") {
@@ -2667,16 +2596,17 @@ sub ReadArguments {
       push @masking_modes, "-rm";
 
       ## task selection
-    } elsif (($arg =~ /^-task/) 
+    } elsif (($arg eq "-task")
 	     || ($arg =~ /^-step/)) {
-      my @requested_tasks = split ",", shift(@arguments);
-      foreach my $task (@requested_tasks) {
-	next unless $task;
-	if ($supported_task{$task}) {
-	  $task{$task} = 1;
-	} else {
-	  &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
-	}
+	my @requested_tasks = split ",", shift(@arguments);
+	foreach my $task (@requested_tasks) {
+	    next unless $task;
+	    if ($supported_task{$task}) {
+		$task{$task} = 1;
+		push @tasks, $task;
+	    } else {
+		&RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+	    }
       }
 
       ## image format
@@ -2954,7 +2884,6 @@ sub ReadAssemblySummary {
 
 	    ## Split organism_name into genus and species
 	    my ($genus, $species) = split("_", $organism_name, 2);
-#	    $species =~ s/ /_/g; ## Replace remaining spaces by underscores
 	    my $genus_species = $genus."_".$species;
 	    
 	    ## Filter on species
@@ -3064,9 +2993,10 @@ sub ListAssemblies {
 	print $out "TASKS=download,parse,config,default\n";
 	for my $current_strain (@sorted_strains) {
 	    if ($strain_info{$current_strain}->{"genus_species"}) {
-		print $out "install-organism -v 1 -group ", $group, " -task \$TASKS",
+		print $out "install-organism -v 1 -group ", $group, 
 		    " -species ", $strain_info{$current_strain}->{"genus_species"},
 		    " -strain ", $strain_info{$current_strain}->{"strain"},
+   		    " -task \$TASKS",
 		    "\n";
 	    }
 	}
