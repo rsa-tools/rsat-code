@@ -323,21 +323,39 @@ package main;
   }
 
   
+
   ################################################################
-  ## Define the name of the assembly summary file
-  ## File containing the assembly summary downloaded from NCBI
+  ## Assemblies
   
-  #  my $today = &trim(`date +%Y-%m-%d`);
-  #  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";  
-  # $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
-  unless ($group) {
-      &RSAT::error::FatalError("Use the option -group to specify the taxonomic group");
-  }
-  $dir{assembly_summary} = join("/", $dir{downloads}."refseq", $group);
-  $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "assembly_summary.txt");
-  $outfile{assembly_columns} = $outfile{assembly_summary}; 
-  $outfile{assembly_columns} =~ s/\.txt/_colums.tsv/;
+  ## Read assembly summary table
+  our %strain_info;
+  our @sorted_strains;
+  our $selected_strains;
+  if ((scalar(@organisms) == 0) || $task{available} || $task{list} || $task{download} || $task{parse}) {
+      %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
+      @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
+      $selected_strains = scalar(keys(%strain_info));
+      ################################################################
+      ## Define the name of the assembly summary file
+      ## File containing the assembly summary downloaded from NCBI
+      
+      #  my $today = &trim(`date +%Y-%m-%d`);
+      #  $outfile{assembly_summary} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}.".tsv";  
+      # $outfile{assembly_summary} = $dir{downloads}."/ncbi_organisms_assembly_summary_".${group}."_refseq.tsv";
+      unless ($group) {
+	  &RSAT::error::FatalError("Use the option -group to specify the taxonomic group");
+      }
+      $dir{assembly_summary} = join("/", $dir{downloads}."refseq", $group);
+      $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "assembly_summary.txt");
+      $outfile{assembly_columns} = $outfile{assembly_summary}; 
+      $outfile{assembly_columns} =~ s/\.txt/_colums.tsv/;
 #  $outfile{assembly_columns} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
+  }
+
+  ## List assemblies if requested
+  if ($task{list}) {
+      &ListAssemblies($list_format, %strain_info);
+  }
 
   ################################################################
   ## Open output stream and print arguments if required
@@ -379,25 +397,6 @@ package main;
       &RewriteConfigTab();
       exit();
   }
-  ################################################################
-  ## Assemblies
-  
-  ## Read assembly summary table
-  our %strain_info;
-  our @sorted_strains;
-  our $selected_strains;
-  if ((scalar(@organisms) == 0) || $task{available} || $task{list} || $task{download} || $task{parse}) {
-      %strain_info = &ReadAssemblySummary($outfile{assembly_summary});
-      @sorted_strains = sort {$strain_info{$a}->{"organism"} cmp $strain_info{$b}->{"organism"}} keys(%strain_info);
-      $selected_strains = scalar(keys(%strain_info));
-  }
-
-
-  ## List assemblies if requested
-  if ($task{list}) {
-      &ListAssemblies($list_format, %strain_info);
-  }
-
 
   ################################################################
   ## Download the required files from NCBI FTP site
