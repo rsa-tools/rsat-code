@@ -60,7 +60,7 @@ our $supported_return_fields = join(",", sort(keys(%supported_return_fields)));
 
 
 our $palindroms_only = 0;
-our $in_format = "fasta";
+our $input_format = "fasta";
 our @output_fields = ();
 our @output_patterns = ();
 
@@ -210,7 +210,7 @@ if ($bg_method eq "Markov model estimated from input sequences") {
 
 ################################################################
 ## check input format
-&CheckInputSeqFormat($in_format);
+&CheckInputSeqFormat($input_format);
 
 ################################################################
 ## Check if quick counting mode is possible
@@ -323,7 +323,7 @@ if ($background_model eq "equi") {
     } else {
       $bg_model->set_attribute("strand", "sensitive");
     }
-    $bg_model->load_from_file($infile{bg}, $bg_in_format);
+    $bg_model->load_from_file($infile{bg}, $bg_input_format);
     $bg_model->check_missing_transitions();
     $markov_order = $bg_model->get_attribute("order");
 
@@ -498,11 +498,11 @@ sub CountOligos {
 
 
   if ($quick_count) {
-    %patterns = &CountWords();
+    %patterns = &CountWords("input_format"=>$input_format);
 
-
+    ################################################################
     ## count-words does not inform us about te number and length of
-    ## the sequences, we do it separately
+    ## the sequences, we do it separately if the input is not STDIN
     if (($main::verbose >= 1) && ($infile{input})) {
       my $cmd =  &RSAT::server::GetProgramPath("sequence-lengths");
       $cmd .= " -i ".$infile{input};
@@ -517,7 +517,7 @@ sub CountOligos {
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = $seq_length;
 	$sum_seq_length += $seq_length[$sequence_number];
-	&RSAT::message::Debug( $sequence_number, $current_id, $seq_length, $sum_seq_length) if ($main::verbose >= 5);
+	&RSAT::message::Debug($sequence_number, $current_id, $seq_length, $sum_seq_length) if ($main::verbose >= 5);
       }
       close(SEQLEN);
 
@@ -531,7 +531,7 @@ sub CountOligos {
 
   } else {
 
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type, $mask)) &&
 	   (($current_seq) || ($current_id))) {
 
       if ($return{'table'}) {
@@ -576,7 +576,7 @@ sub CountOligos {
       ## Count oligomers ####
       $offset = 0;
       my $current_pos = $last_pos;
-      my $chunk=100000;
+      my $chunk = 100000;
 
       ## The sequence is read from the end to the start, in order to progressively release memory
       while ($current_pos >=0) {
@@ -1150,9 +1150,26 @@ sub CalcExpected {
       } else {
 	$outfile{bg_model} = &RSAT::util::make_temp_file("", "oligo-analysis_for_quick_bg_mkv".$markov_order);
       }
+
+
+
+      ################################################################
+      ## Run count-words for quick mode count
       local $count_words_cmd = &RSAT::server::GetProgramPath("count-words");
-      my $cmd = $count_words_cmd;
-      $cmd .= " -v 1 -i ".$infile{input};
+      my $cmd;
+
+      ## Convert input sequences to fasta if they are in another format
+      if ($input_format eq "fasta") {
+	  $cmd = $count_words_cmd;
+	  $cmd .= " -v 1 -i ".$infile{input};
+      } else {
+	  $cmd =  &RSAT::server::GetProgramPath("convert-seq");
+	  $cmd .= " -i ".$infile{input};
+	  $cmd .= " -from ".$input_format;
+	  $cmd .= " -to fasta";
+	  $cmd .= " | ".$count_words_cmd;
+	  $cmd .= " -v 1";
+      }
       $cmd .= " -1str -l ".$bg_ol;
       $cmd .= " -o ".$outfile{bg_model};
       &doit($cmd);
@@ -1167,16 +1184,6 @@ sub CalcExpected {
 	($patterns{$pattern_seq}->{'exp_freq'}) = $bg_model->segment_proba($pattern_seq,0);
       }
 
-#       my ($bg, $bg_dir) = &OpenInputFile($outfile{bg_model});
-#       while (<$bg>) {
-# 	next if (/^;/); ## Skip comment lines
-# 	next if (/^;#/); ## Skip header line
-# 	next unless (/\S/); ## Skip empty lines
-# 	chomp();
-# 	my ($seq, $id, $freq, $occ) = split ("\t");
-# 	$sub_word[$bg_ol]{$seq}->{obs_freq} = $freq;
-#       }
-#     }
 
     } else {
       ## Compute Markov model parameters as subword frequencies from
@@ -1735,7 +1742,7 @@ sub Verbose {
 	  printf $out "; %-29s\t%s\n", "Accepted oligos", scalar(keys(%accepted_patterns));
 	}
 	printf $out "; %-29s\t%s\n", "Input file",	&RSAT::util::hide_RSAT_path($infile{input}) if ($infile{input});
-	printf $out "; %-29s\t%s\n", "Input format", $in_format;
+	printf $out "; %-29s\t%s\n", "Input format", $input_format;
 
 	printf $out "; %-29s\t%s\n", "Output file", &RSAT::util::hide_RSAT_path($outfile{output}) if ($outfile{output});
 	if ($noov eq "-noov") {
@@ -2080,7 +2087,7 @@ sub ReadArguments {
 	    &CheckMask($mask);
 
 	} elsif ($arg eq "-format") {
-	    $in_format = lc(shift(@arguments));
+	    $input_format = lc(shift(@arguments));
 
 	    ## sequence type
 	} elsif ($arg =~ /^-seqtype/i) {
@@ -2187,13 +2194,13 @@ sub ReadArguments {
 
 	    ## Background model format
 	} elsif ($arg eq "-bg_format") {
-	    $main::bg_in_format = lc(shift(@arguments));
+	    $main::bg_input_format = lc(shift(@arguments));
 
 	    ## Check background input format
-	    &RSAT::error::FatalError($main::bg_in_format,
+	    &RSAT::error::FatalError($main::bg_input_format,
 				     "Invalid input format.",
 				     "Supported: ", $RSAT::MarkovModel::supported_input_formats)
-		unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
+		unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_input_format});
 
 
 	    ## expected frequency file
@@ -2489,7 +2496,11 @@ sub ReadArguments {
 	    ## (developed by Matthieu Defrance)
 	} elsif ($arg eq "-quick") {
 	    $quick_count = 1;
-	    ## Same as -quick, but first check if the quick mode is compatible with selected options, and use the slow mode otherwise
+
+	    ################################################################
+	    ## Same as -quick, but first check if the quick mode is
+	    ## compatible with selected options, and use the slow mode
+	    ## otherwise
 	} elsif ($arg eq "-quick_if_possible") {
 	    $quick_count_if_possible = 1;
 
