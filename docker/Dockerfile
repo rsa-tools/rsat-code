@@ -1,6 +1,6 @@
 ## <---- Create a clone of Ubuntu image
 
-FROM ubuntu:latest
+FROM ubuntu:jammy
 
 MAINTAINER Najla Ksouri <najlaksouri@gmail.com>
 MAINTAINER Bruno Contreras Moreira <bcontreras@eead.csic.es>
