@@ -39,7 +39,7 @@ RUN apt-get install -y --no-install-recommends \
    && rm -rf /var/lib/apt/lists/*
 
 
-##  <----  Add the CRAN repository to your system sources’ list
+##  <----  Add the CRAN repository to your system sources list
 
 RUN echo "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" > /etc/apt/sources.list.d/cran.list
 RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
@@ -56,6 +56,7 @@ RUN apt-get update \
 		r-base \
 		r-base-dev \
 		r-recommended \
+		r-cran-rcolorbrewer \
         && echo 'options(repos = c(CRAN = "https://cloud.r-project.org/"), download.file.method = "libcurl")' >> /etc/R/Rprofile.site \
         && echo 'source("/etc/R/Rprofile.site")' >> /etc/littler.r \
 	&& ln -s /usr/share/doc/littler/examples/install.r /usr/local/bin/install.r \
@@ -100,10 +101,7 @@ RUN git clone https://github.com/rsa-tools/rsat-code.git
 RUN wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
 	&& mv /packages/rsat.eead.csic.es/plants/motif_databases/ /packages \
 	&& rm -rf  /packages/rsat.eead.csic.es/ \
-	&& rm -rf /packages/motif_databases/_to_remove \
 	&& mv rsat-code rsat
-
-
 
 
 ## <---- Create soft link 
