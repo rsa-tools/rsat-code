@@ -5,6 +5,7 @@
 package RSAT::util;
 
 use POSIX;
+use File::Temp;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
@@ -906,16 +907,25 @@ sub get_pub_temp {
 ##
 ## For the Web server, temporary files are stored in
 ## $RSAT/public_html/tmp, in order to be accessible to web browsers.
+##
+## If default locations are not writable, core tempdir is called instead
 sub get_temp_dir {
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
   my $login = getpwuid($<) || "temp_user";
   my $tmp_base;
+
   if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
       (($ENV{RSA_OUTPUT_CONTEXT}eq "cgi") || ($ENV{RSA_OUTPUT_CONTEXT} eq "RSATWS"))) {
     $tmp_base = &get_pub_temp()."/".$login;
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
   }
+
+  if not(-w $tmp_base) {
+    File::Temp->newdir( "rsat_tmp_dirXXXXX" );
+  }
+
+
   my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day);
   &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 5);
   return($tmp_dir);
