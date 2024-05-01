@@ -903,12 +903,10 @@ sub get_pub_temp {
 ## Return a user-specific directory for storing temporary files.
 ##
 ## By default, temporary files are stored in a hidden folder
-## $HOME/.rsat_tmp_dir.
+## $HOME/.rsat_tmp_dir. If $HOME not writable call newdir (docker)
 ##
 ## For the Web server, temporary files are stored in
 ## $RSAT/public_html/tmp, in order to be accessible to web browsers.
-##
-## If default locations are not writable, core tempdir is called instead
 sub get_temp_dir {
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time());
   my $login = getpwuid($<) || "temp_user";
@@ -919,12 +917,10 @@ sub get_temp_dir {
     $tmp_base = &get_pub_temp()."/".$login;
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
+    if( ! -w $ENV{HOME}) {
+      $tmp_base = File::Temp->newdir( "rsat_tmp_dirXXXXX" );
+    }
   }
-
-  if( ! -w $tmp_base) {
-    $tmp_base = File::Temp->newdir( "rsat_tmp_dirXXXXX" );
-  }
-
 
   my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day);
   &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 5);
