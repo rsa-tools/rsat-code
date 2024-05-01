@@ -918,11 +918,12 @@ sub get_temp_dir {
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
     if( ! -w $ENV{HOME}) {
-      $tmp_base = File::Temp->newdir( "rsat_tmp_dirXXXXX" );
+      $tmp_base = File::Temp->newdir();
     }
   }
 
   my $tmp_dir = sprintf("%s/%04d/%02d/%02d", $tmp_base, 1900+$year,$month+1,$day);
+
   &RSAT::message::Info("&RSAT::util::get_temp_dir()", $tmp_dir) if ($main::verbose >= 5);
 
   return($tmp_dir);
