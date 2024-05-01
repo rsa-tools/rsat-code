@@ -918,7 +918,7 @@ sub get_temp_dir {
   } else {
     $tmp_base = $ENV{HOME}."/.rsat_tmp_dir";
     if( ! -w $ENV{HOME}) {
-      $tmp_base = File::Temp->newdir();
+      $tmp_base = tempdir( CLEANUP => 1 );
     }
   }
 
