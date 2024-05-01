@@ -52,7 +52,6 @@ package main;
 
   our @default_tasks = qw(
       config
-      phylogeny
       start_stop
       allup
       seq_len_distrib
@@ -67,6 +66,7 @@ package main;
       );
   
   our @extra_tasks = qw(
+      phylogeny
       fasta_genome
       fasta_genome_rm
       chrom_sizes
@@ -1983,7 +1983,8 @@ OPTIONS
 		install-organism -v 1 -group bacteria  \\
                     -task available,list \\
 		    -list_format org   \\
-		    -filter  refseq_category "reference genome" 
+		    -filter  refseq_category "reference genome" \\
+		    -o reference_genomes.txt
 
 		Example 2: select major releases of complete genomes
 		belonging to the category "representative".
@@ -2436,6 +2437,7 @@ install_organism options
 -source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
+-batch_org      when installing multiple orgnaisms, send each organism separately to the job scheduler
 -queue          specify a queue to send the job with the option -batch (default: $ENV{CLUSTER_QUEUE}) 
 -config		alternative organism configuration file
 -backup_org_table  Store a backup copy of the organism table before overwriting it.
