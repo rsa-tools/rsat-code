@@ -121,10 +121,12 @@ sub SelectReferenceOrganisms {
       $main::org_selection_prefix = $taxon;
       if ($unique_genus) {
 	  $main::org_selection_prefix .= "_OOPG"; # one organism per species
+
       } elsif ($unique_species) {
 	  $main::org_selection_prefix .= "_OOPS"; # one organism per genus
       }
   }
+
   elsif ($main::orglist_file){
       $main::org_selection_prefix = "org_list";
   }
@@ -449,8 +451,6 @@ sub InitQueryOutput {
   $genes = &OpenOutputFile($outfile{genes}) ;
 
   ## Specify other file names
-  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab"; ## orthologs of the query gene(s)
-  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta"; ## Upstream sequence(s) of the query gene(s)
 
   ## type of promoter: either use directly the promoter of each query
   ## gene (ortho) or of the predicted operon leader gene
@@ -460,7 +460,10 @@ sub InitQueryOutput {
   } else {
     $promoter = "ortho";
   }
+  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta"; ## Upstream sequence(s) of the query gene(s)
   $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
+  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab"; ## orthologs of the query gene(s) ; ## JvH 2024-05-01 : not sure there is any reason to have two different files for bbh and orthologs. This creates a bug in footprint-phylogeny
+#  $outfile{orthologs} = $outfile{bbh}; ## JvH 2024-05-01 : not sure there is any reason to have two different files for bbh and orthologs. This creates a bug in footprint-phylogeny
   $outfile{seq_notclean} = $outfile{prefix}."_".$promoter."_seq_notclean.fasta";
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
   # $outfile{purged_notclean} = $outfile{prefix}."_".$promoter."_seq_purged_notclean.fasta" unless $main::no_purge;
@@ -1331,11 +1334,13 @@ sub RetrieveOrthoSeq {
   if ($task{ortho_seq}) {
     &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 2);
     &CheckDependency("ortho_seq", "bbh");
+    
     my $cmd = $SCRIPTS."/retrieve-seq-multigenome -v 1 -ids_only -quick";
     $cmd .= " -i ".$outfile{bbh};
     $cmd .= " -noorf";
     $cmd .= " -feattype cds,mrna,trna,scrna,misc_rna" ;
     $cmd .= " -o ". $outfile{seq_notclean} ;
+    $cmd .= " -log ". $outfile{seq_notclean}."_log.txt" ;
     &one_command($cmd); ## JvH restored one_command on 2015-03-09
     ## print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
 
