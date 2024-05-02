@@ -1,6 +1,6 @@
 ## <---- Create a clone of Ubuntu image
 
-FROM ubuntu:jammy
+FROM ubuntu:focal
 
 MAINTAINER Najla Ksouri <najlaksouri@gmail.com>
 MAINTAINER Bruno Contreras Moreira <bcontreras@eead.csic.es>
@@ -201,7 +201,10 @@ RUN useradd ${RSATUSER} \
 	&& mkdir -p ${TESTPATH} \
 	&& chmod -R a+w ${RSATUSERHOME}
 
+## <---- Set env variables
 
+ENV R_LIBS_SITE="${RSAT}/R-scripts/Rpackages/"
+ENV PATH="${PATH}:${RSAT}/ext_lib/ensemblgenomes-44-97/ensembl-git-tools/bin:${RSAT}/python-scripts:${RSAT}/perl-scripts/parsers:${RSAT}/perl-scripts:${RSAT}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 ## <---- Create new folder with test _data 
 
