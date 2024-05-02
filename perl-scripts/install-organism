@@ -193,8 +193,8 @@ package main;
   our $log_handle = "";
   our $err_handle = "";
   our $cluster_queue = $ENV{CLUSTER_QUEUE};
-  our $download_date="";
-      
+  our $download_date = "";
+
   ################################################################
   ## Read arguments
   &ReadArguments();
@@ -891,9 +891,10 @@ sub Erase {
 }
 
 ################################################################
-## Update configuration file
+## Update configuration table for the current organism
 sub UpdateConfig {
-  ## Read taxonomy from the parsing result
+
+  ## Read taxonomy from the current organism
   my $organism_table = $dir{install}."/genome/organism.tab";
   my $id = $null;
   $taxid = $null;
@@ -916,10 +917,13 @@ sub UpdateConfig {
     next unless (/\S/);
     if (/^-- field\s+(\d)	taxonomy/) {
       $taxonomy_field = $1;
+
     } elsif (/^-- field\s+(\d)	taxid/) { 
       $taxid_field = $1;
+
     } elsif (/^--/ || /^;/ || /^#/) { #; are required to parse organism.tab created by parse_gtf
       next;
+
     } else {
       @fields = split "\t";
       $id = $fields[0];
@@ -945,7 +949,9 @@ sub UpdateConfig {
   }
   close $org_handle;
 
-  ## Default limits of upstream region for retrieve-seq
+  ################################################################
+  ## Define default limits of upstream region for retrieve-seq
+  ## depending on the taxonomic group
   unless (defined($up_from)) {
     ## If already defined in the file supported-organism.tab, keep
     ## previously defined value (might have been specifically tuned
@@ -1060,7 +1066,8 @@ sub UpdateConfigPerl {
 }
 
 ################################################################
-## Update the tab-delimited file  describing the list of organisms
+## Update the tab-delimited file describing the list of supported
+## organisms
 sub UpdateConfigTab {
   my (%args) = @_;
   &RSAT::message::Info ("Updating supported organisms", $main::org_table) if ($main::verbose >= 3);
@@ -1076,26 +1083,22 @@ sub UpdateConfigTab {
 #  &RSAT::message::Debug($organism,  $organism_short_name, $organism->get_attribute("name"), $install_date) if ($main::verbose >= 10);
 
   ## Change source if requested
-  #$prev_source = $supported_organism{$organism_short_name}->{'source'} ;
   if (($main::source) && ($main::source ne $null)) {
     $supported_organism{$organism_short_name}->{'source'} = $main::source;
   } elsif (($args{source}) && ($args{source} ne $null)) {
     $supported_organism{$organism_short_name}->{'source'} = $args{source};
   }
  
-  ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
-#  unless ($source eq 'ensembl') {
-    $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
-    $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $main::outfile{genome};
-    $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
-#  }
+  $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
+  $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $main::outfile{genome};
+  $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
   $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $main::taxonomy;
   $supported_organism{$organism_short_name}->{'taxid'} = $args{taxid} || $main::taxid;
   if (defined($main::outfile{synonyms})) {
     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
   }
-  $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
 
+  $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
   if (($main::up_from) && ($main::up_from ne $null)) {
     $supported_organism{$organism_short_name}->{'up_from'} = $main::up_from;
   } elsif (($args{up_from}) && ($args{up_from} ne $null)) {
@@ -1126,7 +1129,6 @@ sub UpdateConfigTab {
     $supported_organism{$organism_short_name}->{'path_to_variant_files'}= "<NA>";
   }
 
-
   ## Update organism configuration table
   &RSAT::message::Debug("&UpdateConfigTab()",
 			$supported_organism{$organism_short_name}->{'source'},
@@ -1140,13 +1142,14 @@ sub UpdateConfigTab {
 			$supported_organism{$organism_short_name}->{'path_to_variant_files'}
       ) if ($main::verbose >= 3);
 
- 
 
   ## Export the updated table of supported organisms
   &RSAT::OrganismManager::export_supported_organisms(file=>$main::org_table, backup=>$main::backup_org_table);
 }
 
-sub RewriteConfigTab{
+################################################################
+## Rewrite the table of supported organisms on RSAT
+sub RewriteConfigTab {
     my $supported_organism_file = &Get_supported_file();
     my $new_file = '';
     if (-f $supported_organism_file) {
@@ -2437,7 +2440,7 @@ install_organism options
 -source		data source (e.g. refseq);
 -dir		absolute path of the installation directory
 -batch  	run some tasks (for examplethe calibration of oligos and dyads) in batch mode.
--batch_org      when installing multiple orgnaisms, send each organism separately to the job scheduler
+-batch_org      when installing multiple orgnaisms, send each organism genome-blasseparately to the job scheduler
 -queue          specify a queue to send the job with the option -batch (default: $ENV{CLUSTER_QUEUE}) 
 -config		alternative organism configuration file
 -backup_org_table  Store a backup copy of the organism table before overwriting it.

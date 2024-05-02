@@ -18,25 +18,25 @@ our $ensemblgenomes_release_safe = $ENV{ensemblgenomes_release_safe} || 19;
 ## Fields of the table describing the supported organisms obtained
 ## from Ensembl. These fields are used by several methods
 our @supported_header_fields = ("ID",
-             "name",    #species
-             "taxid",
-             "source",  #db
-             "last_update",
-             "nb",
-             "seq_format",
-             "up_from",
-             "up_to",
-             "taxonomy",
-             "data",    #species_directory
-             "genome",
-             "genome_assembly", #assembly
-             "genome_version", #ensembl_release
-             "download_date", #update_date
-             "variant_available",
-             "variant_source",
-			 "path_to_variant_files",
-             "blast_available"
-	);
+				"name",    #species
+				"taxid",
+				"source",  #db
+				"last_update",
+				"nb",
+				"seq_format",
+				"up_from",
+				"up_to",
+				"taxonomy",
+				"data",    #species_directory
+				"genome",
+				"genome_assembly", #assembly
+				"genome_version", #ensembl_release
+				"download_date", #update_date
+				"variant_available",
+				"variant_source",
+				"path_to_variant_files",
+				"blast_available"
+    );
 
 ################################################################
 ## Functions
@@ -1021,9 +1021,9 @@ sub Get_feature_file {
 }
 
 
-############################ Fct get file_chr name
-
-## Get list of sequence file
+################################################################
+## Fct get file_chr name
+## Get list of sequence files
 sub Get_file_seq_name {
   my ($genome_dir, $source) = @_;
   my %chr_file = ();
@@ -1090,7 +1090,6 @@ sub Get_file_seq_name {
     genomes downloaded from Ensembl.
 
 =cut
-
 sub UpdateEnsemblSupported {
     my ($species, $assembly,$ensembl_release, $species_suffix) = @_;
     my	$supported_organism_file = &Get_supported_file();
@@ -1181,7 +1180,19 @@ sub UpdateEnsemblSupported {
 =cut
 
 ##########################################
-###
+## Update the list of supported organisms by setting the
+## "blast_supported" column to 1
+##
+## Note (JvH, 2024-05-01): this function should be revised. 
+##
+## - it should not be in a library named RSAT_to_ensembl.pl since it
+##   has nothing to do with Ensembl. I guess it is there only because
+##   it shares with &UpdateVariationsSupported the definition of the
+##   column headers @supported_header_fields -> move it to generic
+##   RSA.lib ?
+##
+## - in install-organisms, the list of Blast supported organisms is
+##   redefined based on the presence of a blastdb directory
 sub UpdateBlastSupported {
     my ($species_id) = @_;
     my $supported_organism_file = &Get_supported_file();

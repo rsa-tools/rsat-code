@@ -608,7 +608,7 @@ sub iterate_blast {
 		&BlastAndRank() if ($task{blastall});
 	    }
         
-        &UpdateBlastSupported($query_organism);
+#	    &UpdateBlastSupported($query_organism); ## JvH commented on 2024-05-02 becasue it causes empty table of supported organisms at each organism, i.e. every 6 seconds with diamond
 	}
 	if ($task{cleandb}) {
 	    my $clean_command = "rm -f ".$outfile{blast_db}.".*";
@@ -1217,6 +1217,74 @@ sub BlastAndRank {
 #    close $bbh if ($task{blast_bbh});
     close $output if ($task{blast_ranks});
 }
+
+
+################################################################
+## JvH 2024-05-02 : the update of blast-supported organisms has to be revised throughoutly
+
+# =pod
+
+#  Update the tab-delimited file with the blasts installed for
+#  get-orthologs
+
+# =cut
+
+# ##########################################
+# ### Update the list of supported organisms with info about BLAST
+# ### supported
+# sub UpdateBlastSupported {
+#     my ($species_id) = @_;
+#     my $supported_organism_file = &Get_supported_file();
+#     &RSAT::message::TimeWarn("Updating supported organism file", $supported_organism_file) if ($main::verbose >= 2);
+
+#     ## Hash table to store previous species description lines
+#     my %species_description = ();
+#     if (-f $supported_organism_file) {
+#         my ($s_o_file) = &OpenInputFile($supported_organism_file);
+
+#         ## Read the whole file of supported organisms from ensembl,
+#         ## and store species description lines in a hash indexed by
+#         ## full species ID, in order to sort them after having changed
+#         ## the current species fields.
+#         my $l = 0;
+#         while (<$s_o_file>){
+#             $l++;
+#             next if (/^;/); ## Skip comment lines
+#             next if (/^#/); ## Skip header line
+# 	    next unless (/\S/); ## Skip empty lines
+#             chomp();
+#             my @fields = split("\t");
+#             my $current_species_id = $fields[0];
+
+#             ## check if the species is already in the list
+#             if ($species_id eq $current_species_id){
+#                 # Build the line for the species
+#                 $fields[18] = 1;
+#                 $species_description{$current_species_id} = join("\t", @fields);
+#             } else {
+#                 $species_description{$current_species_id} = $_;
+#             }
+#         }
+#         close $s_o_file;
+#     }
+
+#     ## Write the updated table of supported organisms from Ensembl
+#     my $s_o_file = &OpenOutputFile($supported_organism_file);
+
+#     ## Print the header with column content
+#     print $s_o_file "#", join ("\t", @supported_header_fields), "\n";
+
+#     ## Print the table of supported organisms
+#     foreach my $id (sort keys %species_description) {
+#         print $s_o_file $species_description{$id}, "\n";
+#     }
+#     #    print $s_o_file join("",@other_species);
+#     close $s_o_file;
+
+#     &RSAT::message::Info("Ensembl genome installed in folder", $genome_dir) if ($main::verbose >= 1);
+# }
+
+
 
 __END__
 
