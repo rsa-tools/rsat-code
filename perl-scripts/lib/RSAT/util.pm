@@ -5,7 +5,7 @@
 package RSAT::util;
 
 use POSIX;
-use File::Temp;
+use File::Temp qw/ tempdir /;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
