@@ -304,6 +304,7 @@ package main;
   local $batch = 0;
   local $dry = 0;
   local $max_jobs = 5000; ## Max number of allowed jobs to send to batch queue
+  local $delay = 30; ## Delay before sending a new job to the job scheduler in case the current number of jobs exceeds the max niumber of jobs
 
   ## Network inference
   local $max_dyad_degree = 20;
@@ -666,6 +667,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Predict operon leader genes of the query gene(s)
   &InferQueryOperons() if ($infer_operons); # && ($task{operons}));
+#  &InferQueryOperons() if ($infer_operons && $task{operons});
 
   ################################################################
   ## Dyad filter tasks
@@ -757,15 +759,14 @@ sub RunFootprintDisco {
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
   if ($batch) {
-    my $jobnb = 0;
-    my $delay = 30;
+    my $job_nb = 0;
     if (($q-1) % 100 == 0) {
-      $jobnb = &get_job_nb();
+      $job_nb = &get_job_nb();
     }
-    while ($jobnb > $max_jobs) {
-      &RSAT::message::TimeWarn("Already ", $jobnb, "jobs in queue ... waiting", $delay, "seconds before submitting new jobs") if ($main::verbose >= 0);
+    while ($job_nb > $max_jobs) {
+      &RSAT::message::TimeWarn("Already ", $job_nb, "jobs in queue ... waiting", $delay, "seconds before submitting new jobs") if ($main::verbose >= 0);
       sleep($delay);
-      $jobnb = &get_job_nb();
+      $job_nb = &get_job_nb();
     }
 
 #    print ("\n\nBatch command:\n\n", $batch_cmd, "\n\n"); 
@@ -1060,8 +1061,8 @@ This option must be used in combination with the option -bg_model file
 
 =item B<-filter>
 
-Only accept dyads found in the promoter of the query gene, in the
-query organism. (option selected by default)
+Apply over-representation test only to the dyads found in the promoter
+of the query gene, in the query organism. (option selected by default)
 
 =cut
     } elsif ($arg eq "-filter") {
@@ -1071,8 +1072,9 @@ query organism. (option selected by default)
 
 =item B<-no_filter>
 
-Accept all dyads, even if they are not found in the promoter of the
-query gene, in the query organism. (will cancel -filter option if selected)
+Apply over-representation test to all dyads, even if they are not
+found in the promoter of the query gene, in the query organism. (will
+cancel -filter option if selected)
 
 =cut
 
@@ -1478,6 +1480,7 @@ sub CoregulationNetwork {
   ## score profiles between each pair of genes
   $outfile{gene_pairs} .= $dir{network}."/".$main_prefix."_gene_pairs.tab"; push @network_files, "gene_pairs";
   my $compare_classes_cmd = 'awk \'{print $1"\t"$4"\t"$3}\' '.$outfile{dyads_filtered};
+#  $compare_classes_cmd .=  " | compare-classes";
   $compare_classes_cmd .=  " | ". &RSAT::server::GetProgramPath("compare-classes");
   $compare_classes_cmd .= " -v 1";
   $compare_classes_cmd .= " -i /dev/stdin";
@@ -1684,11 +1687,11 @@ sub OpenMainIndex {
 sub get_job_nb {
     my $batchuser = `whoami`;
     chomp $batchuser;
-    my $jobnb = `qstat -u $batchuser | grep -v ' C ' | wc -l`;
-    chomp $jobnb;
-    $jobnb -= 2;
-    &RSAT::message::TimeWarn("$jobnb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
-    return $jobnb;
+    my $job_nb = `qstat -u $batchuser | grep -v ' C ' | wc -l`;
+    chomp $job_nb;
+    $job_nb -= 2;
+    &RSAT::message::TimeWarn("$job_nb jobs in the queue for user $batchuser") if ($main::verbose >= 4);
+    return $job_nb;
 }
 __END__
 
