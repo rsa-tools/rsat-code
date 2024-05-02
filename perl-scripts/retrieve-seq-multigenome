@@ -107,13 +107,14 @@ my $job_prefix = "";
 ## Output file is manatory in quick mode
 if ($quick_mode) {
   &RSAT::error::FatalError("Output file (option -o) is mandatory in quick mode.") unless ($outfile{output});
-  &RSAT::message::TimeWarn ("Extracting sequences from pre-computed upstream sequences") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn ("Extracting sequences from pre-computed upstream sequences") if ($main::verbose >= 2);
 }
 
 ################################################################
 ## Open output stream
 $out = &OpenOutputFile($outfile{output});
-$log = STDOUT;
+$log = &OpenOutputFile($outfile{log});
+#$log = STDOUT;
 
 ################################################################
 ## Read input
@@ -188,7 +189,7 @@ foreach my $org (sort(keys( %genes_per_org))) {
       }
       $command .= " -q ";
       $command .= join(" -q ", @genes);
-      &RSAT::message::TimeWarn($command)  if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn($command)  if ($main::verbose >= 2);
       if ($quick_mode) {
 	  $command .= ">> ".$outfile{output};
 	  &RSAT::message::Debug($command)  if ($main::verbose >= 5);
@@ -307,6 +308,17 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@ARGV);
+
+=pod
+
+=item	B<-log logfile>
+
+Specify a file for log text (including the verbosity). The log text is
+sent to a separate file than the output file.
+
+=cut
+	} elsif ($arg eq "-log") {
+	    $outfile{log} = shift(@ARGV);
 
 	    ## Gene column
 
