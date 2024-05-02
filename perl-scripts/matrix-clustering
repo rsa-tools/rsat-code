@@ -1940,7 +1940,7 @@ sub pre_process_motif_files{
       $convert_matrix_cmd .= " -skip ".$skip_matrices if ($skip_matrices > 0);
       $convert_matrix_cmd .= " -o ".$motif_set_attributes{$collection_name}{matrix_file_processed_1};
       
-      print $convert_matrix_cmd."\n";
+#      print $convert_matrix_cmd."\n";
       
       &doit($convert_matrix_cmd, 0, 1, $verbose, 0, "", $main::out, $main::err);
 
