@@ -755,8 +755,6 @@ sub FilterOrganismsHavingBlast{
     ## Check if the BLAST file exists
     my $miss = 0;
 
-
-    
     ## Find BLAST file from query to reference organism
     # ahcorcha
     my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism);
