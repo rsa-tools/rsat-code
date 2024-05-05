@@ -2892,7 +2892,7 @@ sub ReadAssemblySummary {
 	    ## parentheses, quotes, ...).
 	    my $organism_name = &CleanPathName($fields[$column_index{'organism_name'}]);
 	    if ($fields[$column_index{'organism_name'}] ne $organism_name) {
-		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 3); 
+		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 5); 
 		$fields[$column_index{'organism_name'}] = $organism_name;
 	    }
 
