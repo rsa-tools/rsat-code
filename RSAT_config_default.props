@@ -102,7 +102,7 @@ compara_tools=0
 variations_tools=0
 
 ## plant genomes require special processing in the variation forms
-plant_server=1
+plant_server=0
 
 ################################################################
 ## Support for tools requiring a connection to UCSC genome browser.

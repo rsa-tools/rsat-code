@@ -213,9 +213,10 @@ package main;
 
   ## Set on the default tasks is the task "default" was invoked
   if ($task{default}) {
-    foreach my $task (@default_tasks) {
-      $task{$task} = 1;
-    }
+      foreach my $task (@default_tasks) {
+	  $task{$task} = 1;
+      }
+      &RSAT::message::Info("Default tasks selected: ", join(", ", @default_tasks)) if ($main::verbose >= 2);
   }
 
   ## Run all the tasks for each organism (not the species-wide tasks
@@ -326,6 +327,7 @@ package main;
     }
   }
 
+  our %remaining_task = %task;
   
 
   ################################################################
@@ -360,6 +362,12 @@ package main;
       ## Download or update the assembly summary table for the selected group
       if ($task{available}) {
 	  &DownloadAssemblySummary($group);
+
+	  ## If all tasks have been completed, skip the rest
+	  delete($remaining_task{available});
+	  if (scalar(keys(%remaining_task)) == 0) {
+	      &Finish();
+	  }
       }
 
       ################################################################
@@ -373,14 +381,18 @@ package main;
   ## List assemblies if requested
   if ($task{list}) {
       &ListAssemblies($list_format, %strain_info);
+
+      ## If all tasks have been completed, skip the rest
+      delete($remaining_task{list});
+      if (scalar(keys(%remaining_task)) == 0) {
+	  &Finish();
+      }
   }
 
 
   ################################################################
   ##  Print arguments if required
   &Verbose() if ($main::verbose >= 1);
-
-  
   
   # ################################################################
   # ## Get the list of available species for the selected group
@@ -438,7 +450,8 @@ package main;
 	  ## Restrictw the number of strains if requested
 	  if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 	      my $remaining_strains = $selected_strains - $strain_nb + 1;
-	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $selected_strains) if ($main::verbose >= 1);
+	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $selected_strains)
+		  if ($main::verbose >= 1);
 	      last;
 	  }
 
@@ -550,7 +563,13 @@ package main;
       for my $strain (@sorted_strains) {
 	  push @organisms, $strain_info{$strain}->{"organism"};
       }
+  } elsif (scalar(@sorted_strains) > 0) {
+      for my $strain (@sorted_strains) {
+	  push @organisms, $strain_info{$strain}->{"organism"};
+      }
   }
+
+      
   &RSAT::message::Info("Organisms to install", scalar(@organisms)) if ($main::verbose >= 1);
   # if ($main::verbose >= 10) {
   #     &RSAT::message::Info(join("; ", @organisms));
@@ -560,11 +579,11 @@ package main;
   ## Check that at least one organism has been specified
   unless ($task{list}) { 
       unless ((scalar(@organisms) > 0) || ($task{parse})) {
-	  if ($strain && $species[0]) {
-	      @organisms = (join("_", $species, $strain));
-	  } else {
+	  # if ($strain && $species[0]) {
+	  #     @organisms = (join("_", $species, $strain));
+	  # } else {
 	      &RSAT::error::FatalError("At least one organism should be specified (options -org, -taxon or -all_organisms)")
-	  }
+	  # }
       }
   }
 
@@ -763,10 +782,7 @@ package main;
 
   }
 
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-  print $main::out $exec_time if ($main::verbose >= 1);
-  close $out if ($outputfile);
-  exit(0);
+  &Finish();
 }
 
 
@@ -774,6 +790,12 @@ package main;
 ##################  SUBROUTINE DEFINITIONS  ####################
 ################################################################
 
+sub Finish {
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out if ($outputfile);
+  exit(0);
+}
 
 ################################################################
 ## Display verbosity message
@@ -2821,6 +2843,7 @@ sub DownloadAssemblySummary {
     # my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
     my $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
     $command .= "; head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
+    $command .= "; rsync -ruptvl https://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt ".$dir{downloads};
     &doit($command, $dry, $die_on_error, $main::verbose);
 
     ## Display file names
@@ -2892,7 +2915,7 @@ sub ReadAssemblySummary {
 	    ## parentheses, quotes, ...).
 	    my $organism_name = &CleanPathName($fields[$column_index{'organism_name'}]);
 	    if ($fields[$column_index{'organism_name'}] ne $organism_name) {
-		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 3); 
+		&RSAT::message::Warning("Organism name fixed", $fields[$column_index{'organism_name'}],  $organism_name) if ($main::verbose >= 5); 
 		$fields[$column_index{'organism_name'}] = $organism_name;
 	    }
 

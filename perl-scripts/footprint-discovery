@@ -1358,7 +1358,8 @@ sub CountMatrices {
     }
   } elsif ($status eq "OK") {
     &RSAT::message::Warning("Missing matrix file", $outfile{count_PSSM_tf});
-    $status = "Missing matrix file:".$outfile{count_PSSM_tf};
+    $status = "Missing matrix file";
+#    $status = "Missing matrix file:".$outfile{count_PSSM_tf};
   }
   return($matrix_nb);
 }
