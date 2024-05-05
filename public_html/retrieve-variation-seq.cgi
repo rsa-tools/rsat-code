@@ -131,7 +131,7 @@ if ($query->param('input_type')) {
 }
 
 
-### Lenght of the longest matrix, sequence window around the variant ###
+### Length of the longest matrix, sequence window around the variant ###
 if (&IsInteger($query->param('mml'))) {
     $parameters .= " -mml ".$query->param('mml');
 }
