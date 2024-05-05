@@ -304,7 +304,8 @@ package main;
   local $batch = 0;
   local $dry = 0;
   local $max_jobs = 5000; ## Max number of allowed jobs to send to batch queue
-  local $delay = 30; ## Delay before sending a new job to the job scheduler in case the current number of jobs exceeds the max niumber of jobs
+#  local $delay = 30; ## Delay before sending a new job to the job scheduler in case the current number of jobs exceeds the max niumber of jobs
+  local $delay = 0; ## Delay before sending a new job to the job scheduler in case the current number of jobs exceeds the max niumber of jobs
 
   ## Network inference
   local $max_dyad_degree = 20;
