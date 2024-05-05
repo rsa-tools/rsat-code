@@ -326,6 +326,7 @@ package main;
     }
   }
 
+  our %remaining_task = %task;
   
 
   ################################################################
@@ -360,6 +361,12 @@ package main;
       ## Download or update the assembly summary table for the selected group
       if ($task{available}) {
 	  &DownloadAssemblySummary($group);
+
+	  ## If all tasks have been completed, skip the rest
+	  delete($remaining_task{available});
+	  if (scalar(keys(%remaining_task)) == 0) {
+	      &Finish();
+	  }
       }
 
       ################################################################
@@ -373,6 +380,12 @@ package main;
   ## List assemblies if requested
   if ($task{list}) {
       &ListAssemblies($list_format, %strain_info);
+
+      ## If all tasks have been completed, skip the rest
+      delete($remaining_task{list});
+      if (scalar(keys(%remaining_task)) == 0) {
+	  &Finish();
+      }
   }
 
 
@@ -763,10 +776,7 @@ package main;
 
   }
 
-  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-  print $main::out $exec_time if ($main::verbose >= 1);
-  close $out if ($outputfile);
-  exit(0);
+  &Finish();
 }
 
 
@@ -774,6 +784,12 @@ package main;
 ##################  SUBROUTINE DEFINITIONS  ####################
 ################################################################
 
+sub Finish {
+  my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+  print $main::out $exec_time if ($main::verbose >= 1);
+  close $out if ($outputfile);
+  exit(0);
+}
 
 ################################################################
 ## Display verbosity message
