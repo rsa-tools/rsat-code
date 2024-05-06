@@ -2842,10 +2842,12 @@ sub DownloadAssemblySummary {
     &RSAT::util::CheckOutDir($dir{downloads});
 
     # my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
-    my $command = "wget --no-clobber -O ".$dir{downloads}."/README_assembly_summary.txt https://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt; "; 
+    my $command = "wget --no-clobber -O ".$dir{downloads}."/README_assembly_summary.txt https://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt; ";
+    &doit($command, $dry, $die_on_error, $main::verbose);
+
 #     $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-    $command .= "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-    $command .= "; head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
+    $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    $command .= " && head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
     &doit($command, $dry, $die_on_error, $main::verbose);
 
     ## Display file names
