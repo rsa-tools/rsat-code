@@ -353,7 +353,8 @@ package main;
 	  &RSAT::error::FatalError("Use the option -group to specify the taxonomic group");
       }
       $dir{assembly_summary} = join("/", $dir{downloads}."refseq", $group);
-      $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "assembly_summary.txt");
+      $outfile{assembly_summary} = join("/", $dir{assembly_summary}, "/assembly_summary.txt");
+      $outfile{assembly_summary} =~ s|//assembly|/assembly|;
       $outfile{assembly_columns} = $outfile{assembly_summary}; 
       $outfile{assembly_columns} =~ s/\.txt/_colums.tsv/;
 #  $outfile{assembly_columns} = "ncbi_organisms_assembly_summary_".${group}."_refseq_".${today}."_columns.tsv";
@@ -2841,9 +2842,10 @@ sub DownloadAssemblySummary {
     &RSAT::util::CheckOutDir($dir{downloads});
 
     # my $command = "wget -nc ${assembly_url} --no-clobber --output-document ${assembly_file} ; ";
-    my $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    my $command = "wget --no-clobber -O ".$dir{downloads}."/README_assembly_summary.txt https://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt; "; 
+#     $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    $command .= "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
     $command .= "; head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
-    $command .= "; rsync -ruptvl https://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt ".$dir{downloads};
     &doit($command, $dry, $die_on_error, $main::verbose);
 
     ## Display file names
