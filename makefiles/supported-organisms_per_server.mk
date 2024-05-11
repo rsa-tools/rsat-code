@@ -6,7 +6,8 @@ include ${RSAT}/makefiles/util.mk
 MAKEFILE=makefiles/supported-organisms_per_server.mk
 
 TAXON=Fungi
-SERVER=rsat-tagc.univ-mrs.fr
+#SERVER=rsat-tagc.univ-mrs.fr
+SERVER=rsat.france-bioinformatique.fr
 SERVER_PATH=rsat
 URL=http://${SERVER}/${SERVER_PATH}
 RES_DIR=results/supported-organisms_per_server
@@ -27,11 +28,12 @@ all: fungi plants prokaryotes protists metazoa teaching
 
 fungi:
 #	@${MAKE} supported_taxon TAXON=Fungi SERVER=rsat-tagc.univ-mrs.fr SERVER_PATH=rsat
-	@${MAKE} supported_taxon TAXON=Metazoa SERVER=rsat.france-bioinformatique.fr SERVER_PATH=fungi
+	@${MAKE} supported_taxon TAXON=Fungi SERVER=rsat.france-bioinformatique.fr SERVER_PATH=fungi
 
 plants:
-	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=rsat.eead.csic.es SERVER_PATH=plants
 #	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=floresta.eead.csic.es SERVER_PATH=rsat
+#	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=rsat.eead.csic.es SERVER_PATH=plants
+	@${MAKE} supported_taxon TAXON=Viridiplantae SERVER=rsat.eead.csic.es SERVER_PATH=plants
 
 prokaryotes:
 	@${MAKE} supported_taxon TAXON=Bacteria SERVER=embnet.ccg.unam.mx SERVER_PATH=rsat
