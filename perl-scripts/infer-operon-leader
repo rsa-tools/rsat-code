@@ -82,7 +82,7 @@ package main;
   $main::in = STDIN;
   $main::out = STDOUT;
 
-  $main::query_organism = "Escherichia_coli_GCF_000005845.2_ASM584v2";
+  $main::query_organism = "Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2";
 
   @main::query_genes = ();
   %main::is_query = ();
@@ -624,7 +624,7 @@ __END__
 =pod
 
 =head1 EXAMPLES
-    infer-operon-leader -q lexA -org Escherichia_coli_GCF_000005845.2_ASM584v2 -uth interg_dist 50
+    infer-operon-leader -q lexA -org Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -uth interg_dist 50
 
 =head1 SEE ALSO
 

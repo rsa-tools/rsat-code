@@ -151,7 +151,7 @@ while (my $row = <$fh>){
     $demo_matrix .= $row . "\\n";
 }
 
-my $demo_org = "Escherichia coli GCF 000005845.2 ASM584v2";
+my $demo_org = "Escherichia coli_str._K-12_substr._MG1655 GCF_000005845.2 ASM584v2";
 my $org = $demo_org;
 $org =~ s/\ /_/g;
 print '<script>
@@ -167,8 +167,8 @@ function setDemo(demo_matrix){
     demo_descr.innerHTML = descr1;
     
     $("#queries").val("'. $demo_queries . '");
-    $("#organism_name").val("Escherichia coli GCF 000005845.2 ASM584v2").trigger("change");
-    $("#organism").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
+    $("#organism_name").val("Escherichia coli_str._K-12_substr._MG1655 GCF_000005845.2 ASM584v2").trigger("change");
+    $("#organism").val("Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2");
     $("#taxon").val("Gammaproteobacteria");
     $("#taxon_name").val("Gammaproteobacteria").trigger("change");
     $("#matrix").val(demo_matrix);
@@ -179,7 +179,7 @@ function setDemo(demo_matrix){
 </script>';
 print '<button type="button" onclick="setDemo('. "'$demo_matrix'" .')">DEMO</button>';
 
-print "<td><b><a href='sample_outputs/footprint-scan_demo_output/footprint-scan_Gammaproteobacteria__lexA_recA_2018-03-21.183943_2018-03-21.183943_J8t3qJ/lexA_recA/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/all_matrices_report.html'>[Sample Output]</a></B></TD>\n";
+print "<td><b><a href='sample_outputs/footprint-scan_demo_output/footprint-scan_Gammaproteobacteria__lexA_recA_2018-03-21.183943_2018-03-21.183943_J8t3qJ/lexA_recA/Gammaproteobacteria/Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2/all_matrices_report.html'>[Sample Output]</a></B></TD>\n";
 print "<td><b><a href='help.footprint-scan.html'>[MANUAL]</a></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
