@@ -44,7 +44,7 @@ NeAT code.
 
 # Documentation
 
-- [**Installing RSAT**](https://rsa-tools.github.io/installing-RSAT): on [Unix systems](https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html), [Docker container](https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html)
+- [**Installing RSAT**](https://rsa-tools.github.io/installing-RSAT): on [Unix systems](https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html), [Docker container](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html)
 
 - [**Managing RSAT**](https://rsa-tools.github.io/managing-RSAT)
 
