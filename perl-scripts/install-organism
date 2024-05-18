@@ -1562,7 +1562,7 @@ sub CalcFrequencies {
 	    }
 	}
 
-	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies", $noorf, $masking, $seq_file) if ($main::verbose >= 0);
+	&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies", $noorf, $masking, $seq_file) if ($main::verbose >= 2);
 	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
 	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
 	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
