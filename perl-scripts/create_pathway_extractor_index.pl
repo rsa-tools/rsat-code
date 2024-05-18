@@ -32,8 +32,8 @@ Graph tool
 create_pathway_extractor_index -h -of operonfile -fd footprintdirectory [-o outputdirectory] [-v verbosity] -a gene2ec2reactions [-b gene2reaction] 
 
 =head1 infer operon file format
-; infer-operons  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_GCF_000005845.2_ASM584v2 -min_gene_nb 2 -all -dist 55
-; Organism      Escherichia_coli_GCF_000005845.2_ASM584v2
+; infer-operons  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -min_gene_nb 2 -all -dist 55
+; Organism      Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2
 ; Queries       4430
 ; Column descriptions
 ;       1       query           Query string.
@@ -176,7 +176,7 @@ package main;
       print "operonfile:".$operonresultfile."\n";
       open INFEROPERON, "<$operonresultfile";
       my %gene2operonhash = ();
-      #  ; Organism      Escherichia_coli_GCF_000005845.2_ASM584v2
+      #  ; Organism      Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2
       while (my $ligne = <INFEROPERON>) {
 # 	  print "OPERON:".$ligne;
 	  chomp $ligne;
@@ -287,7 +287,7 @@ package main;
       $outdir = "$operondir$rsatorganismid/index.tab";
   open OUTFILE, ">$outdir";
       
-  print OUTFILE "; infer-operons  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_GCF_000005845.2_ASM584v2 -min_gene_nb 2 -all -dist 55\n";
+  print OUTFILE "; infer-operons  -v 1 -sep - -return q_info,operon,gene_nb -org Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -min_gene_nb 2 -all -dist 55\n";
   print OUTFILE "; Organism\t$organismid\n";
   print OUTFILE "; Column descriptions\n";
   print OUTFILE ";\t1\t[Gene_ID]\tquery gene identifier.\n";

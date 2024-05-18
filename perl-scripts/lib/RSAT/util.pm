@@ -1092,13 +1092,12 @@ sub doit {
     $job_name =~ s/\//_/g;
     my $job_log = $job_file.".log";
 
-  &RSAT::message::Debug("\n\twd", $wd, 
-			"\n\tshell", $shell,
-			"\n\tjob_dir", $job_dir,
-			"\n\tjob_file", $job_file,
-			"\n\tjob_log", $job_log
-      ) if ($main::verbose >= 10);
-#  die "HELLO";
+    &RSAT::message::Debug("\n\twd", $wd, 
+			  "\n\tshell", $shell,
+			  "\n\tjob_dir", $job_dir,
+			  "\n\tjob_file", $job_file,
+			  "\n\tjob_log", $job_log
+	) if ($main::verbose >= 10);
 
     ################################################################
     ## Check that the cluster parameters are well defined before
@@ -1175,6 +1174,11 @@ sub doit {
 		       $qsub_options,
 		       $job_file);
 
+    } elsif (lc($queue_manager) eq "slurm") {
+	## Send command to slurm via sbatch command
+	$qsub_command = "sbatch ";
+	$qsub_command .= $job_file;
+	
     } elsif (lc($queue_manager) eq "batch") {
       ## qsub command functionning using Sun Grid Engine
       $qsub_command = &RSAT::server::GetProgramPath("batch");
