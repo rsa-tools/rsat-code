@@ -197,6 +197,7 @@ PERL_MODULES= \
 	Email::Simple \
 	Email::Simple::Creator \
 	File::Spec \
+	File::Temp \
 	GD \
 	HTTP::Tiny \
 	IO::All \

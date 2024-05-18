@@ -14,7 +14,7 @@ print <<"HTML";
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="refresh" content="0; url='$ENV{rsat_www}'" />
+    <meta http-equiv="refresh" content="0; url='$ENV{rsat_www}index.php'" />
   </head>
   <body>
     <p>redirecting to $ENV{rsat_www}</p>

@@ -177,13 +177,16 @@ function setDemo(){
     \$('#reset').trigger('click');
     \$('#queries').val('lexA');
     
-    \$('#organism').val('Escherichia_coli_GCF_000005845.2_ASM584v2');
-    \$('#organism_name').val('Escherichia coli GCF_000005845.2 ASM584v2').trigger('change');
+    \$('#organism').val('Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2');
+    \$('#organism_name').val('Escherichia coli_str._K-12_substr._MG1655 GCF_000005845.2 ASM584v2').trigger('change');
     \$('#taxon_name').val('Gammaproteobacteria').trigger('change');
     \$('#taxon').val('Gammaproteobacteria');
     unique_taxon.value = 'genus';
 }
 </script>";
+
+#     \$('#organism_name').val('Escherichia coli GCF_000005845.2 ASM584v2').trigger('change');
+
 
 print '<TD><B>
 <button type="button" onclick="setDemo()">DEMO</button>
@@ -192,7 +195,7 @@ print '<TD><B>
 
 #print "<TD><B>";
 #print $query->hidden(-name=>'queries',-default=>$demo_queries);
-#print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_GCF_000005845.2_ASM584v2");
+#print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2");
 #print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
 #print $query->hidden(-name=>'unique_taxon',-default=>"genus");
 #print $query->submit(-label=>"DEMO");
@@ -200,7 +203,7 @@ print '<TD><B>
 #print $query->end_form;
 
 
-print "<td><b><a href='sample_outputs/footprint-discovery_demo_output/Gammaproteobacteria/Escherichia_coli_GCF_000005845.2_ASM584v2/Gammaproteobacteria_Escherichia_coli_GCF_000005845.2_ASM584v2_bg_taxfreq_result_index.html'>[Sample Output]</a></B></TD>\n";
+print "<td><b><a href='sample_outputs/footprint-discovery_demo_output/Gammaproteobacteria/Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2/Gammaproteobacteria_Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2_bg_taxfreq_result_index.html'>[Sample Output]</a></B></TD>\n";
 print "<TD><B><A HREF='help.footprint-discovery.html'>MANUAL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

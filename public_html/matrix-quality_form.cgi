@@ -223,8 +223,8 @@ function setDemo(demo_matrix, demo_seq1, demo_seq2){
     markov_order.value = 1;
     $("#nwd").prop("checked",true);
     
-    $("#organism_bg_name").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
-    $("#organism_bg").val("Escherichia_coli_GCF_000005845.2_ASM584v2");
+    $("#organism_bg_name").val("Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2");
+    $("#organism_bg").val("Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2");
 }
 function resetHandler(){
     $("#db_choice").val("").change();
