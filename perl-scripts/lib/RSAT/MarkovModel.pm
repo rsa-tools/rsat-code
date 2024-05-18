@@ -1290,7 +1290,7 @@ sub one_word_update {
 #  if ($strand eq "insensitive")  { #Beware here : 2str means that matrix-scan a
 #      	$self->average_strands();
 #   }
-#  &RSAT::message::Debug($self->to_string("tables", comment_string=>"; ")) if ($main::verbose >= 0 );
+#  &RSAT::message::Debug($self->to_string("tables", comment_string=>"; ")) if ($main::verbose >= 10);
 #  
 #  
 #  ##pseudo-count

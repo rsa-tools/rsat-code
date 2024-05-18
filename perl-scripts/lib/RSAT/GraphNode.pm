@@ -121,7 +121,7 @@ sub get_neighbours_step {
     } else {
       @seed_nodes = @new_neighbours;
     }
-    #    &RSAT::message::TimeWarn("Getting neighbours for node", $self->get_attribute("id"), scalar(@seed_nodes), "seed nodes at step", $s) if ($main::verbose >= 0);
+    #    &RSAT::message::TimeWarn("Getting neighbours for node", $self->get_attribute("id"), scalar(@seed_nodes), "seed nodes at step", $s) if ($main::verbose >= 10);
     @new_neighbours = ();
     foreach my $n (0..$#seed_nodes) {
       $node = $seed_nodes[$n];
