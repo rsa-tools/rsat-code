@@ -151,7 +151,7 @@ all-against-all comparison.
 
 genome-blast -q query_organism -db db_organism -task formatdb
 
-  genome-blast -q Escherichia_coli_GCF_000005845.2_ASM584v2 -db Bacillus_subtilis -task formatdb
+  genome-blast -q Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -db Bacillus_subtilis -task formatdb
 
 The query organism is simply ignore for this task.
 
@@ -163,7 +163,7 @@ way to proceed is run the formatdb task with the option -dbtaxon.
 
 genome-blast -q query_organism -dbtaxon db_taxon -task formatdb
 
- genome-blast -q Escherichia_coli_GCF_000005845.2_ASM584v2 -dbtaxon Bacteria -task formatdb
+ genome-blast -q Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -dbtaxon Bacteria -task formatdb
 
 =head2 Matching a query genome against a single database genome
 
@@ -174,23 +174,23 @@ identify the reciprocal hits (used to infer orthology).
  genome-blast -db organism_2 -db organism_1 -task blastall
 
 Example:
- genome-blast -q Escherichia_coli_GCF_000005845.2_ASM584v2 -db Bacillus_subtilis -task blastall
- genome-blast -db Escherichia_coli_GCF_000005845.2_ASM584v2 -q Bacillus_subtilis -task blastall
+ genome-blast -q Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -db Bacillus_subtilis -task blastall
+ genome-blast -db Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -q Bacillus_subtilis -task blastall
 
 The formatdb step has to be done before running blastall. Note that
 both taks can be requested in a single command, in which case formatdb
 is run before blastall.
 
- genome-blast -q Escherichia_coli_GCF_000005845.2_ASM584v2 -db Bacillus_subtilis -task formatdb,blastall
- genome-blast -db Escherichia_coli_GCF_000005845.2_ASM584v2 -q Bacillus_subtilis -task formatdb,blastall
+ genome-blast -q Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -db Bacillus_subtilis -task formatdb,blastall
+ genome-blast -db Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -q Bacillus_subtilis -task formatdb,blastall
 
 =head2 Matching a query genome against all genomes of a given taxon
 
  genome-blast -q query_organism -dbtaxon db_taxon -task blastall
  genome-blast -db query_organism -qtaxon db_taxon -task blastall
 
- genome-blast -q Escherichia_coli_GCF_000005845.2_ASM584v2 -dbtaxon Bacteria -task blastall
- genome-blast -db Escherichia_coli_GCF_000005845.2_ASM584v2 -qtaxon Bacteria -task blastall
+ genome-blast -q Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -dbtaxon Bacteria -task blastall
+ genome-blast -db Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -qtaxon Bacteria -task blastall
 
 =head2 Running taxon-wide comparisons on a PC cluster
 
@@ -200,8 +200,8 @@ increases exponentially with time. It is thus generally recommended to
 run taxon-wide comparisons on a PC cluster, by using the option
 I<-batch>.
 
- genome-blast -q Escherichia_coli_GCF_000005845.2_ASM584v2 -dbtaxon Bacteria -task blastall -batch
- genome-blast -db Escherichia_coli_GCF_000005845.2_ASM584v2 -qtaxon Bacteria -task blastall -batch
+ genome-blast -q Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -dbtaxon Bacteria -task blastall -batch
+ genome-blast -db Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -qtaxon Bacteria -task blastall -batch
 
 =head2 Matching a taxon against another taxon
 
