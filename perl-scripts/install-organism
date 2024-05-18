@@ -480,7 +480,7 @@ package main;
 	  &RSAT::message::TimeWarn("Downloaded genome in dir", $strain_info{$strain}->{"downloads"}) if ($main::verbose >= 3);
 
 	  ## Store download date in strain_info
-	  $download_date =  &AlphaDate();
+	  $download_date = &AlphaDate();
 	  $strain_info{$strain}->{"download_date"} = $download_date;
       }
   }
@@ -1849,7 +1849,7 @@ sub CalcDyadFreq {
     $quick = "-quick";
   }
 
-  ## uncompress sequence file if required because the option -quick
+  ## Uncompress sequence file if required because the option -quick
   ## currently does not support compressed files
   my $uncompressed = 0;
   if (!(-e $seq_file) && (-e $seq_file.".gz")) {
@@ -1861,7 +1861,7 @@ sub CalcDyadFreq {
       $seq_file =~ s/\.gz$//;
   }
 
-
+  ## Compute dyad frequencies for each sequence type, strand grouping (on or off) and monad length
   my $job_prefix = ${organism_short_name}."_dyads";
   foreach my $noov ("-noov", "-ovlp") {
     foreach my $strands (@strands) {
@@ -1913,7 +1913,7 @@ sub CalcDyadFreq {
 
 
 ################################################################
-## display full help message
+## Display full help message
 sub PrintHelp {
     open HELP, "| more";
     print HELP <<End_of_help;
