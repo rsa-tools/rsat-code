@@ -325,7 +325,7 @@ sub read_tab {
 	    ## Check threshold on score
 	    next if ((defined($args{min_score})) && ($score < $args{min_score}));
 	    $class{$class_name}->new_member($member_name, 0, score=>$score);
-#		&RSAT::message::Debug("member score", $class_name, $member_name, $score) if ($main::verbose >= 0);
+#		&RSAT::message::Debug("member score", $class_name, $member_name, $score) if ($main::verbose >= 10);
 	} else {
 	    $class{$class_name}->new_member($member_name);
 	}
@@ -341,7 +341,7 @@ sub read_tab {
 	    &RSAT::message::TimeWarn( "Reading classes from", "STDIN", "lines read",  $line);
 	  }
 	}
-#	&RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 10);
 	
     }
     close $in if ($input_file);
