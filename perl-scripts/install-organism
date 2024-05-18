@@ -291,7 +291,7 @@ package main;
   for my $species (@species) {
       $selected_species{$species} = 1;
   }
-  &RSAT::message::Info("Selected species",  join("; ", keys(%selected_species))) if ($main::verbose >= 0);
+  &RSAT::message::Info("Selected species",  join("; ", keys(%selected_species))) if ($main::verbose >= 1);
   
   ################################################################
   ## Define the local download directory for NCBI Refseq files
@@ -2877,7 +2877,7 @@ sub ReadAssemblySummary {
     ## Parse the file
     my @header;
     my %strain_info;
-    &RSAT::message::TimeWarn("Reading assembly summary table\t", $file);
+    &RSAT::message::TimeWarn("Reading assembly summary table\t", $file) if ($main::verbose >= 1);
     my $l = 0; ## Line number in the assembly file
     my $selected = 0; ## Number of selected assemblies
     my ($asmb) = &OpenInputFile($file);
