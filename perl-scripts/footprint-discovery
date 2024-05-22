@@ -1368,6 +1368,7 @@ sub CountMatrices {
 ## Generate co-regulation network by linking pairs of genes presenting
 ## similar footprints.
 sub CoregulationNetwork {
+  &RSAT::message::TimeWarn("Computing co-regulation network") if ($main::verbose >= 1);
   my $main_prefix = &MainPrefix();
   my $dyad_suffix = &DyadSuffix();
 
