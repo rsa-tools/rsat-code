@@ -406,7 +406,7 @@ sub LoadSupportedTaxonomy_rj {
 
 ### DEBUGGING 2017-03-12
 #     if ($org_id =~ /MG1655/) {
-#       &RSAT::message::Debug("&RSAT::Tree::LoadSupportedTaxonomy_rj", $org_id, "taxonomy", join("::", @taxonomy)) if ($main::verbose >= 0);
+#       &RSAT::message::Debug("&RSAT::Tree::LoadSupportedTaxonomy_rj", $org_id, "taxonomy", join("::", @taxonomy)) if ($main::verbose >= 10);
 # #    die "HELLO";
 #     }
 ## End Debugging

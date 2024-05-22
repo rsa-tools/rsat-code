@@ -476,7 +476,7 @@ sub ParseGenbankFile {
 	  &RSAT::message::Info ("Storing sequence ",
 				$current_contig->get_attribute("id"),
 				"in file", $seq_file_path)
-	      if ($main::verbose >= 0);
+	      if ($main::verbose >= 2);
 	  
 	  open SEQ, ">".$seq_file_path
 	      || die "Error: cannot write sequence file $seq_file_path\n";

@@ -393,7 +393,7 @@ sub to_gdl {
   require Scmbb::Snow::GraphDataLinker;
   my ($self) = @_;
   my $gdl = "";
-  &RSAT::message::TimeWarn("Exporting graph in GDL format") if ($main::verbose >= 0); 
+  &RSAT::message::TimeWarn("Exporting graph in GDL format") if ($main::verbose >= 2); 
   return $gdl;
 }
 

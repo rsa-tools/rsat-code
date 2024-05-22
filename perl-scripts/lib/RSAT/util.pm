@@ -1324,7 +1324,7 @@ sub EmailTheResult {
     $command .= "; echo '${completion_message}' | ".$send_mail." -subject '${subject} ; Job completed' -to ".$recipient unless ($no_email);
     $command .= " &"; ## Run task in background
     # print "\n\n<pre>", &RSAT::util::hide_RSAT_path($command), "</pre>" if ($ENV{rsat_echo} >= 5);
-    # &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 0);
+    # &RSAT::message::Debug("&RSAT::util::EmailTheResult() command", $command) if ($main::verbose >= 10);
 
     system ($command);
 

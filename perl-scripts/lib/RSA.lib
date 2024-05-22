@@ -613,7 +613,7 @@ sub ReadPatternFrequencies {
     my $pattern_seq = lc($fields[0]);
     next unless $pattern_seq;
 
-#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 0);
+#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
 
     #### check the format and extract expected frequency
     if (&IsReal($fields[1])) {

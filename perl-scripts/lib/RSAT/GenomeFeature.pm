@@ -88,7 +88,7 @@ sub matches {
 	}
     }
 
-#    &RSAT::message::Debug($self->get_attribute("id"), $query, $match, join (";", @to_match)) if ($main::verbose >= 0);
+#    &RSAT::message::Debug($self->get_attribute("id"), $query, $match, join (";", @to_match)) if ($main::verbose >= 10);
     return $match;
 }
 

@@ -121,7 +121,7 @@ sub RGBColorPalette {
     foreach my $c (0..$#palette) {
       my $color_ref = $palette[$c];
       my ($R,$G,$B, $name) = @{$color_ref};
-      &RSAT::message::Debug("Color palette", $c, $R,$G,$B,$name) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Color palette", $c, $R,$G,$B,$name) if ($main::verbose >= 3);
     }
   }
   return @palette;

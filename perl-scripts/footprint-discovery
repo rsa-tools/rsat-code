@@ -56,7 +56,7 @@ footprint-discovery [-i inputfile] -o [output_prefix] \
 Discover conserved motifs in the promoters of the orthologs of lexA in
 Enterobacteriaceae.
 
- footprint-discovery  -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 -taxon Enterobacteriaceae \
+ footprint-discovery  -v 1 -org Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -taxon Enterobacteriaceae \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter  \
 		-bg_model taxfreq -q lexA
@@ -66,7 +66,7 @@ Enterobacteriaceae.
 Discover conserved motifs in the promoters of the orthologs of lexA in
 Enterobacteriaceae.
 
- footprint-discovery  -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 -taxon Enterobacteriaceae \
+ footprint-discovery  -v 1 -org Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -taxon Enterobacteriaceae \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter  \
 		-bg_model taxfreq \
@@ -81,7 +81,7 @@ The genes can also be specified in a file with the option -genes.
 
 Iterate footprint discovery for each gene separately.
 
- footprint-discovery  -v 1 -org Escherichia_coli_GCF_000005845.2_ASM584v2 -taxon Enterobacteriaceae \
+ footprint-discovery  -v 1 -org Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2 -taxon Enterobacteriaceae \
 		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
 		-return occ,proba,rank -filter \
 		-bg_model taxfreq -all_genes -sep_genes
