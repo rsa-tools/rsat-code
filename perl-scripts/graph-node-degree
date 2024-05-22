@@ -157,7 +157,8 @@ package main;
       RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
       foreach my $name (@seed_names) {
         my $node_id = $graph->node_by_name($name);
-        if (defined($node_id)) {
+#        if (defined($node_id)) {
+        if ($node_id) {
 	  &RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
 	  $seed_names_list{$name}++;
         } else {
@@ -208,10 +209,12 @@ package main;
       my $id = $nodes_name_id{$node};
       my $in_deg = 0;
       my $out_deg = 0;
-      if (defined(@{$in_neighbours[$id]})) {
+#      if (defined(@{$in_neighbours[$id]})) {
+      if (@{$in_neighbours[$id]}) {
         $in_deg = scalar(@{$in_neighbours[$id]});
       }
-      if (defined(@{$out_neighbours[$id]})) {
+#      if (defined(@{$out_neighbours[$id]})) {
+      if (@{$out_neighbours[$id]}) {
         $out_deg = scalar(@{$out_neighbours[$id]});
       }
       my $degree = $in_deg + $out_deg;
