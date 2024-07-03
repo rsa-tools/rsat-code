@@ -13,6 +13,7 @@ $accepted_input_seq{'ig'} = 1;
 $accepted_input_seq{'wconsensus'} = 1;
 $accepted_input_seq{'wc'} = 1;
 $accepted_input_seq{'fasta'} = 1;
+$accepted_input_seq{'fastq'} = 1;
 $accepted_input_seq{'filelist'} = 1;
 $accepted_input_seq{'gcg'} = 1;
 $accepted_input_seq{'ncbi'} = 1;
@@ -1245,6 +1246,23 @@ sub ReadNextSequence {
       }
     }
     return ("","");	     ### when input file has been totally read
+
+    ### FASTQ file
+  } elsif ($sequence_format eq "fastq") {
+    while (<$SEQ>) {
+       
+      if($.%4==1){ 
+        chomp();
+        $seq_id = $_;
+
+      } elsif($.%4==2){ 
+        chomp();
+        $sequence = $_;
+
+        return(&ReturnSequence($sequence, $seq_id, $mask, ()));      
+      }
+    }
+    return ("","");      ### when input file has been totally read
 
     ### FastA format ###
   } elsif ($sequence_format eq "fasta") {
