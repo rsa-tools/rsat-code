@@ -1247,11 +1247,11 @@ sub ReadNextSequence {
     }
     return ("","");	     ### when input file has been totally read
 
-    ### FASTQ file
+    ### FASTQ file, actually the kind where records take exactly 4 lines
   } elsif ($sequence_format eq "fastq") {
     while (<$SEQ>) {
        
-      if($.%4==1){ 
+      if($.%4==1 && /^@/){ 
         chomp();
         $seq_id = $_;
 
