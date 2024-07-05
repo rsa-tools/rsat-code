@@ -491,7 +491,7 @@ package main;
       $matrix->calcConsensus();
     }
 
-    ## Add empty columns at the flanks of the input marices
+    ## Add empty columns at the flanks of the input matrices
     if ($flanks) {
       my @empty_col = ();
       my $empty_value = 0;
