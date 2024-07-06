@@ -1361,6 +1361,7 @@ sub one_command {
 
   &RSAT::message::Debug("RSAT::util::one_command()", $cmd) if ($main::verbose >= 3);
 
+  
   ################################################################
   ## Define a dry option for one_command, because there are two
   ## reasons why we might avoid to actually run the command ("dry" mode):
@@ -1384,9 +1385,11 @@ sub one_command {
       my $OS = `uname -a`;
       chomp($OS);
       &RSAT::message::Debug("Adapting time command to OS-specific behaviour", $OS) if ($main::verbose >= 5);
-      
-      if ( $OS =~ /ubuntu/i || $OS =~ /debian/i || 
-           $OS =~ /linux/i || $OS =~ /darwin/i || 
+       
+      if ( $OS =~ /ubuntu/i ||
+	   $OS =~ /debian/i || 
+           $OS =~ /linux/i ||
+#	   $OS =~ /darwin/i || 
            $OS =~ /bongcam/i ) { # personal path?
 	  
 	  $cmd = 'time -o '.$time_file.' '.$cmd;
