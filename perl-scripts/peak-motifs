@@ -514,7 +514,10 @@ sub DefaultParameters {
   @main::composition_oligo_lengths = (1,2);
   $main::param{composition_oligo_lengths} = join(',',@composition_oligo_lengths); push(@main::param_list, "composition_oligo_lengths");
 
-
+  ################################################################
+  ## Run motif discovery on purged sequences rather than raw sequences
+  $main::param{purge} = 1;
+  
   ################################################################
   ## Beware: computational profiles are always computed with the
   ## option -ovlp (count all occurrences), to avoid weird effect:
@@ -1100,6 +1103,7 @@ sub SetOutFileNames {
 sub PurgeSeq {
   my ($seq_type) = @_;
 
+  
 #  my $seq_file = $seqfile{$seq_type};
   my $seq_file = $main::infile{$seq_type."_seq"};
 
@@ -1135,15 +1139,20 @@ sub PurgeSeq {
   $cmd .= " -o ".$main::outfile{$seq_type."_converted"};
   &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
 
-  ## Purge sequences (mask redundant fragments)
-  &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 2);
-  $cmd = &RSAT::server::GetProgramPath("purge-sequence");
-  $cmd .= " -dna";
-  $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
-  $cmd .= " -ml ".$main::param{purge_match_length};
-  $cmd .= " -mis ".$main::param{purge_mismatches};
-  $cmd .= " -o ".$main::outfile{$seq_type."_purged"};
-  &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+  if ($main::param{purge}) {
+      ## Purge sequences (mask redundant fragments)
+      &RSAT::message::TimeWarn("Purging sequences", $seq_type, $main::outfile{$seq_type."_converted"}) if ($main::verbose >= 2);
+      $cmd = &RSAT::server::GetProgramPath("purge-sequence");
+      $cmd .= " -dna";
+      $cmd .= " -i ".$main::outfile{$seq_type."_converted"};
+      $cmd .= " -ml ".$main::param{purge_match_length};
+      $cmd .= " -mis ".$main::param{purge_mismatches};
+      $cmd .= " -o ".$main::outfile{$seq_type."_purged"};
+      &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+  } else {
+      &RSAT::message::Warning("Task purge skipped because option -nopurge was selected") if ($main::verbose >= 1);
+  }
+    
 }
 
 
@@ -1154,10 +1163,17 @@ sub SequenceLengths {
 
   &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
   my $cmd = &RSAT::server::GetProgramPath("sequence-lengths");
-  #  $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
-  $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
+  ## $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
+  if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+      $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
+  } else {
+      $cmd .= " -i ".$main::outfile{$seq_type.'_converted'};
+
+  }
   $cmd .= " -o ".$main::outfile{$seq_type.'_seqlen'};
   $cmd .= " ; ";
+
+  ## Compute an histogram of sequence lengths
   $cmd .= &RSAT::server::GetProgramPath("classfreq");
   $cmd .= " -v 1 -col 2";
   $cmd .= " -i ".$main::outfile{$seq_type.'_seqlen'};
@@ -1208,8 +1224,6 @@ sub SequenceLengths {
     my $bed_header= "track name=\"".$seq_type."_peaks\" description=\"RSAT peak-motifs ".$bed_prefix.": peaks\" visibility=2 use_score=1 color=".$bed_color;
     $cmd .= " | sed '1s/^.*/".$bed_header."/' "; ## change first line
     $cmd .= " > ".$main::outfile{$seq_type."_seq_coord"};
-#    print $cmd, "\n";
-#    die "HELLO";
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 }
@@ -1230,11 +1244,15 @@ sub CompositionProfiles {
     ## from the sequences
     $cmd = &RSAT::server::GetProgramPath("count-words");
     $cmd .= " -v 1";
-    $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
+    if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	$cmd .= " -i ".$main::outfile{$seq_type."_purged"}; 
+    } else {
+	$cmd .= " -i ".$main::outfile{$seq_type.'_converted'};
+    }
     $cmd .= " -l ".$ol;
     $cmd .= " -1str";
     $cmd .= " ".$main::param{profiles_noov} if ($main::param{profiles_noov} eq "-noov"); ## The option -ovlp is not supported by count-words
-    $cmd .= " > ".$main::outfile{$ol."nt_".$seq_type."_freq"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_freq"};
 
     &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_freq"}."_time.txt", log=>$main::out);
 
@@ -1244,6 +1262,7 @@ sub CompositionProfiles {
     $cmd .= " -i ".$main::outfile{$ol."nt_".$seq_type."_freq"};
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_inclusive"};
 
+    
     ## Convert background model to transition table and draw the heatmap of transition probabilities
     $cmd .= "; ";
     $cmd .= &RSAT::server::GetProgramPath("convert-background-model");
@@ -1265,6 +1284,7 @@ sub CompositionProfiles {
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   }
 
+
   ################################################################
   ## Compute position profiles for 1nt and 2nt
   &RSAT::message::TimeWarn("Computing composition profiles") if ($main::verbose >= 2);
@@ -1274,7 +1294,11 @@ sub CompositionProfiles {
     &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 2);
     my $cmd = &RSAT::server::GetProgramPath("position-analysis");
     $cmd .= " -v 1";
-    $cmd .= " -i ".$main::outfile{$seq_type."_purged"};
+    if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	$cmd .= " -i ".$main::outfile{$seq_type."_purged"}; 
+    } else {
+	$cmd .= " -i ".$main::outfile{$seq_type.'_converted'};
+    }
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return html,chi,sig,distrib,graphs,rank,index";
@@ -1359,7 +1383,11 @@ sub ComputeBgModels {
       my $cmd = &RSAT::server::GetProgramPath("oligo-analysis");
       $cmd .= " -v 1";
       $cmd .= " -quick";
-      $cmd .= " -i ".$main::outfile{"ctrl_purged"};
+      if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	  $cmd .= " -i ".$main::outfile{"ctrl_purged"};
+      } else {
+	  $cmd .= " -i ".$main::outfile{"ctrl_converted"};
+      }
       $cmd .= " -format fasta";
       $cmd .= " -return occ,freq";
       $cmd .= " ".$main::param{strand};
@@ -1379,8 +1407,13 @@ sub ComputeBgModels {
     my $pattern_type = 'dyads_test_vs_ctrl';
     my $cmd = &RSAT::server::GetProgramPath("dyad-analysis");
     $cmd .= " -v 1";
-    $cmd .= " -i ".$main::outfile{"ctrl_purged"}; ## NOTE: AS A NEGATIVE CONTROL, USE SAME FILE AS INPUT AND CTRL, AND SET PSEUDO TO 0.
-    $cmd .= " -quick";
+#    $cmd .= " -i ".$main::outfile{"ctrl_purged"}; ## NOTE: AS A NEGATIVE CONTROL, USE SAME FILE AS INPUT AND CTRL, AND SET PSEUDO TO 0.
+    if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	$cmd .= " -i ".$main::outfile{"ctrl_purged"};
+    } else {
+	$cmd .= " -i ".$main::outfile{"ctrl_converted"};
+    }
+   $cmd .= " -quick";
     $cmd .= " -format fasta";
     $cmd .= " -return occ,freq";
     $cmd .= " ".$main::param{strand};
@@ -1426,7 +1459,11 @@ sub OligoAnalysis {
       my $cmd = &RSAT::server::GetProgramPath("oligo-analysis");
       $cmd .= " -v 1";
       $cmd .= " -quick";
-      $cmd .= " -i ".$main::outfile{"test_purged"};
+      if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	  $cmd .= " -i ".$main::outfile{"test_purged"};
+      } else {
+	  $cmd .= " -i ".$main::outfile{"test_converted"};
+      }
       $cmd .= " -format fasta";
       $cmd .= " -sort";
       $cmd .= " -lth ratio ".$main::param{min_ratio};
@@ -1468,8 +1505,13 @@ sub OligoDiff {
     &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 2);
     my $cmd = &RSAT::server::GetProgramPath("oligo-diff");
     $cmd .= " -v 3";
-    $cmd .= " -test ".$main::outfile{"test_purged"};
-    $cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
+    if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	$cmd .= " -i ".$main::outfile{"test_purged"};
+	$cmd .= " -ctrl ".$main::outfile{"ctrl_purged"};
+    } else {
+	$cmd .= " -i ".$main::outfile{"test_converted"};
+	$cmd .= " -ctrl ".$main::outfile{"ctrl_converted"};
+    }
     $cmd .= " -nopurge"; ## The sequences have already been purged
     $cmd .= " -l ".$len;
     $cmd .= " ".$main::param{strand};
@@ -1504,7 +1546,11 @@ sub DyadAnalysis {
 
   my $cmd = &RSAT::server::GetProgramPath("dyad-analysis");
   $cmd .= " -v 1";
-  $cmd .= " -i ".$main::outfile{"test_purged"};
+  if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+      $cmd .= " -i ".$main::outfile{"test_purged"};
+  } else {
+      $cmd .= " -i ".$main::outfile{"test_converted"};
+  }
   $cmd .= " -quick";
   $cmd .= " -format fasta";
   $cmd .= " -sort";
@@ -1540,7 +1586,11 @@ sub PositionAnalysis {
     &RSAT::message::TimeWarn("\n Running position-analysis", $len."nt") if ($main::verbose >= 2);
     my $cmd = &RSAT::server::GetProgramPath("position-analysis");
     $cmd .= " -v 1";
-    $cmd .= " -i ".$main::outfile{"test_purged"};
+    if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	$cmd .= " -i ".$main::outfile{"test_purged"};
+    } else {
+	$cmd .= " -i ".$main::outfile{"test_converted"};
+    }
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
 #    $cmd .= " -return html,chi,sig,distrib,exp_occ,graphs,rank,index";
@@ -1585,7 +1635,11 @@ sub LocalDyads {
   my $cmd = &RSAT::server::GetProgramPath("local-word-analysis");
   $cmd .= " -v 3";
   $cmd .= " --dyad  --length=3 --spacing=0:20";
-  $cmd .= " -i ".$main::outfile{"test_purged"};
+  if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+      $cmd .= " -i ".$main::outfile{"test_purged"};
+  } else {
+      $cmd .= " -i ".$main::outfile{"test_converted"};
+  }
   #  $cmd .= " -format fasta";
   $cmd .= " --min=occ_sig ".$main::param{min_sig};
   $cmd .= " --sort=-occ_sig";
@@ -1629,7 +1683,11 @@ sub LocalWords {
       &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 2);
       my $cmd = &RSAT::server::GetProgramPath("local-word-analysis");
       $cmd .= " -v 3";
-      $cmd .= " -i ".$main::outfile{"test_purged"};
+      if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	  $cmd .= " -i ".$main::outfile{"test_purged"};
+      } else {
+	  $cmd .= " -i ".$main::outfile{"test_converted"};
+      }
       #  $cmd .= " -format fasta";
       $cmd .= " --min=occ_sig ".$main::param{min_sig};
       $cmd .= " --sort=-occ_sig";
@@ -1683,7 +1741,11 @@ sub CalcMemeOptions {
   $meme_suffix = ""; ## Must be a global variable
 
   ## sequence file
-  $meme_options .= " ".$main::outfile{"test_purged"};
+  if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+      $meme_options .= " ".$main::outfile{"test_purged"};
+  } else {
+      $meme_options .= " ".$main::outfile{"test_converted"};
+  }
 
   ## strands
   $meme_suffix .= $main::param{strand};
@@ -1714,14 +1776,22 @@ sub CalcDremeOptions {
   $dreme_suffix = ""; ## Must be a global variable
 
   ## sequence file
-  $dreme_options .= " -p ".$main::outfile{"test_purged"};
+  if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+      $dreme_options .= " -p ".$main::outfile{"test_purged"};
+  } else {
+      $dreme_options .= " -p ".$main::outfile{"test_converted"};
+  }
 
   ## strands: there is apparently no strand option in the current release of DREME (MEME 4.6.1)
 
   ## If background sequences have been specified, sue them as negative sequence file for DREME
   if (($main::infile{ctrl_seq})) {
-    $dreme_options .= " -n ".$main::outfile{"ctrl_purged"};
-    $dreme_options .= "_test_vs_ctrl";
+      if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	  $dreme_options .= " -n ".$main::outfile{"ctrl_purged"};
+      } else {
+	  $dreme_options .= " -n ".$main::outfile{"ctrl_converted"};
+      }
+      $dreme_options .= "_test_vs_ctrl";
   }
 
   foreach my $option (@DREME_options) {
@@ -1736,11 +1806,16 @@ sub CalcDremeOptions {
 ################################################################
 ## Compute background for MEME
 sub CalcMemeBackground {
-  my $cmd = "cat ".$main::outfile{"test_purged"}." | ";
-  $cmd .= &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
-  $cmd .= " -m ".$main::param{bg_meme_markov};
-  $cmd .= " > ".$main::outfile{meme_bg_file};
-  &RSAT::util::one_command($cmd, 1, $main::outfile{meme_bg_file}."_time.txt", log=>$main::out);
+    my $cmd;
+    if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+	$cmd = "cat ".$main::outfile{"test_purged"}." | ";
+    } else {
+	$cmd = "cat ".$main::outfile{"test_converted"}." | ";
+    }
+    $cmd .= &RSAT::server::GetProgramPath("fasta-get-markov", $die_on_error);
+    $cmd .= " -m ".$main::param{bg_meme_markov};
+    $cmd .= " > ".$main::outfile{meme_bg_file};
+    &RSAT::util::one_command($cmd, 1, $main::outfile{meme_bg_file}."_time.txt", log=>$main::out);
 }
 
 
@@ -1831,7 +1906,11 @@ sub RunChIPMunk {
   $chipmunk_options .= " ".$main::param{chipmunk_stop_motif_length};
   $chipmunk_options .= " ".$main::param{chipmunk_verbose};
   $chipmunk_options .= " ".$main::param{chipmunk_mode};
-  $chipmunk_options .= " s:".$main::outfile{"test_purged"};
+  if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
+      $chipmunk_options .= " s:".$main::outfile{"test_purged"};
+  } else {
+      $chipmunk_options .= " s:".$main::outfile{"test_converted"};
+  }
 
   ## Run the CHIPMUNK command
   $cmd .= " ".$chipmunk_options;
@@ -4929,6 +5008,19 @@ Compute meme background model from the test sequences.
 	}
       }
 
+=pod
+
+=item B<-nopurge>
+
+Skip the sequence purging task and run motif discovery in raw
+sequences rather than purged sequences. Beware: this option should be
+used with caution, because unpurged sequences do not comply with the
+assumption of independence underlying the binomial tests of oligo-analysis. 
+
+=cut
+    } elsif ($arg eq "-nopurge") {
+	$main::param{purge} = 0;
+      
 =pod
 
 =item B<-nmotifs max_motif_number>
