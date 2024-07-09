@@ -40,10 +40,10 @@ RUN apt-get install -y --no-install-recommends \
 
 
 ##  <----  Add the CRAN repository to your system sources list
-
-RUN echo "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" > /etc/apt/sources.list.d/cran.list
-RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
-	&& gpg -a --export E298A3A825C0D65DFD57CBB651716619E084DAB9| apt-key add -
+# commented out, use Ubuntu's instead, r-color-brewer complained
+#RUN echo "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" > /etc/apt/sources.list.d/cran.list
+#RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+#	&& gpg -a --export E298A3A825C0D65DFD57CBB651716619E084DAB9| apt-key add -
 
 
 ## <---- Now install R and littler, and create a link for littler in /usr/local/bin
