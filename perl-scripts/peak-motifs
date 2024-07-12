@@ -74,7 +74,7 @@ Motif discovery
 
 peak-motifs [-i inputfile] [-o outputfile] [-v #] [...]
 
-=head1 INPUT FORMAT
+=head1 INPUT FILES
 
 The program takes as input either one (test) or two sequence files
 (test versus control).
@@ -82,7 +82,7 @@ The program takes as input either one (test) or two sequence files
 All sequences formats supported as input by I<convert-sequences> are
 supported.
 
-=head1 OUTPUT FORMAT
+=head1 OUTPUT FILES
 
 The pipeline runs a series of programs generating each one or several
 result file. An HTML index is generated in order to synthesize the
@@ -4539,6 +4539,24 @@ Typical examples of control sequences:
 =cut
     } elsif ($arg eq "-ctrl") {
       $main::infile{ctrl_seq} = shift(@arguments);
+
+=pod
+
+=item B<-seq_format>
+
+Sequence format.
+
+This option applies simultaneously to both test and control sequences
+(we don't think it would be useful to use test and control sequences
+in different formats).
+
+All sequences formats supported as input by I<convert-sequences> are
+supported.
+
+=cut
+      
+    } elsif ($arg eq "-seq_format") {
+      $main::param{seq_format} = shift(@arguments);
 
 
 =pod
