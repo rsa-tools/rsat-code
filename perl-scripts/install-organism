@@ -337,6 +337,7 @@ package main;
   our @sorted_strains;
   our $selected_strains;
 
+  
   if ((($infile{organisms} eq "") && (scalar(@organisms) == 0) && ($taxon eq ""))
       || $task{available} 
       || $task{list} 
@@ -408,7 +409,7 @@ package main;
   # 	&RSAT::message::Info("; Getting available species from NCBI; \t", $refseq_folder_url, "\n");
   #   }
   #   my $command = 'rsync --copy-links  --times  --list-only rsync://'.$refseq_folder_url.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
-  #   &RSAT::message::TimeWarn("Running command\n".$command) if ($main::verbose >= 0);
+  #   &RSAT::message::TimeWarn("Running command\n".$command) if ($main::verbose >= 2);
   #   #    my $available_species = `$command`;
   #   #    print $main::out $available_species;
   #   &doit($command, $dry, $die_on_error, $main::verbose);    
@@ -490,7 +491,40 @@ package main;
   if ($task{parse}) {
       my $strain_nb = 0;
 #      my $selected_strains = scalar(keys(%strain_info));
+      if ($main::strain) {
+	  @sorted_strains = $strain;
+	  $species = $species[0];
+	  unless ($species) {
+	      &FatalError("Option -strain requires to specify species (i.e. Genus_species) with option -species");
+	  }
+	  my ($genus, $species) = split(/[ _]/, $species);
+	  my $organism = join("_", $genus, $species, $strain);
+	  $strain_info{$strain}->{"strain"} = $strain;
+	  $strain_info{$strain}->{"species"} = $species;
+	  $strain_info{$strain}->{"genus_species"} = $genus."_".$species;
+	  $strain_info{$strain}->{"organism"} = $organism;
+	  $strain_info{$strain}->{"downloads"} =
+	      join("/",
+		   $ENV{RSAT},
+		   "downloads",
+		   "refseq",
+		   $group,
+		   $strain_info{$strain}->{"genus"},
+		   $strain_info{$strain}->{"genus_species"},
+		   $strain);
 
+	  &RSAT::message::Debug("organism= ", $organism, "\n",
+				"genus= ", $genus, "\n",
+				"species= ", $species, "\n",
+				"genus_species= ", $strain_info{$strain}->{"genus_species"}, "\n",
+				"strain= ", $strain, "\n",
+				"downloads= ", $strain_info{$strain}->{"downloads"}, "\n",
+				
+	      ) if ($main::verbose >= 5);
+
+	  &RSAT::message::Info("Parsing a single strain specified with options -strain ${strain} -species ${species}") if ($main::verbose >= 1);
+      }
+      
       for my $strain (@sorted_strains) {
 	  $strain_nb++; 
 	  if (($skip > 0) && ($strain_nb <= $skip)) {
@@ -510,7 +544,9 @@ package main;
 	  &ParseGenome($strain_info{$strain}->{"species"},
 		       $strain,
 		       $organism_name,
-		       $strain_info{$strain}->{"downloads"}, $genome_dir, $org_nb);
+		       $strain_info{$strain}->{"downloads"},
+		       $genome_dir,
+		       $org_nb);
       }
   }
 
@@ -533,7 +569,6 @@ package main;
 	  my ($org) = split /\s+/;
 	  push @organisms, $org;
       }
-#      die(join("\t", "HELLO", scalar(@organisms)));
 
   } elsif (scalar(@taxa) > 0) {
       
@@ -641,7 +676,7 @@ package main;
 	}
 	my $org_tasks = join(",", @tasks_to_batch);
 	$command .= " -task ".$org_tasks;
-	&RSAT::message::Info("Organism batch command\t", $command) if ($main::verbose >= 0);
+	&RSAT::message::Info("Organism batch command\t", $command) if ($main::verbose >= 1);
 	&doit($command, $dry, $die_on_error, $main::verbose, $batch_org, $job_prefix, $log_handle, $err_handle, $cluster_queue);  
 	next;
     }
@@ -1836,7 +1871,7 @@ sub CalcOligoDistrib {
 ## file
 sub CalcDyadFreq {
   my ($seq_file, $seq_format, $seq_type) = @_;
-  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 0);
+  &RSAT::message::TimeWarn("&CalcDyadFreq()", $seq_file, $seq_format, $seq_type) if ($main::verbose >= 2);
   $min_spacing = 0;
   $max_spacing = 20;
   @monad_lengths = (3,2,1);
@@ -2778,8 +2813,7 @@ sub ParseGenome {
   $strain_dir = $strain_info{$strain}->{"downloads"};
   $organism_name = $strain_info{$strain}->{"organism"};
   $genus_species = $strain_info{$strain}->{"genus_species"};
-  &RSAT::message::TimeWarn("Parsing genome", $org_nb, $genus_species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 2);
-
+  &RSAT::message::TimeWarn("Parsing genome", $org_nb, $genus_species, $strain, $organism_name, $strain_dir) if ($main::verbose >= 1);
   my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v ".($main::verbose -1);
   $command .= " -i ".$strain_dir;
   $command .= $parse_options;
@@ -2789,7 +2823,7 @@ sub ParseGenome {
     $command .= " -ext gbff"; ## 2019 format in NCBI
     $command .= " -genomeInFasta "; ## 2019 format in NCBI has the genome in fasta version separated from the genebank format
   }
-  $command .= " -org ".$organism_name;
+  $command .= " -org '".$organism_name."'";
   #    if ($source ne $null) {
   $command .= " -source '$source'";
   #    }
