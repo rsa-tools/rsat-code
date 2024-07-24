@@ -49,11 +49,12 @@ sudo pip3 install matplotlib
 sudo pip3 install fisher
 sudo pip3 install snakemake
 
-# may2023, ubuntu 20.04
-# to avoid error with rpy2-3.5.12.tar.gz "note: This error originates from a subprocess, and is likely not a problem with pip",
-# not sure this solves "THIS FAILS on the IFB cloud. To be checked"
-sudo pip install wheel setuptools pip --upgrade
-sudo pip3 install wheel setuptools pip --upgrade
+# may2023,jul2024 ubuntu 20.04
+# to avoid errors with python packages such as rpy2-3.5.12.tar.gz or PySimpleSOAP-1.16.2.tar.gz, 
+# note: "This error originates from a subprocess, and is likely not a problem with pip",
+# not sure this solves "THIS FAILS on the IFB cloud. To be checked
+sudo pip install wheel setuptools importlib_metadata pip --upgrade
+sudo pip3 install wheel setuptools importlib_metadata pip --upgrade
 sudo pip3 install rpy2 
 
 ## pip3 install pygraphviz ## This fails ! Command python setup.py egg_info failed with error code 1 in /tmp/pip_build_root/pygraphviz
