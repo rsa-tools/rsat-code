@@ -3,7 +3,7 @@
 # ------------------------------------------
 #
 # rsat main script
-# RSAT 2018
+# RSAT 2024
 #
 # ------------------------------------------
 
@@ -13,12 +13,36 @@ from sys import exit
 # import argparse
 import subprocess
 import yaml
+import re
 
 path = os.path.dirname(os.path.realpath(__file__))
 path += "/../share/rsat"
 
-def usage_and_exit(usage):
+
+def citation(path):
+
+    main_citation = ''    
+    try:
+        csvfilename = path + "/../../public_html/publications.csv"         
+        pubfile = open(csvfilename)
+    except OSError as error:
+        print("# ERROR: cannot open/read file:", csvfilename, error)
+        return main_citation
+
+    for line in pubfile:
+        suitere = re.search(r"^[^;]+;\s*([^;]+).*?suite", line)
+        if suitere:
+            main_citation = suitere.group(1)
+            break
+    pubfile.close()
+
+    return main_citation
+    
+
+
+def usage_and_exit(usage, path):
     print(usage)
+    print("\nMain citation:\n" + citation(path))
     exit()
 
 def error(msg):
@@ -73,9 +97,9 @@ try:
 
     # check for help
     if len(sys.argv) == 1:
-        usage_and_exit(usage)
+        usage_and_exit(usage, path)
     if sys.argv[1] in ['-h', '--help', 'help']:
-        usage_and_exit(usage)
+        usage_and_exit(usage, path)
     if sys.argv[1] in ['-l', '--list', 'list']:
         print(subcmd_list)
         exit(0)
