@@ -864,6 +864,7 @@ _install_bedtools:
 	@echo
 	@mkdir -p ${RSAT_BIN}
 	@${SUDO} rsync -ruptvl ${BED_BIN_DIR}/* ${RSAT_BIN}/
+	@strip ${RSAT_BIN}/bedtools 	
 
 ################################################################
 ## Install Biotoolbox
