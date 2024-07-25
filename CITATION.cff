@@ -1,9 +1,53 @@
-cff-version: 1.1.0
+cff-version: 1.2.0
 message: recommended way to cite the software suite Regulatory Sequence Analysis Tools
-authors
+title: "Regulatory Sequence Analysis Tools (RSAT) "
+version: 20240709
+doi: 10.1093/nar/gkac312
+date-released: 2024-07-09
+url: "https://github.com/rsa-tools"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Walter"
+    given-names: "Santana-Garcia"
+    orcid: "https://orcid.org/0000-0002-1350-9880"
+  - family-names: "Jaime"
+    given-names: "Castro-Mondragon"
+    orcid: "https://orcid.org/0000-0003-4069-357X"
+  - family-names: "Monica"
+    given-names: "Padilla-Galvez"
   - family-names: Nguyen
     given-names: Nga Thi Thuy
-    orcid: NA
-  - family-names: van Helden
-    given-names: Jacques
-    orc-id: 
+  - family-names: "Ana"
+    given-names: "Elizondo-Salas"
+  - family-names: "Najla"
+    given-names: "Ksouri"
+    orcid: "https://orcid.org/0000-0001-8956-2920"
+  - family-names: "François"
+    given-names: "Gerbes"
+  - family-names: "Denis"
+    given-names: "Thieffry"
+    orcid: "https://orcid.org/0000-0003-0271-1757" 
+  - family-names: "Pierre"
+    given-names: "Vincens"
+  - family-names: "Bruno"
+    given-names: "Contreras-Moreira"
+    orcid: "https://orcid.org/0000-0002-5462-907X"
+  - family-names: "Jacques"
+    given-names: "van Helden"
+    orcid: "https://orcid.org/0000-0002-8799-8584"
+  - family-names: "Morgane"
+    given-names: "Thomas-Chollier"
+    orcid: "https://orcid.org/0000-0003-2608-476X"
+  - family-names: "Alejandra"
+    given-names: "Medina-Rivera"
+    orcid: "https://orcid.org/0000-0002-7912-2718" 
+  doi: "10.1093/nar/gkac312"    
+  journal: "Nucleic Acids Research"
+  month: 5
+  start: W670
+  end: W676
+  title: "RSAT 2022: regulatory sequence analysis tools"
+  issue: 50
+  volume: W1
+  year: 2022
