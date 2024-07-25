@@ -35,8 +35,7 @@ RUN apt-get install -y --no-install-recommends \
 	dirmngr \    
 	ca-certificates\
 	software-properties-common \
-# optimize the space in your docker
-   && rm -rf /var/lib/apt/lists/*
+	&& rm -rf /var/lib/apt/lists/*
 
 
 ##  <----  Add the CRAN repository to your system sources list
@@ -91,11 +90,8 @@ WORKDIR /packages
 RUN git clone https://github.com/rsa-tools/rsat-code.git
 
 # Repositories 'demo_files' and 'sample_ouput' are skipped to save space
-#
 # git clone https://github.com/rsa-tools/demo_files.git
-# git clone https://github.com/rsa-tools/motif_databases.git
 # git clone https://github.com/rsa-tools/sample_outputs.git
-
 
 ## <---- Download motif_databases licensed-collections , move this directory to /packages, then rename rsat_code
 RUN wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
@@ -152,7 +148,6 @@ RUN apt-get update \
 SHELL ["/bin/bash", "-c"]
 
 
-
 ## <---- make sure you are in your working dir
 RUN cd ${RSAT}
 WORKDIR ${RSAT}
@@ -165,18 +160,14 @@ RUN  source /packages/rsat/RSAT_config.bashrc \
 	&& bash installer/02_python_packages.bash
 
 ########################################################       Notes       ########################################################
-# When installinng python dependencies i got error with rpy2-3.5.12.tar.gz :
+# When installinng python dependencies you might error with rpy2-3.5.12.tar.gz or PySimpleSOAP-1.16.2.tar.gz
 # "note: This error originates from a subprocess, and is likely not a problem with pip"
-# To fix this, we need to Upgrade versions of pip, setuptools and wheel.
-# see https://bobbyhadz.com/blog/python-note-this-error-originates-from-subprocess
-# RUN pip install wheel setuptools pip --upgrade
-# RUN pip3 install wheel setuptools pip --upgrade
-# These commands were added to installer/02_python_packages.bash 
-
+# To fix this, we need to pgrade versions of pip, setuptools and wheel -> see installer/02_python_packages.bash
+# end https://bobbyhadz.com/blog/python-note-this-error-originates-from-subprocess
 
 RUN bash installer/03_install_rsat.bash \
 	&& bash installer/04_perl_packages.bash \
-	&& bash installer/06_install_organisms.bash \
+#	&& bash installer/06_install_organisms.bash \ skipped to save 243MB
 	&& bash installer/07_R-and-packages.bash \
 	&& bash installer/08_apache_config.bash \
 	&& bash installer/10_clean_unnecessary_files.bash
@@ -192,6 +183,7 @@ ENV RSATUSER="rsat_user"
 ENV RSATPASS="rsat_2020"
 ENV RSATUSERHOME="/home/${RSATUSER}"
 ENV TESTPATH="${RSATUSERHOME}/test_data"
+ENV EXTMOTIFPATH="${RSATUSERHOME}/ext_motifs"
 
 RUN useradd ${RSATUSER} \
 	&& echo "${RSATUSER}:${RSATPASS}" | chpasswd \
@@ -199,6 +191,7 @@ RUN useradd ${RSATUSER} \
 	&& chown -R "${RSATUSER}:${RSATUSER}" ${RSAT} \
 	&& chmod 755 ${RSAT} \
 	&& mkdir -p ${TESTPATH} \
+	&& mkdir -p ${EXTMOTIFPATH} \
 	&& chmod -R a+w ${RSATUSERHOME}
 
 ## <---- Set env variables
@@ -217,10 +210,17 @@ ENV TESTMAKEFILELOCAL="${TESTPATH}/peak-motifs.mk"
 RUN wget ${TESTRSATFILEREMOTE} -O ${TESTRSATFILELOCAL}
 RUN wget ${TESTMAKEURL} -O ${TESTMAKEFILELOCAL}
 
-
-## <---- rename the container's folder for installing genomes, local volume to be used instead
-
-RUN mv ${RSAT}/public_html/data ${RSAT}/public_html/data_container
+# not needed unless installer/06_install_organisms.bash is run above
+## <---- Rename the container's folder for installing genomes, local volume to be used instead,
+#        this also allows to use preinstalled genomes elsewhere in the file system.
+#
+#        Note that ${RSAT}/public_html/data_container takes 243MB including
+#        Escherichia_coli_GCF_000005845.2_ASM584v2  
+#        Escherichia_coli_K_12_substr__MG1655_uid57779  
+#        Saccharomyces_cerevisiae
+# 
+#        This is a a result of installer/06_install_organisms.bash
+#RUN mv ${RSAT}/public_html/data ${RSAT}/public_html/data_container
 
 ## <---- set default user and path
 
