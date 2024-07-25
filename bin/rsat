@@ -43,6 +43,7 @@ def citation(path):
 def usage_and_exit(usage, path):
     print(usage)
     print("\nMain citation:\n" + citation(path))
+    print("\nAll publications:\nhttps://github.com/rsa-tools/rsat-code/blob/master/public_html/publications.csv\n")
     exit()
 
 def error(msg):
