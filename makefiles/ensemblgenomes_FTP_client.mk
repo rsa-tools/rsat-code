@@ -96,6 +96,8 @@ organisms:
 	@echo
 	@echo "	${ORGANISM_TABLE}"
 
+param: list_param
+
 list_param:
 	@echo
 	@echo "Parameters"
@@ -107,6 +109,7 @@ list_param:
 	@echo "	RELEASE 		${RELEASE}"
 	@echo " SPECIES_ID		${SPECIES_ID}"
 	@echo "	SPECIES_RSAT_ID		${SPECIES_RSAT_ID}"
+	@echo
 	@echo "Files to download"
 	@echo "	DOWNLOAD_TASKS		${DOWNLOAD_TASKS}"
 	@echo "	COLLECTION_FROM_TABLE	${COLLECTION_FROM_TABLE}"
@@ -116,7 +119,8 @@ list_param:
 	@echo "	FASTA_MSK_FTP_URL	${FASTA_MSK_FTP_URL}"
 	@echo "	FASTA_PEP_FTP_URL	${FASTA_PEP_FTP_URL}"
 	@echo "	SERVER_COMPARA_FILE	${SERVER_COMPARA_FILE}"
-	@echo "LOCAL_FILES"
+	@echo
+	@echo "Local files"
 	@echo "	ORGANISM_DIR		${ORGANISM_DIR}"
 	@echo "	ORGANISM_TABLE		${ORGANISM_TABLE}"
 	@echo "	ALL_SPECIES_NB		${ALL_SPECIES_NB}"
