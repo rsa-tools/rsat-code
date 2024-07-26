@@ -31,6 +31,9 @@ print $query->start_html(-title=>"$title",
         -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
+        -src      => 'js/matamo.js'
+    },
+    { -type => 'text/javascript',
         -src      => 'js/RSAT_tabs.js'
     }
    ],

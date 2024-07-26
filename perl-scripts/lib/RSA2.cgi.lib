@@ -362,6 +362,9 @@ sub RSA_header {
         -src      => 'js/jquery.js'
     },
     { -type => 'text/javascript',
+        -src      => 'js/matamo.js'
+    },
+    { -type => 'text/javascript',
         -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',

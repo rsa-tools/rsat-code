@@ -8,6 +8,7 @@
         <link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
 
         <script src="js/jquery.js"></script>
+	<script src="js/matamo.js"></script>
         <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
             </head>
 

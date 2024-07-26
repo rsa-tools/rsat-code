@@ -4,6 +4,7 @@
 <link rel="stylesheet" type="text/css" href = "css/main_grat.css" media="screen">
 <link rel="stylesheet" type="text/css" href="css/colorbox.css">
 <script scr="js/jquery.js"></script>
+<script scr="js/matamo.js"></script>
  </head>
    <body class="form">
 
