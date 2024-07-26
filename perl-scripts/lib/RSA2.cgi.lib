@@ -280,6 +280,9 @@ sub RSA_header_bootstrap {
         -src      => 'js/RSAT_menu.js'
     },
     { -type => 'text/javascript',
+        -src      => 'js/matamo.js'
+    },
+    { -type => 'text/javascript',
         -src      => 'js/RSAT_tabs.js'
     }
    ],

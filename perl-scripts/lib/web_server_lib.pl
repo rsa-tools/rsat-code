@@ -49,10 +49,13 @@ sub RSA_header_old {
 			   -author=>'Jacques.van-Helden\@univ-amu.fr',
 			   -script=>[
 				     { -type => 'text/javascript',
-				       -src      => 'lib/RSAT_menu.js'
+				       -src      => 'js/RSAT_menu.js'
 				     },
 				     { -type => 'text/javascript',
-				       -src      => 'RSAT_tabs.js'
+				       -src      => 'js/matamo.js'
+				     },
+				     { -type => 'text/javascript',
+				       -src      => 'js/RSAT_tabs.js'
 				     }
                                  ],
 			   -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css"],
