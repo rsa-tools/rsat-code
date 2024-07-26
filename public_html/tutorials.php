@@ -100,6 +100,7 @@ initio</i>" from the sequences.</li></p>
 <h3>General information</h3>
 
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/abbreviations.html"><b>Abbreviation table</b></a></li>
+<li><a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html"><b>How to run RSAT on a Docker container</b></a></li>
 
 </ul><ol>
 

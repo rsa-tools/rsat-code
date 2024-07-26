@@ -49,9 +49,10 @@ sudo pip3 install matplotlib
 sudo pip3 install fisher
 sudo pip3 install snakemake
 
-# may2023, ubuntu 20.04
-# to avoid error with rpy2-3.5.12.tar.gz "note: This error originates from a subprocess, and is likely not a problem with pip",
-# not sure this solves "THIS FAILS on the IFB cloud. To be checked"
+# may2023,jul2024 ubuntu 20.04
+# to avoid errors with python packages such as rpy2-3.5.12.tar.gz, 
+# note: "This error originates from a subprocess, and is likely not a problem with pip",
+# not sure this solves "THIS FAILS on the IFB cloud. To be checked
 sudo pip install wheel setuptools pip --upgrade
 sudo pip3 install wheel setuptools pip --upgrade
 sudo pip3 install rpy2 
@@ -66,7 +67,7 @@ sudo pip3 install rpy2
 ## SAME ERROR: ImportError: No module named 'WSDLTools'
 
 ## I should test one of the following SOAP packages
-sudo pip3 install pysimplesoap
+# sudo pip3 install pysimplesoap ## commented jul2024, fails in Dockerfile
 # sudo pip3 install suds-jurko ## Inactivated on 2023-02-06 because does not work anymore with Ubuntu 22.04
 # soappy is not maintained, and don't install well on python3
 # sudo pip3 install soappy

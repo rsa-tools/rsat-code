@@ -381,7 +381,7 @@ sub retrieve_ensembl_seq {
   if ($args{"features"}) {
     my $features = $args{"features"};
     chomp $features;
-##    $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+#   $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
     $prefix = "retrieve-ensemb-seq_WS";
     $tmp_file_path = &RSAT::util::make_temp_file("",$prefix, 1,0); $tmp_file_name = &ShortFileName($tmp_file_path);
     $tmp_ft_file = $tmp_file_path.".ft";
@@ -6917,7 +6917,7 @@ sub get_result {
   my $ticket = $args{"ticket"};
   my $tmp_outfile = $TMP."/".$ticket;
   my $result = '';
-  open $TMP_OUT, $tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  open $TMP_OUT, $tmp_outfile or die "cannot open that bloody temp file ".$tmp_outfile."\n";
   while (my $line = <$TMP_OUT>) {
       $result .= $line;
   }
@@ -6980,7 +6980,7 @@ sub run_WS_command {
       my $email_address = $output_choice;
       my $delay = "72 hours";
 
-     &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
+      &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
       #my %args;
       #$args{title} = join(" ", "[RSATWS]", $method_name);
       #&RSAT::util::EmailTheResult($command, $email_address, $tmp_outfile, %args);
@@ -6989,7 +6989,7 @@ sub run_WS_command {
       $response .= "\t$result_URL\n";
       $response .= "When the result will be ready, you will be notified at your email address ($email_address).\n";
       $response .= "The result file will remain on the server for $delay.\n";;
-#      return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
+#     return SOAP::Data->name('response' => {'command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command),
 #					     'client' => $response});
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => 'NA'),
  				                               SOAP::Data->name('command' => $ENV{rsat_site}.': '.&RSAT::util::hide_RSAT_path($command)),

@@ -4958,8 +4958,8 @@ motifs in ChIP-Seq data. Bioinformatics 26, 2622-3.
 
 =item I<merge_words>
 
-Merge the words (oligos or dyads) discovered by the different
-string-based motif discovery algorithms.
+Merge the "words" (k-mers, i.e. oligos or dyads) discovered by the
+different string-based motif discovery algorithms.
 
 The table of merged words has one row per word (oligo or dyad) and one
 column per motif discovery program. This table is convenient to
@@ -4973,6 +4973,21 @@ provide a graphical representation of the significance of each word
 The merged words can optionally be used as seeds for extracting
 position-specific scoring matrices from the sequences, using the
 program I<matrix-from-patterns> (see option -disco merged_words).
+
+=item I<merge_motifs>
+
+After having extracted matrices from the k-mers
+(matrix-from-patterns), create a file with all the position-specific
+scoring matrices discovered by the different algorithms
+(oligo-analysis, position-analysis, local-wrods and dyad-analysis.
+
+The merged motifs file is in  transfac format.
+
+=item I<split_motifs>
+
+Split the discovered motifs in separate files in order to analyse them
+separately (e.g. for positional distribution of the sites). One
+separate directory is created for each motif.
 
 =item I<motifs_vs_ref>
 

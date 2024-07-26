@@ -307,7 +307,7 @@ package main;
 	   $fasta_genome_file =~ s/\Q$ext\E/fna/;
 	   $original_path = $ENV{PWD};
 	   $convert_seq_cmd = "cd $dir{output} ; convert-seq -from fasta -to filelist -mask non-dna -i ". $fasta_genome_file ." ; cd ".$original_path;
-	   &RSAT::message::Debug("Genome stored in Fasta will be converted to raw format",  $convert_seq_cmd ) if ($main::verbose >= 2);
+	   &RSAT::message::Debug("Genome stored in fasta format will be converted to raw format",  $convert_seq_cmd ) if ($main::verbose >= 2);
 	   system($convert_seq_cmd);
        }
     }

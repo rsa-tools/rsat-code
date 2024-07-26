@@ -190,6 +190,7 @@ sub PrintHtmlResultHeader {
     #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
     #  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
     $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/matamo.js");
     $header .=  "</head>\n";
     
     ## Start HTML body
