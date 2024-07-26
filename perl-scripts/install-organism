@@ -57,20 +57,20 @@ package main;
       seq_len_distrib
       genome_segments
       upstream_freq
-      genome_freq
       protein_seq
       protein_freq
       protein_len
       oligos
       dyads
-      );
-  
-  our @extra_tasks = qw(
-      phylogeny
       fasta_genome
       fasta_genome_rm
       chrom_sizes
       index_bedtools
+      );
+  
+  our @extra_tasks = qw(
+      genome_freq
+      phylogeny
       uninstall
       erase
       distrib
@@ -470,10 +470,13 @@ package main;
 
 	  ## Create local download directory if needed
 	  &RSAT::util::CheckOutDir($strain_info{$strain}->{"downloads"});
+
+	  ## Build the download command
 	  $RSYNC_URL = $URL;
 	  $RSYNC_URL =~ s/https/rsync/;
-	  my $command = "rsync --copy-links --times --recursive --verbose ".$RSYNC_URL."/* ".$strain_info{$strain}->{"downloads"}."/";
-
+	  $EXCLUDE = " --exclude '*_graph.bw'";
+	  $EXCLUDE .= " --exclude RefSeq_transcripts_alignments";
+	  my $command = "rsync --copy-links --times --recursive --verbose ".${EXCLUDE}." ".$RSYNC_URL."/* ".$strain_info{$strain}->{"downloads"}."/";
 
 	  ## Download data from NCBI
 	  &doit($command, $dry, $die_on_error, $main::verbose);
@@ -510,7 +513,7 @@ package main;
 	  &ParseGenome($strain_info{$strain}->{"species"},
 		       $strain,
 		       $organism_name,
-		       $strain_info{$strain}->{"downloads"}, $genome_dir, $org_nb);
+		       $strain_info{$strain}->{"downloads"}, $genome_dir, $org_nb, %{$strain_info{$strain}});
       }
   }
 
@@ -2774,7 +2777,7 @@ sub StartAndStopCodons {
 ################################################################
 ## Parse the genome from Genbank files
 sub ParseGenome {
-  my ($genus_species, $strain, $organism_name, $strain_dir, $genome_dir, $org_nb) = @_;
+  my ($genus_species, $strain, $organism_name, $strain_dir, $genome_dir, $org_nb, %args) = @_;
   $strain_dir = $strain_info{$strain}->{"downloads"};
   $organism_name = $strain_info{$strain}->{"organism"};
   $genus_species = $strain_info{$strain}->{"genus_species"};
