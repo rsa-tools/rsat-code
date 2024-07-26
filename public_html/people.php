@@ -110,6 +110,7 @@
       Deployment of RSAT::Plants & footprintDB, part of the <a href="https://inb-elixir.es">INB/ELIXIR-ES</a> resources portfolio.<br>
       Integration of plant genomes from Ensembl.<br>
       Protocols for the analysis of regulatory sequences in plants.<br>
+      Docker container
     </td>
   </tr>		    
 		    
