@@ -2952,6 +2952,16 @@ sub ReadAssemblySummary {
 	    my @fields = split("\t");
 
 	    ################################################################
+	    ## Run filters on user-specified fields
+	    for my $field (sort(keys(%filter))) {
+		unless ($fields[$column_index{$field}] =~ /$filter{$field}/) {
+		    $pass_filter = 0;
+		    last;
+		}
+	    }
+	    next unless $pass_filter;	    
+
+	    ################################################################
 	    ## Fix problems with some organism or assembly names that contain
 	    ## problematic characters for folder names (brackets,
 	    ## parentheses, quotes, ...).
@@ -2978,7 +2988,7 @@ sub ReadAssemblySummary {
 	    my $current_strain = join("_", $fields[$column_index{'assembly_accession'}], $fields[$column_index{'asm_name'}]);
 #	    $current_strain =~s/ /_/g; ## Fix problem with some spaces in asm_name
 
-	    ## Check is current strain corresponds to selected strain
+	    ## Check if current strain corresponds to selected strain
 	    if ($strain) {
 		next unless $current_strain eq $strain;
 	    }
@@ -2996,14 +3006,14 @@ sub ReadAssemblySummary {
 		}
 	    }
 
-	    ## Run filters on the other fields
-	    for my $field (sort(keys(%filter))) {
-		unless ($fields[$column_index{$field}] =~ /$filter{$field}/) {
-		    $pass_filter = 0;
-		    last;
-		}
-	    }
-	    next unless $pass_filter;	    
+	    # ## Run filters on user-specified fields
+	    # for my $field (sort(keys(%filter))) {
+	    # 	unless ($fields[$column_index{$field}] =~ /$filter{$field}/) {
+	    # 	    $pass_filter = 0;
+	    # 	    last;
+	    # 	}
+	    # }
+	    # next unless $pass_filter;	    
 	    
 	    ## Create an entry for this assembly in the strain_info hash
 	    $selected += 1;
