@@ -539,25 +539,33 @@ package main;
   ## Compute sequence lengths, which will be required for example
   ## for some bedtools operation (option -g)
   if ($task{"seq_len"}) {
-    foreach my $fasta_type ("fasta", "fasta_rm", "fasta_pep") {
-	$outfile{$fasta_type."_lengths"} = $infile{$fasta_type};
-	$outfile{$fasta_type."_lengths"} =~ s/\.fa$//;
-	$outfile{$fasta_type."_lengths"} .= "_lengths.tab";
-	my $cmd = "sequence-lengths -v 0 -i $infile{$fasta_type} -o $outfile{$fasta_type.'_lengths'}";
-	&RSAT::message::TimeWarn("Computing sequence lengths",$fasta_type, $outfile{$fasta_type."_lengths"}) if ($main::verbose >= 2);
-	&RSAT::util::doit($cmd);
-
-    }      
+      foreach my $fasta_type ("fasta", "fasta_rm", "fasta_pep") {
+	  $outfile{$fasta_type."_lengths"} = $infile{$fasta_type};
+	  $outfile{$fasta_type."_lengths"} =~ s/\.fa$//;
+	  $outfile{$fasta_type."_lengths"} .= "_lengths.tab";
+	  if (-e $infile{$fasta_type}) {
+	      my $cmd = "sequence-lengths -v 0 -i $infile{$fasta_type} -o $outfile{$fasta_type.'_lengths'}";
+	      &RSAT::message::TimeWarn("Computing sequence lengths",$fasta_type, $outfile{$fasta_type."_lengths"}) if ($main::verbose >= 2);
+	      &RSAT::util::doit($cmd);
+	  } else {
+	      &RSAT::message::Warning("Missing file\t", $infile{$fasta_type}, "\tunable to compute sequence lengths");
+	  }
+	  
+      }      
   }
-
+  
   ################################################################
   ## Index the fasta file (required for bedtools getfasta, which is
   ## called by retrieve-seq-bed);
   if ($task{"index_fasta"}) {
     foreach my $fasta_type ("fasta", "fasta_rm", "fasta_pep") {
-      my $cmd = "samtools faidx ".$infile{$fasta_type};
-      &RSAT::message::TimeWarn("Indexing fasta file",$fasta_type, $infile{$fasta_type}) if ($main::verbose >= 2);
-      &RSAT::util::doit($cmd);
+	if (-e $infile{$fasta_type}) {
+	    my $cmd = "samtools faidx ".$infile{$fasta_type};
+	    &RSAT::message::TimeWarn("Indexing fasta file",$fasta_type, $infile{$fasta_type}) if ($main::verbose >= 2);
+	    &RSAT::util::doit($cmd);
+	} else {
+	    &RSAT::message::Warning("Missing file\t", $infile{$fasta_type}, "\tunable to compute samtools index");
+	}
     }      
   }
 
@@ -626,23 +634,28 @@ package main;
     ## I will need to modify sequence headers.
     $pep_fasta_file = $infile{"fasta_pep"};
     if ($pep_fasta_file) {
-      ## Open a specific handle for peptidic sequences
-      $outfile{"peptidic_sequences"} = $dir{output}."/peptidic_sequences.fasta";
-      $handle{"peptidic_sequences"} = &RSAT::util::OpenOutputFile($outfile{"peptidic_sequences"});
-      my $handle = $handle{"peptidic_sequences"};
-
-      &RSAT::message::TimeWarn("Parsing file", "fasta_pep", $pep_fasta_file) if ($main::verbose >= 2);
-      my ($in, $input_dir) = &OpenInputFile($pep_fasta_file);
-      my $seq_nb = 0;  ## Sequence counter
-      my %args = (); 
-      while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, "fasta", $input_dir, "", "", %args)) &&
-	      (($current_seq ne "") || ($current_id ne ""))) {
-	$seq_nb++;
-	#&RSAT::message::Debug("Peptidic sequence", $seq_nb, $current_id) if ($main::verbose >= 10);
-	&PrintNextSequence($handle, "fasta", 0, $current_seq, $current_id, @comments);
-      }
+	if (-e $infile{"fasta_pep"}) {
+	    ## Open a specific handle for peptidic sequences
+	    $outfile{"peptidic_sequences"} = $dir{output}."/peptidic_sequences.fasta";
+	    $handle{"peptidic_sequences"} = &RSAT::util::OpenOutputFile($outfile{"peptidic_sequences"});
+	    my $handle = $handle{"peptidic_sequences"};
+	    
+	    &RSAT::message::TimeWarn("Parsing file", "fasta_pep", $pep_fasta_file) if ($main::verbose >= 2);
+	    my ($in, $input_dir) = &OpenInputFile($pep_fasta_file);
+	    my $seq_nb = 0;  ## Sequence counter
+	    my %args = (); 
+	    while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, "fasta", $input_dir, "", "", %args)) &&
+		    (($current_seq ne "") || ($current_id ne ""))) {
+		$seq_nb++;
+		#&RSAT::message::Debug("Peptidic sequence", $seq_nb, $current_id) if ($main::verbose >= 10);
+		&PrintNextSequence($handle, "fasta", 0, $current_seq, $current_id, @comments);
+	    }
+	} else {
+	    &RSAT::message::Warning("Missing file\t", $infile{"fasta_pep"}, "\tunable to export peptidic sequences");
+	}
     }
   }
+
 
   ################################################################
   ## Update RSAT config
