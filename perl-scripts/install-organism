@@ -3153,8 +3153,10 @@ sub CleanProteinSequences {
 	my $empty_rows = `grep '^\$' ${peptidic_seq_file} | wc -l `;
 	$empty_rows =~ s/\s//g; 
 	if ($empty_rows > 0) {
-	    &RSAT::message::Warning("Peptidic sequence file contains ".$empty_rows." empty rows");
-	    &RSAT::message::Info("Cleaning  ".$empty_rows." empty rows from peptidic sequence fasta file");
+	    if ($main::verbose >= 3) {
+		&RSAT::message::Warning("Peptidic sequence file contains ".$empty_rows." empty rows");
+		&RSAT::message::Info("Cleaning  ".$empty_rows." empty rows from peptidic sequence fasta file");
+	    }
 	    &doit('perl -pi -e "s/^\n$//" '.$peptidic_seq_file);
 	}
     } else {
