@@ -549,7 +549,7 @@ sub CheckOutDir {
 
   ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
-  $chmod = '0777' unless ($chmod);
+  $chmod = '0775' unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = $ENV{PWD}; #`pwd`;
