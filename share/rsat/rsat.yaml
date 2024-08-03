@@ -322,10 +322,6 @@ commands:
 
   ################################################################
   ## Utilities
-  - command: "perl-scripts/classfreq"
-    desc: "Compute frequency distribution of numerical values provided in a given column of a tab-delimited text file"
-    group: "Utilities"
-
   - command: "perl-scripts/create-background-model"
     desc: "Estimate the parameters of a background model from sequences (Bernoulli or Markov)"
     group: "Utilities"
@@ -344,6 +340,14 @@ commands:
 
   - command: "perl-scripts/compare-features"
     desc: "Compare two or more features sets: compute intersection, union and difference, contingency tables and comparison statistics"
+    group: "Utilities"
+
+  - command: "perl-scripts/contingency-table"
+    desc: "Create a contingency table by counting the joint occurrences between values of 2 columns of a tab-delimited text file"
+    group: "Utilities"
+
+  - command: "perl-scripts/classfreq"
+    desc: "Compute frequency distribution of numerical values provided in a given column of a tab-delimited text file"
     group: "Utilities"
 
 
