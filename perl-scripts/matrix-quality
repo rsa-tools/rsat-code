@@ -934,7 +934,7 @@ package main;
 
 	      ## Check if NWD graph is requiered for the given sequence set
 	      if ($main::plot_seq_type{$st} =~/occ_proba/) {
-	      my $occ_proba_st=&Calculate_OCC ($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options)   ;
+	      my $occ_proba_st=&Calculate_OCC($seqfile{$st}, $outfile{matrix_tab}, 'tab', $st, 1,  @matrix_scan_options)   ;
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_matrix{$matrix_name} }, $occ_proba_st);
 	      push ( @{ $tab_files_for_aux_plots_occ_proba_per_seq{$st} }, $occ_proba_st);
 
