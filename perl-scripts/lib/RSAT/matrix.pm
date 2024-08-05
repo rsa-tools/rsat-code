@@ -808,7 +808,7 @@ sub trim_columns {
       if ($left_col_nb > 0 && $right_col_nb < 1) {
 	  $new_col = 0;
 	  for $c (0..($ncol - 1)){
-	      if($c > ($left_col_nb - 1)){
+	      if($c > ($left_col_nb - 1)){ 
 		  $trimmed_counts[$new_col][$r] = $counts[$c][$r];
 		  $new_col++;
 	      }	      
