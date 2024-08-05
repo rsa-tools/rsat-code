@@ -79,6 +79,8 @@ package main;
   local $insert_col_right = 0;
   local $trim_col_left = 0;
   local $trim_col_right = 0;
+  local $min_col_info = -1;
+
   $matrix_list_name=0;
   ## Return type(s)
   @return_fields = ();
@@ -485,11 +487,53 @@ package main;
       $matrix->insert_columns($insert_col_left, $insert_col_right);
     }
 
-    ## Trim columns
+    ## Trim columns with user-provided positions, left and right
     if (($trim_col_left > 0) || ($trim_col_right > 0)) {
       $matrix->trim_columns($trim_col_left, $trim_col_right);
       $matrix->calcConsensus();
+
+
+      # Alternatively trim based on information
+    } elsif(defined($min_col_info)) {
+      
+      my ($trim_info_left, $trim_info_right, $i) = (0, 0);
+
+      # make copy of original matrix to avoid secondary effects further on
+      my $matrixcp = new RSAT::matrix();
+      $matrixcp->setAlphabet( $matrix->getAlphabet() );
+      $matrixcp->setMatrix(
+        $matrix->get_attribute("nrow"),
+        $matrix->get_attribute("ncol"),	
+        $matrix->getMatrix()
+      );
+
+      $matrixcp->calcInformation();
+      my @info = $matrixcp->get_attribute("column.information"); 
+       
+      # compute $trim_info_left according to $min_col_info
+      foreach $i (@info) { 
+        last if($i > $min_col_info);
+        $trim_info_left++; 	
+      }
+
+      # now $trim_info_right
+      if($trim_info_left < $matrixcp->get_attribute("ncol")) {
+        foreach $i (reverse(@info)) {
+          last if($i > $min_col_info);
+          $trim_info_right++;
+        }
+      }
+
+      if (($trim_info_left > 0) || ($trim_info_right > 0)) {
+
+      &RSAT::message::Info("columns to trim based on information: ",$trim_info_left, 
+        ',', $trim_info_right, "($min_col_info)") if ($main::verbose >= 5);
+
+	$matrix->trim_columns($trim_info_left, $trim_info_right);
+	$matrix->calcConsensus();
+      }
     }
+
 
     ## Add empty columns at the flanks of the input matrices
     if ($flanks) {
@@ -598,7 +642,7 @@ package main;
     $id .= $id_nb;
 
 
-    my $ID =   $matrix->get_attribute("accession")
+    my $ID = $matrix->get_attribute("accession")
 	|| $matrix->get_attribute("identifier")
 	|| $matrix->get_attribute("name")
 	|| $matrix->get_attribute("ID")
@@ -988,6 +1032,10 @@ OPTIONS
 	-trim_col #
 	      Remove columns on the left, right, or both flanks of the
 	      count matrix.
+
+	-trim_info #
+	      Remove columns from both flanks with information < value 
+	      (cutoff >= 0.0).
 
 	-base #
 	      Base for the logarithms used in the scores involving a
@@ -1843,6 +1891,7 @@ convert-matrix options
 -trim_col_left #  Remove columns on the left flank of the count matrix.
 -trim_col_right # Remove columns on the right flank of the count matrix.
 -trim_col #	  Remove columns on both flanks of the count matrix.
+-trim_info #    Remove columns on both flanks of the matrix with information < cutoff.
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -prefix		prefix to add before matrix identifiers
@@ -2068,6 +2117,12 @@ sub ReadArguments {
 		unless &RSAT::util::IsNatural($trim_col_left);
 	    &RSAT::error::FatalError($trim_col_right, "Invalid number for columns. Must be a Natural number")
 		unless &RSAT::util::IsNatural($trim_col_right);
+
+	} elsif ($ARGV[$a] eq "-trim_info") {
+	    $min_col_info = $ARGV[$a+1];
+	    
+	    &RSAT::error::FatalError($min_col_info, "Invalid number for columns. Must be a real number >= 0.0")
+		unless &RSAT::util::IsReal($min_col_info);
 
 	    ## Base for the logarihtms in the weight and info content
 	}  elsif ($ARGV[$a] eq "-base") {
