@@ -1,0 +1,16 @@
+on:
+  release:
+    types: [published]
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: write current tag as version
+        run: git describe --tags --abbrev=0 > ./version.txt
+      - name: commit
+        run: git commit -m "updated" version.txt
+      - name: fetch from master
+        run: git fetch origin master
+      - name: push code to master
+        run: git push origin HEAD:master
