@@ -2122,7 +2122,7 @@ sub ReadArguments {
 	    $min_col_info = $ARGV[$a+1];
 	    
 	    &RSAT::error::FatalError($min_col_info, "Invalid number for columns. Must be a real number >= 0.0")
-		unless &RSAT::util::IsReal($min_col_info);
+		unless (&RSAT::util::IsReal($min_col_info) && $min_col_info >= 0);
 
 	    ## Base for the logarihtms in the weight and info content
 	}  elsif ($ARGV[$a] eq "-base") {
