@@ -26,7 +26,7 @@ def citation(path):
         csvfilename = path + "/../../public_html/publications.csv"         
         pubfile = open(csvfilename)
     except OSError as error:
-        print("# ERROR: cannot open/read file:", csvfilename, error)
+        eprint("# ERROR: cannot open/read file:", csvfilename, error)
         return main_citation
 
     for line in pubfile:
@@ -38,10 +38,29 @@ def citation(path):
 
     return main_citation
     
+def version(path):
+
+    version = ''
+    try:
+        vfilename = path + "/../../version.txt"
+        vfile = open(vfilename)
+    except OSError as error:
+        eprint("# ERROR: cannot open/read file:", vfilename, error)
+        return version
+
+    for line in vfile:
+        versre = re.search(r"^(\S+)", line)
+        if versre:
+            version = versre.group(1)
+            break
+    vfile.close()
+
+    return version
 
 
 def usage_and_exit(usage, path):
     print(usage)
+    print("\nVersion: " + version(path))    
     print("\nMain citation:\n" + citation(path))
     print("\nAll publications:\nhttps://github.com/rsa-tools/rsat-code/blob/master/public_html/publications.csv\n")
     exit()
