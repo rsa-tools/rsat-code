@@ -1290,6 +1290,10 @@ File containing a sequence set of a given type.  The first next
 argument indicates the type of the sequence (which will appear in the
 leend of the plots), and the second next argument the file name.
 
+This option can be used iteratively to analyse the matrix score
+distribution in different datasets (e.g. a test and a control
+dataset).
+
 =cut
        } elsif ($arg eq "-seq") {
 	 my $seq_type = shift(@arguments);
