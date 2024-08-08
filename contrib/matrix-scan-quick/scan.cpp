@@ -42,6 +42,7 @@ int scan_seq(FILE *fout,         // output file
 	     )
 {
     char buffer[256];
+    char bestBuffer[256];
     int l = matrix.J;
     ASSERT(l < 256, "invalid matrix size");
     int a = 0;
@@ -105,6 +106,7 @@ int scan_seq(FILE *fout,         // output file
 		    bestA = a;
 		    bestB = b;
 		    bestS = 'D';
+		    strcpy(buffer, bestBuffer);
 		    if (pvalues != NULL)
 		      bestPval = Pval;
 
@@ -156,6 +158,7 @@ int scan_seq(FILE *fout,         // output file
 		    bestA = a;
 		    bestB = b;
 		    bestS = 'R';
+		    strcpy(buffer, bestBuffer);
 		    if (pvalues != NULL)
 		      bestPval = Pval_rc;
 		    
@@ -185,7 +188,7 @@ int scan_seq(FILE *fout,         // output file
 
     if (best_hit)
     {
-      fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, bestS, bestA, bestB, buffer, bestW);
+      fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, bestS, bestA, bestB, bestBuffer, bestW);
       if (pvalues != NULL)
 	fprintf(fout, "\t%G", bestPval);
       fprintf(fout, "\n");
