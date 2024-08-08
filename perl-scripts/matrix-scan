@@ -3627,11 +3627,15 @@ This option is convenient to distinguish separate CRERs, but it can be heavy for
 
 =item B<-quick>
 
-Delegates scanning to the C program matrix-scan-quick (developed by Matthieu Defrance)
-Evaluate if the quick mode is compatible with the selected output parameters, otherwise, run in the slower mode.
+Delegate scanning to the C program matrix-scan-quick (developed by
+Matthieu Defrance)
 
-Incompatible with - CRER scanning
-				  - window background model
+Evaluate if the quick mode is compatible with the selected output
+parameters, otherwise, run in the slower mode.
+
+Incompatible with the following options:
+- CRER scanning
+- window background model
 
 =cut
     } elsif ($arg eq "-quick") {
@@ -3902,10 +3906,11 @@ sub QuickScan {
   }
 
   ################################################################
-  ## Prepare matrix-scan-quick cmd do NOT pass the pseudocount if
-  ## ($main::verbose >= 1) {
+  ## Prepare matrix-scan-quick cmd do NOT pass the pseudocount
+
+  # if ($main::verbose >= 1) {
   $quick_verbose = 1; ## matrix-scan-quick does not accept verbosity higher than 2
-  #  }
+  # }
   my $quick_path = &RSAT::server::GetProgramPath("matrix-scan-quick");
   my $quick_cmd = "";
 
@@ -3981,9 +3986,9 @@ sub QuickScan {
     }
 
     #################################
-    ## PVAL calculation
+    ## P-value computation
     if ($return_fields{pval}) {
-      ## calculate distibution of score
+      ## Compute distibution of weight scores
       my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-distrib_".&AlphaDate());
       my $tmp_distrib_file =  $tmp_file_name.".tab";
       my $matrix_distrib_cmd =  &RSAT::server::GetProgramPath("matrix-distrib");
@@ -4003,22 +4008,37 @@ sub QuickScan {
       ## load the distrib file as option to matrix-scan-quick
       $quick_cmd .= " -distrib ".$tmp_distrib_file;
 
-    ## ========================================================================================================
-    ## DIRTY HACK BY CARL (04/09/2014)
-    ## -t options needs to be specified otherwise the output is empty (when pval calculation is on)
-    ## for some reason, ($uth_matrix->{$matrix_name}->{pval} is sometimes not defined, and the output is empty
-    ## solution : impose a hard thresold -t 0.1
+      ## ========================================================================================================
+      ## DIRTY HACK BY CARL (04/09/2014)
+      ##
+      ## -t options needs to be specified otherwise the output is empty
+      ## (when pval calculation is on) for some reason,
+      ## ($uth_matrix->{$matrix_name}->{pval} is sometimes not defined,
+      ## and the output is empty solution : impose a hard thresold -t
+      ## 0.1
 
       ## commented out by Carl (04/09/2014)
       ## threshold
-       if (defined($uth_matrix->{$matrix_name}->{pval})) {
-       	$quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
-       }
-     #$quick_cmd .= " -t 0.1";
-    ## ========================================================================================================
+      if (defined($uth_matrix->{$matrix_name}->{pval})) {
+	  $quick_cmd .= " -t ".$uth_matrix->{$matrix_name}->{pval};
+      }
 
+      #$quick_cmd .= " -t 0.1";
+      ## ========================================================================================================
+      
     }
 
+    ################################################################
+    ## Return only the best hit per sequence for each
+    ## position-weight matrix. Option added by Jacques, 2024-08-08
+    if (defined($uth{rank_pm})) {
+	if ($uth{rank_pm} == 1) {
+	    $quick_cmd .= " -best_hit_per_seq";
+	} else {
+	    &RSAT::error::FatalError("In quick mode, -uth rank_pm only supports value 1.");
+	}
+    }
+    
     #################################
     ## Run matrix-scan-quick
     &RSAT::message::TimeWarn("Quick scan", $quick_cmd) if ($main::verbose >= 2);
@@ -4072,14 +4092,13 @@ sub QuickScan {
       	}
       }
         
-      # global var, Bruno 19052017
+      # global var, Bruno Contreras 2017-05-19
       $total_printed_quick_matches++;
 
-      if(!defined($ENV{max_matrix_scan_lines}) ||
+      if (!defined($ENV{max_matrix_scan_lines}) ||
          $total_printed_quick_matches < $ENV{max_matrix_scan_lines}) {
          &print_match($match);
-      }
-      elsif($total_printed_quick_matches == $ENV{max_matrix_scan_lines}) {
+      } elsif ($total_printed_quick_matches == $ENV{max_matrix_scan_lines}) {
          printf $main::out "\n;WARNING: list of matches truncated due to disk space limitations (max_matrix_scan_lines).\n";
          printf $main::out ";WARNING; consider reducing the number of sequences, matrices or changing the thresholds.\n\n";
       }
