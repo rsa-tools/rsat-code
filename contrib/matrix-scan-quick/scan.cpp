@@ -24,8 +24,22 @@ void set_buffer(char *buffer, char *seq, int i, int l)
     }
 }
 
-int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t *values, 
-            double threshold, int rc, pvalues_t *pvalues, int origin, int offset, char *matrix_name, int *scanned_pos, int first_hit)
+int scan_seq(FILE *fout,         // output file
+	     seq_t *seq,         // sequence to scan
+	     int s,              
+	     Array &matrix,      // position-specific scoring matrix
+	     Markov &bg,         // background model
+	     values_t *values,   
+	     double threshold,   // shreshold on either weight score or P-value
+	     int rc,             // if 1, also scan reverse complementary sequence
+	     pvalues_t *pvalues, 
+	     int origin,         // reference for the position 0
+	     int offset,         // offset added to each position
+	     char *matrix_name,  // name of the position-specific scoring matrix, printed in 3rd column
+	     int *scanned_pos,    
+	     int first_hit,      // if 1, only print the first hit per sequence
+	     int best_hit        // if 1, only print the best hit per sequence
+	     )
 {
     char buffer[256];
     int l = matrix.J;
@@ -33,6 +47,15 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
     int a = 0;
     int b = 0;
     seq_t *seqrc = NULL;
+
+    // Best values for option -best_hit_per_seq
+    double bestW = -9999999999; // Best weight score for current sequence
+    double bestPval = 1;
+    int bestA = 0;
+    int bestB = 0;
+    char bestS;
+    //    char *bestWline;            // line to print for the best score of the current sequence
+      
     if (rc)
         seqrc = new_seq_rc(seq);
 
@@ -48,6 +71,7 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
         else
             W = matrix.logP(&seq->data[i]) - bg.logP(&seq->data[i], l);
 
+	
         // position
         if (origin == -1) // start
             a = i + 1;
@@ -72,10 +96,32 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
             {
                 //const char *seqstr = "?";
                 set_buffer(buffer, seq->data, i, l);
-                fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'D', a, b, buffer, W);
-                if (pvalues != NULL)
+
+		// Store best hit if option -best_hit_per_seq has been activated
+		if (best_hit)
+		{
+		  if (W > bestW) {
+		    bestW = W;
+		    bestA = a;
+		    bestB = b;
+		    bestS = 'D';
+		    if (pvalues != NULL)
+		      bestPval = Pval;
+
+		    // snprintf(bestWline, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'D', a, b, buffer, W);
+		    // if (pvalues != NULL)
+		    //   snprintf(bestWline, "\t%G", Pval);
+		    // snprintf(bestWline, "\n");
+		  }
+
+		// print current hit
+		} else
+		{
+                  fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'D', a, b, buffer, W);
+                  if (pvalues != NULL)
                     fprintf(fout, "\t%G", Pval);
-                fprintf(fout, "\n");
+                  fprintf(fout, "\n");
+		}
             }
 
             if (first_hit)
@@ -102,10 +148,31 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
             {
                 //const char *seqrcstr = "?";
                 set_buffer(buffer, seqrc->data, seq->size - i - l, l);
-                fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'R', a, b, buffer, Wrc);
-                if (pvalues != NULL)
-                    fprintf(fout, "\t%G", Pval_rc);
-                fprintf(fout, "\n");
+
+		if (best_hit)
+		{
+		  if (Wrc > bestW) {
+		    bestW = Wrc;
+		    bestA = a;
+		    bestB = b;
+		    bestS = 'R';
+		    if (pvalues != NULL)
+		      bestPval = Pval_rc;
+		    
+		    // snprintf(bestWline, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'R', a, b, buffer, Wrc);
+		    // if (pvalues != NULL)
+		    //   snprintf(bestWline, "\t%G", Pval_rc);
+		    // snprintf(bestWline, "\n");
+		  }
+		    
+		} else
+		{
+
+                  fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, 'R', a, b, buffer, Wrc);
+                  if (pvalues != NULL)
+                      fprintf(fout, "\t%G", Pval_rc);
+                  fprintf(fout, "\n");
+		}
             }
             
             if (first_hit)
@@ -115,6 +182,14 @@ int scan_seq(FILE *fout, seq_t *seq,  int s, Array &matrix, Markov &bg, values_t
     
     if (rc)
         free_seq(seqrc);
+
+    if (best_hit)
+    {
+      fprintf(fout, "%s\t%s\t%s\t%c\t%d\t%d\t%s\t%G", seq->name, "site", matrix_name, bestS, bestA, bestB, buffer, bestW);
+      if (pvalues != NULL)
+	fprintf(fout, "\t%G", bestPval);
+      fprintf(fout, "\n");
+    }
     
     return 1;
 }

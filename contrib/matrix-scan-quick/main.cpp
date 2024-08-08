@@ -118,6 +118,8 @@ void help()
 "\n"
 "    -first_hit_per_seq    only report the first hit per sequence.\n"
 "\n"
+"    -best_hit_per_seq     only report the best hit per sequence.\n"
+"\n"
 "    -origin [start|end|center]\n"
 "                          specify the origin for the calculation of positions\n"
 "                           (see matrix-scan manual for details).\n"
@@ -150,6 +152,7 @@ int main(int argc, char *argv[])
     int    origin     = -1;
     int    offset     = 0;
     int    first_hit  = FALSE;
+    int    best_hit  = FALSE;
     FILE *fout        = NULL;
     pvalues_t *pvalues = NULL;
 
@@ -187,12 +190,18 @@ int main(int argc, char *argv[])
         {
             rc = TRUE;
         }
+
         else if (strcmp(argv[i], "-first_hit_per_seq") == 0)
         {
             first_hit = TRUE;
         }
 
-        else if (strcmp(argv[i], "-name") == 0)
+        else if (strcmp(argv[i], "-best_hit_per_seq") == 0)
+        {
+            best_hit = TRUE;
+        }
+
+	else if (strcmp(argv[i], "-name") == 0)
         {
             ASSERT(argc > i + 1, "-name requires a value");
             matrix_name = argv[++i];
@@ -360,7 +369,7 @@ int main(int argc, char *argv[])
         seq_t *seq = fasta_reader_next(reader);
         if (seq == NULL)
             break;
-        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, offset, matrix_name, &scanned_pos, first_hit);
+        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc, pvalues, origin, offset, matrix_name, &scanned_pos, first_hit, best_hit);
         free_seq(seq);
     }
 
