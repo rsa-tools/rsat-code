@@ -106,7 +106,7 @@ int scan_seq(FILE *fout,         // output file
 		    bestA = a;
 		    bestB = b;
 		    bestS = 'D';
-		    strcpy(buffer, bestBuffer);
+		    strcpy(bestBuffer, buffer);
 		    if (pvalues != NULL)
 		      bestPval = Pval;
 
@@ -158,7 +158,7 @@ int scan_seq(FILE *fout,         // output file
 		    bestA = a;
 		    bestB = b;
 		    bestS = 'R';
-		    strcpy(buffer, bestBuffer);
+		    strcpy(bestBuffer, buffer);
 		    if (pvalues != NULL)
 		      bestPval = Pval_rc;
 		    
