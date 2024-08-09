@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      -run: |  
+      - run: |  
             git config --global user.email "bcontreras@eead.csic.es"
             git config --global user.name "eead-csic-compbio"
       - name: write current tag as version
