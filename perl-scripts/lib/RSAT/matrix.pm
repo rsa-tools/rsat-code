@@ -1973,14 +1973,34 @@ sub to_cb {
 
   $to_print .= "\n";
 
-  ## count matrix
-  my @matrix = $self->getMatrix();
+  ## Get the matrix with values to be used
+  my $decimals;
+  if ($args{type} eq "frequencies") {
+    $return_freq = 1;
+    if (defined($self->{decimals})) {
+      $decimals = $self->get_attribute("decimals");
+    } else {
+      $decimals = 2;
+    }
+  }
+  my @values;
+  if ($return_freq) {
+    @values = $self->getFrequencies();
+  } else {
+    @values = $self->getMatrix();
+  }
+
   my $ncol = $self->ncol();
   my $nrow = $self->nrow();
+  my $value;
   for my $c (1..$ncol) {
     for my $r (1..$nrow) {
-      my $occ = $matrix[$c-1][$r-1];
-      $to_print .= $occ;
+      $value = $values[$c-1][$r-1];
+      if ($return_freq) {
+	$to_print .= sprintf " %9g",$value;
+      } else {
+	$to_print .= $value;
+      }
       $to_print .= "\t";
     }
     $to_print .= "\n";
