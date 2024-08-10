@@ -1975,13 +1975,16 @@ sub to_cb {
 
   ## Get the matrix with values to be used
   my $decimals;
+  my $number_width;
   if ($args{type} eq "frequencies") {
     $return_freq = 1;
     if (defined($self->{decimals})) {
       $decimals = $self->get_attribute("decimals");
     } else {
-      $decimals = 2;
+      $decimals = 4;
     }
+    $number_width = $decimals + 3;
+#    warn "decimals=", $decimals, "\t", "number_width=", $number_width, "\n";
   }
   my @values;
   if ($return_freq) {
@@ -1993,11 +1996,12 @@ sub to_cb {
   my $ncol = $self->ncol();
   my $nrow = $self->nrow();
   my $value;
+
   for my $c (1..$ncol) {
     for my $r (1..$nrow) {
       $value = $values[$c-1][$r-1];
       if ($return_freq) {
-	$to_print .= sprintf " %9g",$value;
+	$to_print .= sprintf("%-${number_width}.${decimals}f", $value);
       } else {
 	$to_print .= $value;
       }

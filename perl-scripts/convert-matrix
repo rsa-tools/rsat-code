@@ -1736,10 +1736,9 @@ sub ExportMatrix {
   if ($output_format eq "param_table") {
       print $out_handle $matrix->toString("format"=>"param_table", "number"=>$m);
   }
-
-  if ($output_format eq "cluster-buster" || $output_format eq "cb" ) {
-      print $out_handle $matrix->toString(format=>"cluster-buster", number=>$m);
-  }
+  # if ($output_format eq "cluster-buster" || $output_format eq "cb" ) {
+  #     print $out_handle $matrix->toString(format=>"cluster-buster", number=>$m);
+  # }
 
   if ($output_format eq "jaspar" ) {
       print $out_handle $matrix->toString(format=>"jaspar", number=>$m);
