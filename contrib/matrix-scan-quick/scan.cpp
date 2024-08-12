@@ -50,11 +50,11 @@ int scan_seq(FILE *fout,         // output file
     seq_t *seqrc = NULL;
 
     // Best values for option -best_hit_per_seq
-    double bestW = -9999999999; // Best weight score for current sequence
+    double bestW = -1000000; // Best weight score for current sequence
     double bestPval = 1;
     int bestA = 0;
     int bestB = 0;
-    char bestS;
+    char bestS = '.';
     //    char *bestWline;            // line to print for the best score of the current sequence
       
     if (rc)
