@@ -42,7 +42,7 @@ int scan_seq(FILE *fout,         // output file
 	     )
 {
     char buffer[256];
-    char bestBuffer[256];
+    char bestBuffer[256] =".";
     int l = matrix.J;
     ASSERT(l < 256, "invalid matrix size");
     int a = 0;
