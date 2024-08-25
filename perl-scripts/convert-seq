@@ -106,15 +106,18 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     &RSAT::message::Info("Converting sequence", $seq_nb, $current_id, $seq_len."bp", $comments[0]) if ($main::verbose >= 2);
 
 
-#    ## Remove empty sequences
-#    if (($noempty) && ($current_seq !~ /\S/)) {
-#	next;
-#    }
-
     ## Skip short sequences
     if ($skip_short) {
       if ($seq_len < $skip_short) {
 	&RSAT::message::Warning(join("\t", "Skipping short sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
+	next;
+      }
+    }
+
+    ## Skip sequences composed only of Ns (uncharacterized nucleotides)
+    if ($skip_polyN) {
+      if ($current_seq =~ /^n+$/) {
+	&RSAT::message::Warning(join("\t", "Suppresssing sequence containing only Ns", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
 	next;
       }
     }
@@ -290,6 +293,9 @@ OPTIONS
 	-noempty
 		Remove empty sequences from the set (same as -skip_short 1)
 
+	-skip_polyN
+		Remove sequences composed only of Ns (uncharacterized nucleotides)
+
 	-mask_short min_seq_len
 		Mask (replace by N characters) sequences shorter than
 		the specified length. This can be useful to discard
@@ -307,19 +313,19 @@ OPTIONS
 		Skip sequences longer than the specified length. These
 		sequences are not returned at all in the output.
 
-	-last N
+	-last #
 	        Stop after the Nth sequence.
 
-	-top N
-		Same as -last N
+	-top #
+		Same as -last #
 		 (maintained for backward compatibility)
 
-	-first N
+	-first #
 		Start at the Nth sequence (skip the N-1 first
 		sequences).
 
-	-skip N
-		Skip the N first sequences (start at sequence N+1).
+	-skip #
+		Skip the # first sequences (start at sequence #+1).
 
 		Options -first (or -skip) and -top can be combined to
 		extract a subset from the i^th to the j^th sequence (a
@@ -467,10 +473,11 @@ consvert-seq options
 -mask_short min_seq_len	Mask sequences shorter than the specified length
 -skip_short min_seq_len	Skip sequences shorter than the specified length
 -skip_long max_seq_len	Skip sequences longer than the specified length
--last N	   		Stop after the Nth sequence
--first N		Start at the Nth sequence.
--skip N			Skip the # first sequences of the file. 
--noempty		Remove empty sequences from the set (same as -skip_short 1)
+-last #	   		stop after the #th sequence
+-first #		start at the #th sequence
+-skip #			skip the # first sequences of the file
+-noempty		remove empty sequences from the set (same as -skip_short 1)
+-skip_polyN             remove sequences composed only of Ns (uncharacterized nucleotides)
 -o			outputfile
 -from			input format (see below for accepted formats)
 -id_col			column containing the ID in tab-delimted format
@@ -525,8 +532,12 @@ sub ReadArguments {
 
       ## Remove empty sequences from the set
     } elsif ($ARGV[$a] eq "-noempty") {
-      #	    $noempty = 1;
       $skip_short = 1;
+
+      ## Remove sequences containing only Ns
+    } elsif ($ARGV[$a] eq "-skip_polyN") {
+      #	    $noempty = 1;
+      $skip_polyN = 1;
 
       ## mask short sequences
     } elsif ($ARGV[$a] eq "-mask_short") {
