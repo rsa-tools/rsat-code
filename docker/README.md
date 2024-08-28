@@ -31,8 +31,16 @@ git tag $RSAT_DOCKER_VERSION
 git push origin --tags
 ```
 
+3. Update rsat branch in Dockerfile
 
-3. Build the docker image
+**Attention:** you also need to edit the file `rsat-code/docker/Dockerfile` in order to update the rsat branch. 
+An example below, for the version 2024-08-28c:
+
+```
+RUN git clone https://github.com/rsa-tools/rsat-code.git  --branch 2024-08-28c --single-branch
+```
+
+4. Build the docker image
 
 Beware: this step can take one or several hours. 
 
