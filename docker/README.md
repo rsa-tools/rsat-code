@@ -63,3 +63,12 @@ docker push eeadcsiccompbio/rsat:$RSAT_DOCKER_VERSION
 
 **Note:** the push requires a login and password with write authorization on this repo. 
 
+6. Check the availabilty
+
+You can chek the availability of RSAT versions on dockerhub; 
+
+<https://hub.docker.com/r/eeadcsiccompbio/rsat/tags>
+
+
+
+
