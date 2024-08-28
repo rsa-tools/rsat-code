@@ -52,6 +52,7 @@ package main;
   local $export_top_matrices = 0; ## 0 means "export all"
   local $skip_matrices = 0;  ## 0 means "skip none"
   local $multiply = 1;
+  local $matrix_rescaling = "none";
   local $column_rescaling = "none";
 
   local %selected_matrix = ();
@@ -477,9 +478,14 @@ package main;
       $matrix->multiply($multiply);
     }
 
-    ## Scale factor
+    ## Matrix-wise rescaling
+    if (&IsReal($matrix_rescaling)) {
+      $matrix->rescale_matrix($matrix_rescaling);
+    }
+
+    ## Column-wise rescaling
     if (&IsReal($column_rescaling)) {
-      $matrix->rescale_columns($column_rescaling);
+      $matrix->rescale_matrix($column_rescaling, 1);
     }
 
     ## Insert columns
@@ -1014,10 +1020,16 @@ OPTIONS
 		provide relative frequencies.
 
 	-rescale #
-		Scale the matrix to a fixed value for the sums per
+		Rescale the matrix to a fixed value for the sums per
 		columns. If columns have unequal counts, the scaling
 		factor is adapted to the maximal count of residues per
 		column.
+
+	-rescale_col #
+                Rescale each column of the matrix to a fixed value for
+		the sums per columns. In contrast with the option
+		-rescale, the scaling factor is computed separately
+		for each column.
 
 	-insert_col_left #
 	-insert_col_right #
@@ -2077,8 +2089,14 @@ sub ReadArguments {
 	    &RSAT::error::FatalError($multiply, "Invalid multiplicative factor. Must be a Real number")
 		unless &RSAT::util::IsReal($multiply);
 
-	    ## Column rescaling
+	    ## Matrix rescaling
 	} elsif ($ARGV[$a] eq "-rescale") {
+	    $matrix_rescaling = $ARGV[$a+1];
+	    &RSAT::error::FatalError($matrix_rescaling, "Invalid column rescaling number. Must be a strictly positive Real number.")
+		unless ((&RSAT::util::IsReal($matrix_rescaling)) && ($matrix_rescaling > 0));
+
+	    ## Column-wise rescaling
+	} elsif ($ARGV[$a] eq "-rescale_col") {
 	    $column_rescaling = $ARGV[$a+1];
 	    &RSAT::error::FatalError($column_rescaling, "Invalid column rescaling number. Must be a strictly positive Real number.")
 		unless ((&RSAT::util::IsReal($column_rescaling)) && ($column_rescaling > 0));

@@ -1,4 +1,4 @@
-################################################################
+ ################################################################
 ##
 ## Treatment of Position-Specific Scoring Matrices (PSSM): computation
 ## of derived statistics (frequencies, weights, information) and
@@ -2358,36 +2358,77 @@ sub multiply {
 
 =pod
 
-=item rescale_columns()
+=item rescale_matrix()
 
 Scale the matrix to a fixed value for the sums per columns. If columns
 have unequal counts, the scaling factor is adapted to the maximal
 count of residues per column.
 
-Usage: $matrix->rescale_columns($n);
+Usage: $matrix->rescale_matrix($n);
 
 =cut
 sub rescale_columns {
-  my ($self, $n) = @_;
+  &RSAT::message::Warning("&RSAT::matrix::rescale_columns() is obsolete, passing to &RSAT::matrix::rescale_matrix()");
+  my $rescaled = &RSAT::matrix::rescale_matrix(@_);
+#  die "BOUM";
+  return($rescaled);
+}
+sub rescale_matrix {
+  my ($self, $n, $per_column) = @_;
+  if ($main::verbose >= 0) {
+    my $message = "";
+    if ($per_column) {
+      $message .= " column-wise";
+    } else {
+      $message .= " matrix-wise";
+    }
+    $message .=  " rescaling to ".$n;
+    &RSAT::message::Info($message);
+  }
 
   ## count matrix
   my @matrix = $self->getMatrix();
   my $ncol = $self->ncol();
   my $nrow = $self->nrow();
+  my $scaling_factor = 1;
+
+  &RSAT::message::Debug("nrow=".$nrow, "ncol:".$ncol) if ($main::verbose >= 0);
 
   ## Get the maximal count sum per column
-  my @col_sum = col_sum($nrow,$ncol,@matrix);
-  my $max_col_sum = &RSAT::stats::max(@col_sum);
-  if ($max_col_sum <= 0) {
+  if ($per_column == 0) {
+    my @col_sum = col_sum($nrow,$ncol,@matrix);
+    my $max_col_sum = &RSAT::stats::max(@col_sum);
+    if ($max_col_sum <= 0) {
       &RSAT::error::FatalError("Cannot scale matrix with only null values");
-  }
-  my $scaling_factor = $n/$max_col_sum;
-  
-  for my $c (0..($ncol-1)) {
-    my $col_sum = 0;
-    for my $r (0..($nrow-1)) {
-      $matrix[$c][$r] *= $scaling_factor;
     }
+    $scaling_factor = $n/$max_col_sum;
+    &RSAT::message::Debug("max_col_sum=".$max_col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >+ 0);
+  }
+
+  for my $c (0..($ncol-1)) {
+    ## Compute the sum of counts for current column
+    if ($per_column) {
+      my $col_sum = 0;
+      for my $r (0..($nrow-1)) {
+	$col_sum += $matrix[$c][$r];
+      }
+      $scaling_factor = $n / $col_sum;
+      &RSAT::message::Debug("c=".$c, "col_sum=".$col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >+ 0);
+#      die "HELLO";
+    } elsif ($main::verbose >= 0) {
+      &RSAT::message::Debug("Scaling factor: ", $scaling_factor);
+    }
+
+    ## Rescale column counts
+    for my $r (0..($nrow-1)) {
+      # Update count for this residue
+      $matrix[$c][$r] *= $scaling_factor;
+
+      # Update max count
+      if ($matrix[$c][$r] > $max_count) {
+      }
+    }
+
   }
   $self->setMatrix($nrow, $ncol, @matrix);
 }
@@ -3328,9 +3369,8 @@ Return a vector of the same length as the table width.
 =cut
 sub col_sum {
   my ($nrow, $ncol, @table) = @_;
-#    die join "\t", $nrow, $ncol, join( " ", @{$matrix[0]});
 
-  &RSAT::message::Info("Calculating sum per column for a table",$nrow, $ncol)
+  &RSAT::message::Info("Calculating sum of counts for each column of a table", $nrow, $ncol)
       if ($main::verbose > 5);
 
   my @col_sum = ();
