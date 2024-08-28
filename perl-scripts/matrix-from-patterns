@@ -335,7 +335,7 @@ package main;
     $convert_cmd .= " -decimals 2";
     $convert_cmd .= " -flanks ".$flanks;
     $convert_cmd .= " -top ".$max_asmb_nb unless ($cluster_column);
-    $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
+#    $convert_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix, $log, $err);
@@ -1234,7 +1234,7 @@ sub sites_to_matrix {
   $convert2_cmd .= " -v 0"; ## Verbosity must be 0 for TRANSFAC format
   $convert2_cmd .= " -i ".$site_file;
   $convert2_cmd .= " -from feature -to transfac";
-  $convert2_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
+#  $convert2_cmd .= " -prefix ".$main::matrix_prefix if ($main::matrix_prefix);
   $convert2_cmd .= " -return counts";
   #    $convert2_cmd .= " -sort desc information.per.column";
   $convert2_cmd .= " -return sites" if ($return_fields{sites});

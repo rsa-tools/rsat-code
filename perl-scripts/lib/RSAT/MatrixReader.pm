@@ -154,9 +154,9 @@ sub readFromFile {
 	} elsif ($format eq "meme") {
 	@matrices = _readFromMEMEFile_2015($file, %args);
     } elsif ($format eq "feature") {
-	@matrices = _readFromFeatureFile($file, %args);
-      } elsif ($format eq "sequences") {
-	@matrices = _readFromSeq($file, %args);
+      @matrices = _readFromFeatureFile($file, %args);
+    } elsif ($format eq "sequences") {
+      @matrices = _readFromSeq($file, %args);
     } else {
 	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
     }
@@ -3083,6 +3083,7 @@ sub _readFromFeatureFile {
 		    );
   }
   close $in if ($file);
+
   return @matrices;
 }
 
