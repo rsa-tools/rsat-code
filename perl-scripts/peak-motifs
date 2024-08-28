@@ -114,7 +114,7 @@ use File::Basename;
 ## Main package
 package main;
 {
-  
+
   ################################################################
   ## Initialize parameters
   local $start_time = &RSAT::util::StartScript();
@@ -1103,14 +1103,13 @@ sub SetOutFileNames {
 sub PurgeSeq {
   my ($seq_type) = @_;
 
-  
-#  my $seq_file = $seqfile{$seq_type};
   my $seq_file = $main::infile{$seq_type."_seq"};
+  &RSAT::message::TimeWarn("Pre-processing sequence", $seq_type, $seq_file) if ($main::verbose >= 2);
 
   ## Convert sequences to standard fasta format, mask non-DNA seqences
   ## selectd top peaks if required, and truncate sequences to max
   ## length if specified.
-  &RSAT::message::TimeWarn("Converting sequences", $seq_type, $seq_file) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Converting sequences", $seq_type, $seq_file) if ($main::verbose >= 3);
   my $cmd = &RSAT::server::GetProgramPath("convert-seq");
   $cmd .= " -i ".$seq_file;
   $cmd .= " -from ".$main::param{seq_format};
@@ -1152,7 +1151,6 @@ sub PurgeSeq {
   } else {
       &RSAT::message::Warning("Task purge skipped because option -nopurge was selected") if ($main::verbose >= 1);
   }
-    
 }
 
 
@@ -1237,7 +1235,7 @@ sub CompositionProfiles {
 
   ################################################################
   ## Compute nucleotide and dinucleotide frequencies
-  &RSAT::message::TimeWarn("Computing nucleotide and dinucleotide frequencies") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Computing nucleotide and dinucleotide frequencies for sequence type", $seq_type) if ($main::verbose >= 2);
   for my $ol (@composition_oligo_lengths) {
 
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
@@ -1287,11 +1285,11 @@ sub CompositionProfiles {
 
   ################################################################
   ## Compute position profiles for 1nt and 2nt
-  &RSAT::message::TimeWarn("Computing composition profiles") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Computing position profiles for sequence type ", $seq_type) if ($main::verbose >= 2);
   for my $ol (@composition_oligo_lengths) {
 
     ## Compute positional profiles
-    &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tComputing composition profiles", $ol."nt") if ($main::verbose >= 2);
     my $cmd = &RSAT::server::GetProgramPath("position-analysis");
     $cmd .= " -v 1";
     if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
@@ -1315,7 +1313,9 @@ sub CompositionProfiles {
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles"};
     &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt", log=>$main::out);
 
+
     ## Draw a XY graph with composition profiles
+    &RSAT::message::TimeWarn("Plotting composition profiles") if ($main::verbose >= 2);
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
     my $col_nb = 4**$ol + 1;
     $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"};
@@ -1357,7 +1357,10 @@ sub CompositionProfiles {
     $cmd .= " -yleg1 'Occurrences' -ysize 250  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
+    &RSAT::message::TimeWarn("Composition profile task completed for seq type ", $seq_type) if ($main::verbose >= 2);
   }
+
+  &RSAT::message::TimeWarn("Composition profile task completed") if ($main::verbose >= 2);
 }
 
 
@@ -5370,7 +5373,7 @@ sub CheckArguments {
     ## This is important because some users of the Web site seem to
     ## submit coordinates (bed filesà) rather than sequences (fasta
     ## files).
-    &RSAT::message::Debug("Checking fasta format for test sequence file", $infile{test_seq}) if ($main::verbose >= 2);
+    &RSAT::message::Info("Checking fasta format for test sequence file", $infile{test_seq}) if ($main::verbose >= 3);
     my $fasta_header_lines = &CheckFastaFile($infile{test_seq}, $check_fasta_top);
 
     &RSAT::message::TimeWarn($fasta_header_lines, "fasta headers in the top", $check_fasta_top, "lines") if ($main::verbose >= 3);
@@ -5439,6 +5442,7 @@ sub CheckArguments {
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");
   }
 
+
   ## Prefix
   unless ($main::param{prefix}) {
     &RSAT::error::FatalError("You must define a prefix for the output files (option -prefix)");
@@ -5491,8 +5495,8 @@ sub CheckArguments {
   $main::param{scan_enrich_options} = " -lth score ".$main::param{scan_enrich_min_score};
   $main::param{scan_enrich_options} .= " -bginput -markov ".$main::param{scan_markov};
 
-  &RSAT::message::Debug($param{strand}, $param{scan_options}) if ($main::verbose >= 3);
-    
+  &RSAT::message::Debug($param{strand}, $param{scan_options}) if ($main::verbose >= 5);
+
   ## Modalities of motif comparisons
   if ($task{motif_compa}) {
     $task{merge_motifs} = 1;
