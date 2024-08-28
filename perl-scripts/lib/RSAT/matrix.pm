@@ -1075,6 +1075,7 @@ sub to_TRANSFAC {
 			  "ID", $id,
 			  "AC", $accession) if ($main::verbose >= 5);
 
+
     ## Print accession number
     $to_print .= "AC  ".$accession."\n";
     $to_print .= "XX\n";
@@ -2402,7 +2403,7 @@ sub rescale_matrix {
       &RSAT::error::FatalError("Cannot scale matrix with only null values");
     }
     $scaling_factor = $n/$max_col_sum;
-    &RSAT::message::Debug("max_col_sum=".$max_col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >+ 0);
+    &RSAT::message::Debug("max_col_sum=".$max_col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >= 5);
   }
 
   for my $c (0..($ncol-1)) {
@@ -2413,7 +2414,7 @@ sub rescale_matrix {
 	$col_sum += $matrix[$c][$r];
       }
       $scaling_factor = $n / $col_sum;
-      &RSAT::message::Debug("c=".$c, "col_sum=".$col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >+ 0);
+      &RSAT::message::Debug("c=".$c, "col_sum=".$col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >= 5);
 #    } elsif ($main::verbose >= 0) {
 #      &RSAT::message::Debug("Scaling factor: ", $scaling_factor);
     }
