@@ -740,7 +740,7 @@ sub SetOutFileNames {
 
   ################################################################
   ## Background model file for matrix scanning (has been computed with
-  ## the composition profiles).
+  ## the position profiles).
   $main::param{scan_bg_file} = $main::outfile{$main::param{scan_bg_ol}."nt_test_inclusive"};
   &RSAT::message::Info("Background model file",
 		       "order=".$main::param{scan_markov},
@@ -1118,7 +1118,7 @@ sub PurgeSeq {
 
   ## Select top peaks if required
   if (defined($main::param{top_peaks})) {
-    &RSAT::message::Info("\tSelecting top peaks", $main::param{top_peaks}) if ($main::verbose >= 2);
+    &RSAT::message::Info("Selecting top peaks", $main::param{top_peaks}) if ($main::verbose >= 2);
     $cmd .= " -top ".$main::param{top_peaks};
   }
 
@@ -1126,7 +1126,7 @@ sub PurgeSeq {
   if (defined($main::param{max_seq_len})) {
     my $from = -round($main::param{max_seq_len}/2);
     my $to = $from + $main::param{max_seq_len} -1;
-    &RSAT::message::Info("\tTruncating to ", $main::param{max_seq_len}." bp max") if ($main::verbose >= 2);
+    &RSAT::message::Info("Truncating to ", $main::param{max_seq_len}." bp max") if ($main::verbose >= 2);
     $cmd .= " | ";
     $cmd .= &RSAT::server::GetProgramPath("sub-sequence");
     #    $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
@@ -1149,7 +1149,7 @@ sub PurgeSeq {
       $cmd .= " -o ".$main::outfile{$seq_type."_purged"};
       &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
   } else {
-      &RSAT::message::Warning("Task purge skipped because option -nopurge was selected") if ($main::verbose >= 1);
+      &RSAT::message::Info("Task purge skipped because option -nopurge was selected") if ($main::verbose >= 1);
   }
 }
 
@@ -1159,7 +1159,7 @@ sub PurgeSeq {
 sub SequenceLengths {
   my ($seq_type) = @_;
 
-  &RSAT::message::TimeWarn("Computing sequence lengths", $seq_type) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("\tComputing sequence lengths", $seq_type) if ($main::verbose >= 2);
   my $cmd = &RSAT::server::GetProgramPath("sequence-lengths");
   ## $cmd .= " -i ".$main::infile{$seq_type.'_seq'};
   if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
@@ -1227,7 +1227,7 @@ sub SequenceLengths {
 }
 
 ################################################################
-## Run position-analysis to compute composition profiles (residues,
+## Run position-analysis to compute position profiles (residues,
 ## dinucleotides) anw count-words to compute background models for
 ## sequence scanning.
 sub CompositionProfiles {
@@ -1235,7 +1235,7 @@ sub CompositionProfiles {
 
   ################################################################
   ## Compute nucleotide and dinucleotide frequencies
-  &RSAT::message::TimeWarn("Computing nucleotide and dinucleotide frequencies for sequence type", $seq_type) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("\tComputing nucleotide and dinucleotide frequencies") if ($main::verbose >= 2);
   for my $ol (@composition_oligo_lengths) {
 
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
@@ -1285,11 +1285,11 @@ sub CompositionProfiles {
 
   ################################################################
   ## Compute position profiles for 1nt and 2nt
-  &RSAT::message::TimeWarn("Computing position profiles for sequence type ", $seq_type) if ($main::verbose >= 2);
+#  &RSAT::message::TimeWarn("Computing position profiles for sequence type ", $seq_type) if ($main::verbose >= 2);
   for my $ol (@composition_oligo_lengths) {
 
     ## Compute positional profiles
-    &RSAT::message::TimeWarn("\tComputing composition profiles", $ol."nt") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tComputing position profiles", $ol."nt") if ($main::verbose >= 2);
     my $cmd = &RSAT::server::GetProgramPath("position-analysis");
     $cmd .= " -v 1";
     if ($main::param{purge}) { ## 2024-07-04: added option -nopurge
@@ -1314,8 +1314,8 @@ sub CompositionProfiles {
     &RSAT::util::one_command($cmd, 1, $main::outfile{$ol."nt_".$seq_type."_profiles"}."_time.txt", log=>$main::out);
 
 
-    ## Draw a XY graph with composition profiles
-    &RSAT::message::TimeWarn("Plotting composition profiles") if ($main::verbose >= 2);
+    ## Draw a XY graph with position profiles
+    &RSAT::message::TimeWarn("\tPlotting position profiles") if ($main::verbose >= 2);
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
     my $col_nb = 4**$ol + 1;
     $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_".$seq_type."_profiles"};
@@ -1357,10 +1357,10 @@ sub CompositionProfiles {
     $cmd .= " -yleg1 'Occurrences' -ysize 250  -ymin 0";
     $cmd .= " -o ".$main::outfile{$ol."nt_".$seq_type."_profiles_graph"};
     &RSAT::util::one_command($cmd, 1, "", log=>$main::out);
-    &RSAT::message::TimeWarn("Composition profile task completed for seq type ", $seq_type) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("\tComposition profile task completed for seq type ", $seq_type) if ($main::verbose >= 2);
   }
 
-  &RSAT::message::TimeWarn("Composition profile task completed") if ($main::verbose >= 2);
+#  &RSAT::message::TimeWarn("Composition profile task completed") if ($main::verbose >= 2);
 }
 
 
@@ -2082,6 +2082,7 @@ sub MergeMotifs {
 
     if (-e $matrix_file) {
       $cmd .= "; cat ".$matrix_file." >> ".$main::outfile{motifs_discovered};
+#      &RSAT::message::Debug("Adding matrix file", $pattern_type, $matrix_file) if ($main::verbose >= 5);
     } else {
       &RSAT::message::Warning("Missing matrix file", $pattern_type, $matrix_file) if ($main::verbose >= 2);
     }
@@ -2612,18 +2613,16 @@ sub MatrixFromPatterns {
 			"\n\tpattern_type: ".$pattern_type,
 			"\n\tpattern_file: ".$pattern_file,
 			"\n\tpssm_file: ".$pssm_file,
-      ) if ($verbose >= 5);
+		       ) if ($verbose >= 5);
+
+  ## Get the path to rsat matrix-from-patterns
   my $cmd = &RSAT::server::GetProgramPath("matrix-from-patterns");
   $cmd .= " -v 1 ";
 
-  ## Done: add the option -sites (request by Anthony Mathelier,
-  ## 2017-08-08). 
-  ##
   ## TO DO: add a link to the sites used to build the PSSM +
   ## check that these are included in the transfac-formatted output
   ## file.
   $cmd .= " -sites";
-#  $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -seq ".$main::outfile{"test_converted"};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bgfile ".$main::param{scan_bg_file};
@@ -4172,17 +4171,6 @@ sub SynthesisPatternDisco {
     }
     $pattern_table .= "</table>\n\n\n";
 
-#    &SyntheticTableAddRow($pattern_type,
-#			  $pattern_table,
-#			  $pattern_type,$main::outfile{$pattern_type},
-#			  "assembly",$main::outfile{$pattern_type.'_asmb'},
-#			  "sig matrices",$main::outfile{$pattern_type.'_pssm_sig'},
-#			  "matrices - tab format",$main::outfile{$pattern_type.'_pssm_counts'},
-#			  "matrices - transfac format",$main::outfile{$pattern_type.'_pssm_tf'},
-##			  "sites",$main::outfile{$pattern_type.'_pssm_sites'},
-##			  "site distrib",$main::outfile{$pattern_type.'_pssm_site_distrib'},
-##			  "site distrib graph",$main::outfile{$pattern_type.'_pssm_site_distrib_graph'},
-#			 );
     &SyntheticTableAddRow_New($pattern_type,
 			      $pattern_table,
 			      "discovered words",["text",$main::outfile{$pattern_type},
