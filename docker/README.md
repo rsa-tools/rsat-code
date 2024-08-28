@@ -15,11 +15,11 @@ Those are based on this [Dockerfile](./Dockerfile), which we use for testing and
 
 ## Building a new release of RSAT docker
 
-1. Pull the latest version of RSAT code
+1. Get a git clone with the latest version of RSAT code
 
 ```
+git clone https://github.com/rsa-tools/rsat-code.git
 cd rsat-code
-git pull
 ```
 
 2. Set a tag for this docker release
