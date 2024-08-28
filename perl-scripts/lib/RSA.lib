@@ -189,9 +189,9 @@ sub PrintHtmlResultHeader {
     $header .=  sorttable_script();
     #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
     #  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
-    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/js/RSAT_menu.js");
-    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/js/matamo.js");
-    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/js/RSAT_tabs.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/matamo.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/public_html/js/RSAT_tabs.js");
     $header .=  "</head>\n";
     
     ## Start HTML body
