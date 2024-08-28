@@ -26,6 +26,7 @@ git pull
 
 ```
 export RSAT_DOCKER_VERSION=`date '+%Y-%m-%d'`
+echo RSAT_DOCKER_VERSION=$RSAT_DOCKER_VERSION
 git tag $RSAT_DOCKER_VERSION
 ```
 
