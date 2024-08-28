@@ -2375,16 +2375,16 @@ sub rescale_columns {
 }
 sub rescale_matrix {
   my ($self, $n, $per_column) = @_;
-  if ($main::verbose >= 0) {
-    my $message = "";
-    if ($per_column) {
-      $message .= " column-wise";
-    } else {
-      $message .= " matrix-wise";
-    }
-    $message .=  " rescaling to ".$n;
-    &RSAT::message::Info($message);
-  }
+  # if ($main::verbose >= 10) {
+  #   my $message = "";
+  #   if ($per_column) {
+  #     $message .= " column-wise";
+  #   } else {
+  #     $message .= " matrix-wise";
+  #   }
+  #   $message .=  " rescaling to ".$n;
+  #   &RSAT::message::Info($message);
+  # }
 
   ## count matrix
   my @matrix = $self->getMatrix();
@@ -2392,7 +2392,7 @@ sub rescale_matrix {
   my $nrow = $self->nrow();
   my $scaling_factor = 1;
 
-  &RSAT::message::Debug("nrow=".$nrow, "ncol:".$ncol) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("nrow=".$nrow, "ncol:".$ncol) if ($main::verbose >= 10);
 
   ## Get the maximal count sum per column
   if ($per_column == 0) {
@@ -2414,9 +2414,8 @@ sub rescale_matrix {
       }
       $scaling_factor = $n / $col_sum;
       &RSAT::message::Debug("c=".$c, "col_sum=".$col_sum, "scaling_factor=".$scaling_factor) if ($main::verbose >+ 0);
-#      die "HELLO";
-    } elsif ($main::verbose >= 0) {
-      &RSAT::message::Debug("Scaling factor: ", $scaling_factor);
+#    } elsif ($main::verbose >= 0) {
+#      &RSAT::message::Debug("Scaling factor: ", $scaling_factor);
     }
 
     ## Rescale column counts
