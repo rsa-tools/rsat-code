@@ -98,7 +98,7 @@ sub close_table_html {
 ################################################################
 ## Print a java script produce a sortable HTML table
 sub sorttable_script {
-    my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
+    my $script = $ENV{RSAT}."/perl-scripts/lib/js/sorttable.js";
     return `cat $script`;
 }
 
@@ -187,11 +187,11 @@ sub PrintHtmlResultHeader {
     
     ## Java scripts
     $header .=  sorttable_script();
-    #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/sorttable.js");
-    #  $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/RSAT_menu.js");
-    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/RSAT_menu.js");
-    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/matamo.js");
-    $header .=  &java_script_from_file($ENV{RSAT}."/public_html/js/RSAT_tabs.js");
+    #  $header .=   &java_script_from_file($ENV{RSAT}."/public_html/lib/js/sorttable.js");
+    # $header .=  &java_script_from_file($ENV{RSAT}."/public_html/lib/js/RSAT_menu.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/js/RSAT_menu.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/js/matamo.js");
+    $header .=  &java_script_from_file($ENV{RSAT}."/perl-scripts/lib/js/RSAT_tabs.js");
     $header .=  "</head>\n";
     
     ## Start HTML body
