@@ -662,6 +662,7 @@ package main;
 	|| $id_nb;
 
 
+
     $matrix->force_attribute("ID", $ID);
 
     ## Select user-specified IDs if the option -matrix_id_file has been specified
