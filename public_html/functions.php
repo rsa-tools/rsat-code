@@ -105,10 +105,14 @@ Function getTempFileName($prefix, $ext) {
 }
 
 
+
+
 Function storeFile($file) {
   global $properties;
   # transforms the $RSAT variable to the real RSAT path
-  $file = str_replace("\$RSAT", $properties['RSAT'], $file);
+  if (isset($properties['RSAT'])) {
+    $file = str_replace("\$RSAT", $properties['RSAT'], $file);
+  }
   $fh = fopen($file, 'r');
   $theData = "";
   if (filesize($file) > 0) {
