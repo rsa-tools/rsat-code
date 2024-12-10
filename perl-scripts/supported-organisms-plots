@@ -92,7 +92,6 @@ package main;
       my @data = split;
      
       #next if($data[0] !~ /Arabidopsis/ && $data[0] !~ /Chlamydomonas/ && $data[0] !~ /cerevisiae/); # debugging
-      next if($data[0] !~ /Medicago/);
 
       # check contigs, add Ns and tally genome size
       my ($contigs,$size) = (0,0);
