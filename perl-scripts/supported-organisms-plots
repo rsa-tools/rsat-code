@@ -92,6 +92,7 @@ package main;
       my @data = split;
      
       #next if($data[0] !~ /Arabidopsis/ && $data[0] !~ /Chlamydomonas/ && $data[0] !~ /cerevisiae/); # debugging
+      next if($data[0] !~ /Medicago/);
 
       # check contigs, add Ns and tally genome size
       my ($contigs,$size) = (0,0);
@@ -152,6 +153,10 @@ package main;
       }
       close(UPS);
       if(scalar(@{$stats{$data[0]}{'upstream_L'}}) > $max_ups){ $max_ups = scalar(@{$stats{$data[0]}{'upstream_L'}}) }
+
+      if(scalar(@{ $stats{$data[0]}{'upstream_L'} }) == 0) {
+        die "# ERROR: failed to parse upstream_L, cannot compute mean\n";
+      }
 
       # print summary
       #Triticum_urartu.ASM34745v1.40  3.747e+09   499222  19.7    77.5    36922   2601
