@@ -3,14 +3,18 @@
 ## This CGI script was initially developed to fill in the HTML form
 ## for the random-seq web form.
 
+# set path to lib, fixed 24012025
+use FindBin '$Bin';
+use lib "$Bin/lib";
+
 ## Added note, JvH 2024-09-17: this script has been used by several
 ## other CGI and PHP scripts, without apparent consistency between the
 ## formas that use it or not. This is far from clean, it should be
 ## revised and re-designed.
+#if ($0 =~ / ([^ (\/)]+)$/) {
+#    push (@INC, "$`lib/");
+#}
 
-if ($0 =~ / ([^ (\/)]+)$/) {
-    push (@INC, "$`lib/");
-}
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
