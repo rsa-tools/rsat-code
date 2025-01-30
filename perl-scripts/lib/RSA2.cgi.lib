@@ -3839,7 +3839,7 @@ sub MatrixFromPatterns_defaults {
   $default{flanks} = 2;
   $default{max_asmb_nb} = 20;
   $default{min_weight} = 5;
-  $default{clustering} = 'sig';
+  $default{clustering} = 'none';
 }
 
 ################################################################

@@ -153,6 +153,10 @@ package main;
       close(UPS);
       if(scalar(@{$stats{$data[0]}{'upstream_L'}}) > $max_ups){ $max_ups = scalar(@{$stats{$data[0]}{'upstream_L'}}) }
 
+      if(scalar(@{ $stats{$data[0]}{'upstream_L'} }) == 0) {
+        die "# ERROR: failed to parse upstream_L, cannot compute mean\n";
+      }
+
       # print summary
       #Triticum_urartu.ASM34745v1.40  3.747e+09   499222  19.7    77.5    36922   2601
       #Vigna_angularis.Vigan1.1.40    4.667e+08   37373   3.6 10.1    0   2758

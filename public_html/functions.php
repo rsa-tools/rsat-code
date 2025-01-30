@@ -105,10 +105,14 @@ Function getTempFileName($prefix, $ext) {
 }
 
 
+
+
 Function storeFile($file) {
   global $properties;
   # transforms the $RSAT variable to the real RSAT path
-  $file = str_replace("\$RSAT", $properties['RSAT'], $file);
+  if (isset($properties['RSAT'])) {
+    $file = str_replace("\$RSAT", $properties['RSAT'], $file);
+  }
   $fh = fopen($file, 'r');
   $theData = "";
   if (filesize($file) > 0) {
@@ -245,9 +249,9 @@ if ($properties['rsat_www'] == "auto") {
   $properties['rsat_www'] =  'http://'.$ip.'/rsat/';
 }
 
-// Check if the property neat_www_root has been set to "auto", and, if so,
-// set it automatically
-if ($properties['neat_www_root'] == "auto") {
+
+// Check if the property neat_www_root is set and if it is set to "auto"
+if (!isset($properties['neat_www_root']) || $properties['neat_www_root'] == "auto") {
   $ip = $_SERVER['HTTP_HOST'];
   //print_r('IP = '.$ip);
   $properties['neat_www_root'] =  'http://'.$ip.'/rsat/';
@@ -269,27 +273,30 @@ if ($properties['neat_www_root'] == "auto") {
 $neat_www_root = $properties['neat_www_root'];
 
 // automatic definition of neat_ws
-if ($properties['neat_ws'] == "auto") {
+if (!isset($properties['neat_ws']) || $properties['neat_ws'] == "auto") {
+//if ($properties['neat_ws'] == "auto") {
   $properties['neat_ws'] = $rsat_www;
 }
 
 // address of the WSDL document
 $neat_wsdl = $properties['neat_ws']."/web_services/RSATWS.wsdl";
 
-// Karoline: property neat_java_host not required for me, just need the host name here
-// in future: obtain host from url address
-// $scheme = parse_url($rsat_www,PHP_URL_SCHEME);
-// $host = parse_url($rsat_www,PHP_URL_HOST);
-// $neat_java_host = $scheme."://".$host;
-// for the moment: java tools run only on ulb host
-$neat_java_host = $properties['neat_java_host'];
-// host may include tomcat port
-$tomcat_port = $properties['tomcat_port'];
-if (strcmp($tomcat_port,"") != 0){
-    $neat_java_host = $neat_java_host . ":" . $tomcat_port;
-}
-$neat_java_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl";
-$neat_java_remote_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
+// // Karoline: property neat_java_host not required for me, just need the host name here
+// // in future: obtain host from url address
+// // $scheme = parse_url($rsat_www,PHP_URL_SCHEME);
+// // $host = parse_url($rsat_www,PHP_URL_HOST);
+// // $neat_java_host = $scheme."://".$host;
+// // for the moment: java tools run only on ulb host
+// $neat_java_host = $properties['neat_java_host'];
+// // host may include tomcat port
+// if (isset($properties['tomcat_port'])) {
+//   $tomcat_port = $properties['tomcat_port'];
+//   if (strcmp($tomcat_port,"") != 0){
+//     $neat_java_host = $neat_java_host . ":" . $tomcat_port;
+//   }
+//   $neat_java_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl";
+//   $neat_java_remote_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
+// }
 
 // LOG
 $year = date("Y");
