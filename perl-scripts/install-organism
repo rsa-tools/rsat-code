@@ -396,30 +396,7 @@ package main;
   ##  Print arguments if required
   &Verbose() if ($main::verbose >= 1);
   
-  # ################################################################
-  # ## Get the list of available species for the selected group
-  # if ($task{available}) {
-  #   die "Sorry, task available must be revised completely - 2024-04-21\n";
-  #   &RSAT::message::TimeWarn("Getting available species for group", $group) if ($main::verbose >= 2);
-  #   unless ($group) {
-  #     &RSAT::error::FatalError("The task 'available' requires to specify a group (e.g. fungi, bacteria, ...).");
-  #   }    
-  #   my $refseq_folder_url = "ftp.ncbi.nlm.nih.gov/genomes/refseq/".$group;
-  #   if ($main::versbose >= 1) {
-  # 	&RSAT::message::Info("; Getting available species from NCBI; \t", $refseq_folder_url, "\n");
-  #   }
-  #   my $command = 'rsync --copy-links  --times  --list-only rsync://'.$refseq_folder_url.'/ | awk \'$1 ~ "drw"  && $5 ~ "^[A-Z]"  {print $5}\'';
-  #   &RSAT::message::TimeWarn("Running command\n".$command) if ($main::verbose >= 2);
-  #   #    my $available_species = `$command`;
-  #   #    print $main::out $available_species;
-  #   &doit($command, $dry, $die_on_error, $main::verbose);    
-  #   my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-  #   print $main::out $exec_time if ($main::verbose >= 1);
-  #   close $main::out if ($outputfile);
-  #   exit(0); # Available species is not compatible with any other task
-  # }
-
-    
+  
   ## Rewrite config table
   if($task{rewrite}){
       &RewriteConfigTab();
@@ -449,7 +426,7 @@ package main;
 	  &RSAT::message::TimeWarn("Downloading strain", $strain_nb."/".$selected_strains, $strain_info{$strain}->{"organism"})
 	      if ($main::verbose >= 1);
 
-	  ## Restrictw the number of strains if requested
+	  ## Restrict the number of strains if requested
 	  if (($max_strains > 0) && ($strain_nb > $max_strains)) {
 	      my $remaining_strains = $selected_strains - $strain_nb + 1;
 	      &RSAT::message::Info("Max number of strains reached", $max_strains, "Skipping", $remaining_strains, "strains of", $selected_strains)
@@ -500,7 +477,8 @@ package main;
 	  unless ($species) {
 	      &FatalError("Option -strain requires to specify species (i.e. Genus_species) with option -species");
 	  }
-	  my ($genus, $species) = split(/[ _]/, $species);
+	  my ($genus, @species_pieces) = split(/[ _]/, $species);
+	  my $species = join "_", @species_pieces; ## join the elements of species, which sometimes contain sub-species levels e.g. strain
 	  my $organism = join("_", $genus, $species, $strain);
 	  $strain_info{$strain}->{"strain"} = $strain;
 	  $strain_info{$strain}->{"species"} = $species;
@@ -522,8 +500,8 @@ package main;
 				"genus_species= ", $strain_info{$strain}->{"genus_species"}, "\n",
 				"strain= ", $strain, "\n",
 				"downloads= ", $strain_info{$strain}->{"downloads"}, "\n",
-				
 	      ) if ($main::verbose >= 5);
+#	  die "HELLO"; 
 
 	  &RSAT::message::Info("Parsing a single strain specified with options -strain ${strain} -species ${species}") if ($main::verbose >= 1);
       }
@@ -2996,8 +2974,15 @@ sub ReadAssemblySummary {
 	    next unless $fields[$column_index{'assembly_accession'}] && $fields[$column_index{'asm_name'}] && $current_strain;
 
 	    ## Split organism_name into genus and species
+	    ##
+	    ## Note: this assumes that genus name does not contain any
+	    ## underscore. Besides , "species" here may include a
+	    ## subspecies suffix (e.g. strain name), but we count them
+	    ## together as in NCBI.
 	    my ($genus, $species) = split("_", $organism_name, 2);
 	    my $genus_species = $genus."_".$species;
+
+#	    &RSAT::message::Debug("genus_species : ", $genus_species) if ($main::verbose >= 10);
 	    
 	    ## Filter on species
 	    if (scalar(@species) > 0) {
@@ -3057,6 +3042,11 @@ sub ReadAssemblySummary {
 		     $strain_info{$current_strain}->{"genus_species"},
 		     $current_strain);
 	    
+	    # &RSAT::message::Debug("genus : ", $genus) if ($main::verbose >= 10);
+	    # &RSAT::message::Debug("species : ", $species) if ($main::verbose >= 10);
+	    # &RSAT::message::Debug("genus_species : ", $genus_species) if ($main::verbose >= 10);
+	    # &RSAT::message::Debug("download dir", $strain_info{$current_strain}->{"downloads"}) if ($main::verbose >= 10);
+
 	    ## For debugging, report the 10 first assemblies
 	    if (($main::verbose >= 3) && ($selected <= 10)) {
 		print join("\t",
