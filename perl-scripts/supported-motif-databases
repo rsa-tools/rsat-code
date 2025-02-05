@@ -80,6 +80,8 @@ package main;
   our %infile = ();
   our %outfile = ();
 
+  our abspath = 0;
+
   our $verbose = 0;
   our $in = STDIN;
   our $out = STDOUT;
@@ -112,10 +114,14 @@ package main;
 
   ################################################################
   ## Insert here output printing
+
   print $out "#", join("\t", @selected_out_fields), "\n";
   foreach my $db (sort keys %matrix_db) {
     my @out_fields = ();
     foreach my $field (@selected_out_fields) {
+      if ($field eq "file" && $abspath){
+          $matrix_db{$db}->{$field} = $ENV{MOTIFPATH}.$matrix_db{$db}->{$field});
+      }
       push @out_fields, $matrix_db{$db}->{$field};
     }
     print $out join("\t", @out_fields), "\n";
@@ -210,6 +216,10 @@ Display full help message
 Same as -h
 
 =cut
+    } elseif ($arg eq "-f") {
+      #set abspath for the paths printed
+      $abspath = 1; 
+    
     } elsif ($arg eq "-help") {
       &PrintOptions();
 
