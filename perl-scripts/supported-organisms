@@ -79,14 +79,14 @@ package main;
     ################################################################
     ## Get the list supported organisms from a remote RSAT server
     if ($from_server) {
-	&RSAT::message::Warning("Option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
+		&RSAT::message::Warning("Option -server is obsolete, the query will be passed to the separate program supported-organisms-server");
 
-	## Pass the query to supported-organisms-server
-	my $cmd =  &RSAT::server::GetProgramPath("supported-organisms-server");
-	my $parameters = &PrintArguments();
-	&doit($cmd." ".$parameters);
+		## Pass the query to supported-organisms-server
+		my $cmd =  &RSAT::server::GetProgramPath("supported-organisms-server");
+		my $parameters = &PrintArguments();
+		&doit($cmd." ".$parameters);
 
-	exit(0);
+		exit(0);
 
     } else {
       if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
@@ -116,7 +116,13 @@ package main;
 	for my $source (@sources) {
         $result .= &RSAT::OrganismManager::supported_organism_table($verbose, 0, $source, $taxon, $group, $depth, $with_variant, $with_blast, @return_fields); ## Export the table with header and absolute paths;
 	}
-	print $out $result;
+	if ($result){
+		print $out $result;
+		}
+	else {
+		$help = " No organisms found.\n To install organisms use:\n\tdownload-organism -v 2 -org <organism> -server <server> \n For exemple, To download an organism from an already working rsat environment (E.g  https://rsat.eead.csic.es/plants/ )  visit the supported-organisms.cgi page (https://rsat.eead.csic.es/plants/supported-organisms.cgi) \n Then use the previously mentioned command with server info and desired organisms \n\tdownload-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.60 -server https://rsat.eead.csic.es/plants \n For how to download them using containers, visit:\n\tDocker: https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html#4_Installation_instructions\n\tApptainer: https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html#4_Installation_instructions\n To see how to execute scripts inside the containers \n";
+		print $help;
+		}
       }
     }
 
