@@ -88,7 +88,12 @@ package main;
 
 	exit(0);
 
+
+    ################################################################
+    ## Print the lsit of organisms supported on this server
     } else {
+
+      ## Special formats showing the taxonomic tree
       if (($out_format eq "tree")||($out_format eq "html_tree")||$out_format eq "newick") {
 	&RSAT::message::TimeWarn("Building organism tree") if ($main::verbose >= 2);
 	if ($group) {
@@ -101,12 +106,14 @@ package main;
 
 	&RSAT::message::TimeWarn("Printing organism tree in ",$out_format, " format") if ($main::verbose >= 2);
 	if (($out_format eq "tree")||($out_format eq "html_tree")) {
-	  print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef);
+	  print $out $tree->as_indented_text("--", $taxon, $out_format, "all", undef);
 	} elsif ($out_format eq "newick") {
 	  print $out $tree->as_newick($taxon);
 	} else {
 	  &RSAT::error::FatalError($out_format, "Invalid output format");
 	}
+
+      ## Standard format: export a tab-separated table with 1 row per organism and 1 column per attribute
       } else {
 
 	if (scalar(@sources) == 0) {
