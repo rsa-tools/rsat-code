@@ -336,9 +336,14 @@ sub supported_organism_table {
 
   ## Select the organisms
   my @selected_organisms = ();
+
   if ($taxon) {
+      ## Select all the organisms of a given taxon
+
     @selected_organisms = &GetOrganismsForTaxon($taxon, $depth);
+
   } elsif (($group) && ($group ne "None")) {
+      ## Select all the organisms of a given taxonomic "group" as defined in Ensembl (Prokaryotes, Metazoa, Plants, Protists, Fungi)
     @selected_organisms = &GetOrganismsForGroup($group, $depth);
     push @selected_organisms, &get_demo_organisms(@group_specificity);
 
@@ -577,40 +582,98 @@ sub GetOrganismsForTaxon {
 
   my @organisms = ();
 
-  ## Load the taxonomy of the organisms supported on this RSAT
-  ## instance.
-  unless ($tree) {
-    $tree = new RSAT::Tree();
-  }
-  $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
+  my $by_tree = 0;
 
-  ## Identify the tree node corresponding to the query taxon
-  my $node = $tree->get_node_by_id($taxon);
-
-
-  if ($node){
-
-    ## Get all organisms belonging to the query taxon, i.e. the leaves
-    ## descending from the selected tree node.
-    @organisms = $node->get_leaves_names();
-    &RSAT::message::Debug("GetOrganismsForTaxon()", $taxon, scalar(@organisms)) if ($main::verbose >= 5);
-
-    &RSAT::message::Debug("node:", $node->get_attribute("id"), "nb organisms:", scalar(@organisms)) if ($main::verbose >= 5);
-#  die("HELLO\n");
-
-    ## If depth argument has been specified, cut the taxonomic tree by
-    ## selecting only one organism for each taxon at a given depth of
-    ## the taxonomic tree.
-    if (defined($depth) && ($depth != 0)) {
-      @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
-    }
+  if ($by_tree == 0) {
+      if ($depth > 0) {
+	  &RSAT::error::FatalError("Option -depth is not supported anymore");
+      }
+      my @all_organisms = sort keys %main::supported_organism;
+      foreach my $org (@all_organisms) {
+	  my $taxonomy = $main::supported_organism{$org}->{'taxonomy'};
+	  my @taxonomy = split (/\s*;\s*/, $taxonomy);
+	  foreach my $current_taxon  (@taxonomy) {
+	      if (lc($taxon) eq lc($current_taxon)) {
+		  push @organisms, $org;
+	      }
+	  }
+      }
+      if (scalar(@organisms) == 0) {
+	  $message = join ("\t", "Taxon", $taxon, "did not match any supported organism");
+	  if ($die_if_noorg) {
+	      &RSAT::error::FatalError($message);
+	  }
+      }
   } else {
-    $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
-    if ($die_if_noorg) {
-      &RSAT::error::FatalError($message);
-    } #else {
-      #&RSAT::message::TimeWarn($message);
-      #}
+      
+      
+      ## Load the taxonomy of the organisms supported on this RSAT
+      ## instance.
+      
+      ## Quick fix (2025-02-10 JvH) : replace tree-based approach by taxon
+      ## indexing
+      
+      
+      
+      ## Tree-based approach : collect all the leaves descending from the
+      ## taxon node of the taxonomic tree 
+      ## 
+      ## BUG (2025-02-10 JvH): there is a bug here, the number of
+      ## organisms returned differs between these two commands
+      ##
+      ## export TAXON=Actinomycetota
+      ## ## The following returns 1068 organisms
+      ## supported-organisms -return ID,taxonomy | grep ${TAXON} | cut -f 1 | sort -u | wc 
+      ## ## The following returns only 832 organisms
+      ## supported-organisms -return ID,taxonomy -taxon ${TAXON} | sort -u  | wc
+      ## 
+      unless ($tree) {
+	  $tree = new RSAT::Tree();
+      }
+      $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
+      
+      ## Identify the tree node corresponding to the query taxon
+      my $node = $tree->get_node_by_id($taxon);
+      
+      
+      if ($node){
+	  
+	  ## Get all organisms belonging to the query taxon, i.e. the leaves
+	  ## descending from the selected tree node.
+	  @organisms = $node->get_leaves_names();
+	  &RSAT::message::Debug("GetOrganismsForTaxon()", $taxon, scalar(@organisms)) if ($main::verbose >= 5);
+	  
+	  &RSAT::message::Debug("node:", $node->get_attribute("id"), "nb organisms:", scalar(@organisms)) if ($main::verbose >= 5);
+#  die("HELLO\n");
+	  
+	  ## If depth argument has been specified, cut the taxonomic tree by
+	  ## selecting only one organism for each taxon at a given depth of
+	  ## the taxonomic tree.
+	  ##
+	  ## BUG (2025-02-10 JvH): this does not work. If I set the depth to
+	  ## e.g. 1000 I should obtain all the organisms but this is not the
+	  ## case
+	  ##
+	  ## supported-organisms -return ID,taxonomy -taxon ${TAXON} -depth 0 | wc -l
+	  ## 832
+	  ##  supported-organisms -return ID,taxonomy -taxon ${TAXON} -depth 1 | wc -l
+	  ## 1
+	  ##  supported-organisms -return ID,taxonomy -taxon ${TAXON} -depth 5 | wc -l
+	  ## 28
+	  ##  supported-organisms -return ID,taxonomy -taxon ${TAXON} -depth 7 | wc -l
+	  ## 132
+	  ##  supported-organisms -return ID,taxonomy -taxon ${TAXON} -depth 1000 | wc -l
+	  ## 149
+	  
+	  if (defined($depth) && ($depth != 0)) {
+	      @organisms = &OneOrgPerTaxonomicDepth($depth, @organisms);
+	  }
+      } else {
+	  $message = join ("\t", "Taxon", $taxon, "is not supported on server", $ENV{rsat_site});
+	  if ($die_if_noorg) {
+	      &RSAT::error::FatalError($message);
+	  }
+      }
   }
   
   ## Select unique organisms per genus or species if required
