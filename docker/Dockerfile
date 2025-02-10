@@ -169,6 +169,7 @@ ENV RSATPASS="rsat_2020"
 ENV RSATUSERHOME="/home/${RSATUSER}"
 ENV TESTPATH="${RSATUSERHOME}/test_data"
 ENV MOTIFPATH="/packages/motif_databases"
+ENV EXTMOTIFPATH="/packages/motif_databases/ext_motifs"
 
 RUN useradd ${RSATUSER} \
 	&& echo "${RSATUSER}:${RSATPASS}" | chpasswd \
