@@ -57,6 +57,7 @@ $default{dyads_filter} = 'checked';
 #$default{bg_model} = 'taxfreq';
 $default{bg_model} = 'monad'; ## TEMPORARILY SET TO MONAD BECAUSE I HAVE A BUG WITH TAXFREQ
 $default{leaders} = '';
+$default{dist_thr} = 55;
 $default{uth_rank} = 50;
 $default{to_matrix} = 1;
 $default{multi_genes} = "separately";
@@ -106,6 +107,13 @@ print $query->checkbox(-name=>'leaders',
 print "<A HREF='help.footprint-discovery.html#leader'><B>\n";
 print "predict operon leader genes";
 print "</B></A>\n";
+
+print "Distance threshold\n";
+print $query->textfield(-name=>'dist_thr',
+			-default=>$default{dist_thr},
+			-size=>3);
+
+print "<br/>";
 
 ## Analyze each gene separately or group genes
 print "<br>";

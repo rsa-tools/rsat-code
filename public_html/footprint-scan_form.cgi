@@ -36,7 +36,8 @@ $checked{$default{pseudo_distribution}} = "CHECKED";
 ## Background model
 $default{markov_order} = "1";
 
-#$default{leaders} = 'checked';
+$default{leaders} = '';
+$default{dist_thr} = 55;
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="";
@@ -214,14 +215,19 @@ sub Panel2 {
 
   &PrintOrthoSelectionSection();
 
-### use predicted leader genes
+  ### Retrieve upstream sequences from predicted operon leader genes
   print "<br>";
   print $query->checkbox(-name=>'leaders',
 			 -checked=>$default{leaders},
 			 -label=>'');
-  print "<A class='iframe' HREF='help.footprint-scan.html#leader'><B>\n";
+  print "<a class='iframe' href='help.footprint-scan.html#leader'><b>\n";
   print "predict operon leader genes";
-  print "</B></A>\n";
+  print "</b></a>\n";
+
+  print "Distance threshold\n";
+  print $query->textfield(-name=>'dist_thr',
+			  -default=>$default{dist_thr},
+			  -size=>3);
 
   print "<br/>";
 
