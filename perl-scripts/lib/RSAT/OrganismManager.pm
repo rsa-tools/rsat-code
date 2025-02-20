@@ -465,9 +465,9 @@ sub get_supported_organisms_web {
       push @selected_organisms , &RSAT::OrganismManager::GetOrganismsForGroup($group_specificity);
       if (scalar(@selected_organisms) < 1) {
 	if (lc($ENV{group_specificity}) eq "none") {
-	  &RSAT::error::FatalError("No organism supported on this server");
+	  &RSAT::error::FatalError("No organisms supported on this server. Check <a href='https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html#4_Installation_instructions'>Documentation</a> to download organisms from RSAT servers");
 	} else {
-	  &RSAT::error::FatalError("No organism supported on this server for group", $ENV{group_specificity});
+	  &RSAT::error::FatalError("No organisms supported on this server for group", $ENV{group_specificity});
 	}
       }
     }
