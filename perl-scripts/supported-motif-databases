@@ -80,7 +80,7 @@ package main;
   our %infile = ();
   our %outfile = ();
 
-  our abspath = 0;
+  our $abspath = 0;
 
   our $verbose = 0;
   our $in = STDIN;
@@ -120,7 +120,7 @@ package main;
     my @out_fields = ();
     foreach my $field (@selected_out_fields) {
       if ($field eq "file" && $abspath){
-          $matrix_db{$db}->{$field} = $ENV{MOTIFPATH}.$matrix_db{$db}->{$field});
+          $matrix_db{$db}->{$field} = $ENV{MOTIFPATH}.$matrix_db{$db}->{$field};
       }
       push @out_fields, $matrix_db{$db}->{$field};
     }
@@ -216,7 +216,7 @@ Display full help message
 Same as -h
 
 =cut
-    } elseif ($arg eq "-f") {
+    } elsif ($arg eq "-f") {
       #set abspath for the paths printed
       $abspath = 1; 
     
