@@ -236,7 +236,7 @@ WORKDIR "/home/${RSATUSER}"
 ## 4) Download organism from public RSAT server, such as the Plants server.
 ##    Other available servers: http://fungi.rsat.eu, http://metazoa.rsat.eu, http://protists.rsat.eu
 # 
-# download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.38 -server https://rsat.eead.csic.es/plants
+# download-organism -v 2 -org Prunus_persica.Prunus_persica_NCBIv2.60 -server https://rsat.eead.csic.es/plants
 #
 #
 ## 5) Test container
