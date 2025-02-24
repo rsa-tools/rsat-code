@@ -1,6 +1,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 <?php
+
+if ($properties["GOOGLE_ID"]){
+	$google_id = $properties["GOOGLE_ID"];
+	echo '<!-- Google tag (gtag.js) -->';
+	echo '<script async src="https://www.googletagmanager.com/gtag/js?id=$google_id"></script>';
+	echo '<script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag("js", new Date())';
+	echo "gtag('config', '$google_id');"
+	echo '</script>';
+}
+
 if ($result) {
 	$res = " - results";
 	$class = "results";
