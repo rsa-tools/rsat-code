@@ -5,7 +5,7 @@ on:
 
 jobs:
   version-update:
-    name: Update version.txt after commit
+    name: Update version.txt after last commit
     runs-on: ubuntu-latest
 
     steps:
