@@ -1,19 +1,26 @@
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - '*'
+
 jobs:
-  update-version:
+  version-update:
+    name: Update version.txt after commit
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v1
-      - run: |  
-            git config --global user.email "bcontreras@eead.csic.es"
-            git config --global user.name "eead-csic-compbio"
-      - name: write current tag as version
-        run: git describe --tags --abbrev=0 > ./version.txt
-      - name: commit
-        run: git commit -m "updated" version.txt
-      - name: fetch from master
-        run: git fetch origin master
-      - name: push code to master
-        run: git push origin HEAD:master
+      - uses: actions/checkout@v4
+       
+      - name: Get current tag
+        uses: zingimmick/github-action-get-current-tag@v1
+
+      - name: Get latest commit hash
+        uses: docker/build-push-action@v5
+
+      - name: Update version.txt file
+        run: echo ${{steps.get-current-tag.outputs.tag}} ${{ steps.lastcommit.outputs.shorthash }} > version.txt
+
+      - uses: EndBug/add-and-commit@v9
+        with:
+          add: 'version.txt'
+          message: 'Update version, tag and latest commit hash'
