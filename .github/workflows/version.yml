@@ -15,7 +15,6 @@ jobs:
         uses: jimschubert/query-tag-action@v1
 
       - name: Update version.txt file
-        id: tagger
         run: echo ${{ steps.tagger.outputs.tag  }} > version.txt
 
       - name: Commit modified file
