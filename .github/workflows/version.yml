@@ -9,11 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
        
-      - name: Get latest commit hash
-        uses: docker/build-push-action@v5
-
       - name: Update version.txt file
-        run: echo ${{ github.ref_name }} ${{ steps.lastcommit.outputs.shorthash }} > version.txt
+        run: echo ${{ github.ref }} ${{ github.ref_name }} > version.txt
 
       - uses: EndBug/add-and-commit@v9
         with:
