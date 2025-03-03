@@ -1,5 +1,7 @@
 name: version update
-on: [push]
+on:
+  release:
+    types: [published]
 
 jobs:
   version-update:
