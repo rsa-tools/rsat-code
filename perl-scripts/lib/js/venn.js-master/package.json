@@ -5,7 +5,7 @@
   "url": "https://github.com/benfred/venn.js/issues",
   "devDependencies": {
     "rollup": "2.79.2",
-    "uglify-js": "2",
+    "uglify-js": "2.4.24",
     "faucet": "0.0",
     "tape": "4",
     "jshint": "^2.8.0"
