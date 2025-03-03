@@ -7,13 +7,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      -name: Checkout
-       uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      -name: Update version.txt file
-       id: tagger
-       uses: jimschubert/query-tag-action@v1
-       run: echo ${{ steps.tagger.outputs.tag  }} > version.txt
+      - name: Update version.txt file
+        id: tagger
+        uses: jimschubert/query-tag-action@v1
+        run: echo ${{ steps.tagger.outputs.tag  }} > version.txt
 
       - name: Commit modified file
         uses: EndBug/add-and-commit@v9
