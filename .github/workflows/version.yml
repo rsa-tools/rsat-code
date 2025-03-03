@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: jimschubert/query-tag-action@v1
+        with:
+         include: 'v*'  
 
       - name: Update version.txt file
         #curr_tag=$(git describe --tags --abbrev=0 HEAD~)
