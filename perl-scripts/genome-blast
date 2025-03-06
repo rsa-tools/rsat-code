@@ -429,10 +429,14 @@ $out = &OpenOutputFile($outfile{output});
 
 &iterate_blast(\@db_organisms, \@query_organisms);
 
-if ($reciprocal) {
+
+if ($reciprocal >= 1) {
   &RSAT::message::TimeWarn("Running reciprocal BLAST tasks");
   &iterate_blast(\@query_organisms, \@db_organisms);
 }
+
+#&RSAT::message::Debug("reciprocal: ", $reciprocal) if ($main_verbose >= 0);
+#die "HELLO";
 
 ################################################################
 ## Report execution time and close output stream

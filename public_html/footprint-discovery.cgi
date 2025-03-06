@@ -168,6 +168,9 @@ if ($query->param("multi_genes") eq "separately") {
 ## Infer operon leader genes
 if ($query->param('leaders')) {
   $parameters .= " -infer_operons";
+  my $dist_thr = $query->param('dist_thr');
+  &RSAT::error::FatalError("Distance threshold should be a Natural number") unless &IsNatural($dist_thr);
+  $parameters .= " -dist_thr ".$dist_thr;
   $tasks.=",operons";
 }
 

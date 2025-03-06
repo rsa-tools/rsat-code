@@ -51,7 +51,6 @@ package main;
   $supported_for_installation{"filelist"} = 1;
 
   our @default_tasks = qw(
-      config
       start_stop
       allup
       seq_len_distrib
@@ -67,8 +66,10 @@ package main;
       chrom_sizes
       index_bedtools
       );
+#      config ## JvH suppresed config from default tasks to enable submission to job scheduler without destroying the table of supported organisms
   
   our @extra_tasks = qw(
+      config
       genome_freq
       phylogeny
       uninstall

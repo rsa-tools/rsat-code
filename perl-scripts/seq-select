@@ -88,26 +88,30 @@ package main;
     &ReadArguments();
 
     ################################################################
-    #### check argument values
-    unless ($infile{ids}) {
-      &RSAT::error::FatalError("You must specify a file containing selected IDs (option -ids)");
+    #### Check argument values
+    if (scalar(@ids) == 0) {
+	unless ($infile{ids}) {
+	    &RSAT::error::FatalError("You must specify either a query ID (option -q) or a file containing selected IDs (option -ids)");
+	}
     }
 
     ################################################################
     ## Read ID file
-    my ($in, $dir) = &OpenInputFile($infile{ids});
-    my $l = 0;
-    while (<$in>) {
-      $l++;
-      next if (/^;/);
-      next if (/^#/);
-      next if (/^--/);
-      next unless (/\S/);
-      my ($id) = split /\s/;
-      push @ids, $id;
+    if ($infile{ids}) {
+	my ($in, $dir) = &OpenInputFile($infile{ids});
+	my $l = 0;
+	while (<$in>) {
+	    $l++;
+	    next if (/^;/);
+	    next if (/^#/);
+	    next if (/^--/);
+	    next unless (/\S/);
+	    my ($id) = split /\s/;
+	    push @ids, $id;
+	}
+	close $in;
+	&RSAT::message::TimeWarn("Read",scalar(@ids), "IDs from file", $infile{ids}) if ($main::verbose >= 2);
     }
-    close $in;
-    &RSAT::message::TimeWarn("Read",scalar(@ids), "IDs from file", $infile{ids}) if ($main::verbose >= 2);
 
     ## ##############################################################
     ## Read all sequences from the input file and index them in a hash
@@ -272,6 +276,24 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
+
+
+
+
+	    ## File containing sequence identifiers
+=pod
+
+=item    B<-q query_id>
+
+Specify a query sequence identifier. Can be used iteratively to
+specify several IDs. Alternatively, a file with sequence IDs can be
+provided with the option "-ids".
+
+=cut
+	} elsif ($arg eq "-q") {
+	    push @main::ids, shift(@arguments);
+
+
 
 
 	    ## File containing sequence identifiers

@@ -1,19 +1,26 @@
+name: version update
 on:
   release:
     types: [published]
+
 jobs:
-  update-version:
+  version-update:
+    name: Update version.txt after last release
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v1
-      - run: |  
-            git config --global user.email "bcontreras@eead.csic.es"
-            git config --global user.name "eead-csic-compbio"
-      - name: write current tag as version
-        run: git describe --tags --abbrev=0 > ./version.txt
-      - name: commit
-        run: git commit -m "updated" version.txt
-      - name: fetch from master
-        run: git fetch origin master
-      - name: push code to master
-        run: git push origin HEAD:master
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Get current tag  
+        id: tagger
+        uses: jimschubert/query-tag-action@v1
+
+      - name: Update version.txt file
+        run: echo ${{ steps.tagger.outputs.tag  }} > version.txt
+
+      - name: Commit modified file
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'version.txt'
+          message: 'Update version, tag and latest commit hash'
