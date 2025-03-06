@@ -339,6 +339,15 @@ $(document).ready(function(){
 
 }
 
+sub print_google_tag {
+  print '<!-- Google tag (gtag.js) -->';
+  print '<script async src="https://www.googletagmanager.com/gtag/js?id=$google_id"></script>';
+  print '<script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag("js", new Date())';
+  print "gtag('config', '$google_id');"
+  print '</script>';
+
+}
+
 ## ##############################################################
 ## Start a new HTML page and write the header of a RSAT query form or result
 ## page usage &RSA_header($program_name)
@@ -369,11 +378,15 @@ sub RSA_header {
     },
     { -type => 'text/javascript',
         -src      => 'js/RSAT_tabs.js'
-    }
+    },
    ],
     -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
+
+    if ($properties["GOOGLE_ID"]){
+      &print_google_tag
+    } 
 
     if($css_body_class eq "results"){
         print "<style>#page-content-wrapper{
