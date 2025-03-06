@@ -343,7 +343,7 @@ sub print_google_tag {
   print '<!-- Google tag (gtag.js) -->';
   print '<script async src="https://www.googletagmanager.com/gtag/js?id=$google_id"></script>';
   print '<script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag("js", new Date())';
-  print "gtag('config', '$google_id');"
+  print "gtag('config', '$google_id');";
   print '</script>';
 
 }
