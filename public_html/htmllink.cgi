@@ -75,7 +75,7 @@ print $query->start_html (-title=>"$title",
     }
     
     
-    print "<div class='container' id='page-content-wrapper' style='max-width:900px'>";
+    print "<div class='container' id='page-content-wrapper' style='max-width:1920px;height:1080px;'>";
 
 
 	print "<iframe src=$file frameborder='0' width='100%' height='100%' ></iframe>";
