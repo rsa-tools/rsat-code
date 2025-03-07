@@ -55,3 +55,4 @@ export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEM
 export PERL5LIB=${RSAT}/ext_lib/ensemblgenomes-${ENSEMBLGENOMES_RELEASE}-${ENSEMBL_RELEASE}/ensemblgenomes-api/modules::${PERL5LIB}
 export PERL5LIB=${RSAT}/ext_lib/biomart-perl/lib/::${PERL5LIB}
 
+export GOOGLE_ANALYTICS=""
