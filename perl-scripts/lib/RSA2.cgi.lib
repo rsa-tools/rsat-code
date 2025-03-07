@@ -390,7 +390,6 @@ sub RSA_header {
     -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],
         -type => 'text/css',
         -media => 'screen,projection,print' });
-    &print_google_tag
 
     if($css_body_class eq "results"){
         print "<style>#page-content-wrapper{
