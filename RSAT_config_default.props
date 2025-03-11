@@ -330,3 +330,10 @@ biomart_urlconfig=[RSAT_PARENT_PATH]/rsat/perl-scripts/biomart/martDBLocation.xm
 # LOGO_PROGRAM=seqlogo|weblogo
 LOGO_PROGRAM=seqlogo
 
+###############################################################
+## Google Analytics 
+##
+## ID of the property needed to connect to google analytics
+##
+## https://support.google.com/analytics/answer/9304153?hl=en#zippy=%2Cweb%2Cadd-the-google-tag-directly-to-your-web-pages
+GOOGLE_ANALYTICS=
