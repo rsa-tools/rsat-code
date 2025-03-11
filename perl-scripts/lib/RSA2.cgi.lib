@@ -381,10 +381,6 @@ sub RSA_header {
     },
     { -type => 'text/javascript',
         -src      => 'js/RSAT_tabs.js'
-    },
-    {
-      -type => 'text/javascript'
-        -src => 'https://www.googletagmanager.com/gtag/js?id=$properties[GOOGLE_ID]'
     }
    ],
     -style => { 	-src => ["css/main.css","css/tabs.css","css/chosen.css","css/font-awesome.min.css"],

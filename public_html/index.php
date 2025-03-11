@@ -4,7 +4,7 @@
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
 <link rel='stylesheet' type='text/css' href='css/home.css' />
 
-<<?php
+<?php
 
 require_once ('functions.php');
 $properties = load_props($rsat_main."/RSAT_config.props");
