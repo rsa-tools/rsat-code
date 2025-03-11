@@ -4,6 +4,20 @@
 <link rel='stylesheet' type='text/css' href='css/bootstrap.min.css' />
 <link rel='stylesheet' type='text/css' href='css/home.css' />
 
+<<?php
+
+require_once ('functions.php');
+$properties = load_props($rsat_main."/RSAT_config.props");
+
+ echo "<!-- Google tag (gtag.js) -->";
+ echo "<script async src=https://www.googletagmanager.com/gtag/js?id=".$properties["GOOGLE_ANALYTICS"]."></script>";
+ echo "<script>";
+ echo "window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());";
+ echo "gtag('config', '".$properties["GOOGLE_ANALYTICS"]."');";
+ echo "</script>";
+
+?>
+
 <link rel='stylesheet' type='text/css' href='css/font-awesome.css' />
 <script src="js/jquery.js"></script>
 <script src="js/matamo.js"></script>

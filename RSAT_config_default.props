@@ -336,4 +336,4 @@ LOGO_PROGRAM=seqlogo
 ## ID of the property needed to connect to google analytics
 ##
 ## https://support.google.com/analytics/answer/9304153?hl=en#zippy=%2Cweb%2Cadd-the-google-tag-directly-to-your-web-pages
-GOOGLE_ID=
+GOOGLE_ANALYTICS=
