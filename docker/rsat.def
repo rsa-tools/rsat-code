@@ -2,8 +2,7 @@ Bootstrap: docker
 From: ubuntu:focal
 
 %labels 
-    maintainer Bruno Contreras Moreira <bcontreras@eead.csic.es>
-    maintainer Najla Ksouri <najlaksouri@gmail.com>
+    maintainer <rsat-developers@list01.bio.ens.psl.eu>
     name RSAT apptainer
 
 
