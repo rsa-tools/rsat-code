@@ -1,6 +1,12 @@
 Bootstrap: docker
 From: ubuntu:focal
 
+%labels 
+    maintainer Bruno Contreras Moreira <bcontreras@eead.csic.es>
+    maintainer Najla Ksouri <najlaksouri@gmail.com>
+    name RSAT apptainer
+
+
 %environment
     export DEBIAN_FRONTEND=noninteractive
     export LANG=en_US.UTF-8
