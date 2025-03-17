@@ -255,6 +255,16 @@ sub display_bioschemas {
   }
 }
 
+sub print_google_tag {
+           print <<EOG
+           <!-- Google tag (gtag.js) -->
+           <script async src='https://www.googletagmanager.com/gtag/js?id=$ENV{GOOGLE_ANALYTICS}'></script>
+           <script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag("js", new Date());
+           gtag('config', '$ENV{GOOGLE_ANALYTICS}');
+           </script>
+EOG
+}
+
 sub RSA_header_bootstrap {
     my $css_body_class = "form";
     my ($title) = shift;
@@ -264,6 +274,7 @@ sub RSA_header_bootstrap {
         $css_body_class = shift;
     }
     print $query->header();
+    &print_google_tag();
     print sorttable_script();
 
     print $query->start_html(-title=>"RSAT : $title",
@@ -352,9 +363,10 @@ sub RSA_header {
         $css_body_class = shift;
     }
     print $query->header();
+    &print_google_tag();
     print sorttable_script();
 
-    print $query->start_html(-title=>"RSAT : $title",
+    print $query->start_html(-title=>"RSAT : $title", 
     -class => "$css_body_class",
     -author=>'Jacques.van-Helden\@univ-amu.fr',
     -script=>[
