@@ -1,7 +1,7 @@
 ## <---- Create a clone of Ubuntu image
 FROM ubuntu:focal
 
-MAINTAINER <rsat-developers@list01.bio.ens.psl.eu>
+LABEL org.opencontainers.image.authors="rsat-developers@list01.bio.ens.psl.eu"
 
 ##  <---- Prevent to open interactive dialogs during the installation process
 ENV DEBIAN_FRONTEND=noninteractive
