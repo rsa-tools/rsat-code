@@ -1,0 +1,153 @@
+Bootstrap: docker
+From: ubuntu:focal
+
+%labels 
+    maintainer <rsat-developers@list01.bio.ens.psl.eu>
+    name RSAT apptainer
+
+
+%environment
+    export DEBIAN_FRONTEND=noninteractive
+    export LANG=en_US.UTF-8
+    export LANGUAGE=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    export INSTALL_ROOT=/packages
+    export RSAT=/packages/rsat
+    export RSAT_SITE=my_rsat
+    export MY_IP="localhost"
+    export RSATUSER="rsat_user"
+    export RSATPASS="rsat_2020"
+    export RSATUSERHOME="/home/${RSATUSER}"
+    export TESTPATH="${RSATUSERHOME}/test_data"
+    export EXTMOTIFPATH="${RSATUSERHOME}/ext_motifs"
+    export R_LIBS_SITE="${RSAT}/R-scripts/Rpackages/"
+    export PATH="${PATH}:${RSAT}/ext_lib/ensemblgenomes-44-97/ensembl-git-tools/bin:${RSAT}/python-scripts:${RSAT}/perl-scripts/parsers:${RSAT}/perl-scripts:${RSAT}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    export TESTMAKEURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/makefile/peak-motifs.mk"
+    export TESTRSATURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/peach/Modules/M11"
+    export TESTRSATFILEREMOTE="${TESTRSATURL}/genesM11.txt"
+    export TESTRSATFILELOCAL="${TESTPATH}/M11.txt"
+    export TESTMAKEFILELOCAL="${TESTPATH}/peak-motifs.mk"
+
+%post -c /bin/bash
+ ##  <----  Set the language environment in the docker container: should be included before installing any other package
+    export DEBIAN_FRONTEND=noninteractive
+    export LANG=en_US.UTF-8
+    export LANGUAGE=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    export INSTALL_ROOT=/packages
+    export RSAT=/packages/rsat
+    export RSAT_SITE=my_rsat
+    export MY_IP="localhost"
+    export RSATUSER="rsat_user"
+    export RSATPASS="rsat_2020"
+    export RSATUSERHOME="/home/${RSATUSER}"
+    export TESTPATH="${RSATUSERHOME}/test_data"
+    export EXTMOTIFPATH="${RSATUSERHOME}/ext_motifs"
+    export R_LIBS_SITE="${RSAT}/R-scripts/Rpackages/"
+    export PATH="${PATH}:${RSAT}/ext_lib/ensemblgenomes-44-97/ensembl-git-tools/bin:${RSAT}/python-scripts:${RSAT}/perl-scripts/parsers:${RSAT}/perl-scripts:${RSAT}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    export TESTMAKEURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/makefile/peak-motifs.mk"
+    export TESTRSATURL="https://raw.githubusercontent.com/eead-csic-compbio/coexpression_motif_discovery/master/peach/Modules/M11"
+    export TESTRSATFILEREMOTE="${TESTRSATURL}/genesM11.txt"
+    export TESTRSATFILELOCAL="${TESTPATH}/M11.txt"
+    export TESTMAKEFILELOCAL="${TESTPATH}/peak-motifs.mk"
+
+ apt-get update \
+	&& apt-get install -y locales \
+	&& locale-gen en_US.UTF-8 \
+	&& update-locale LANG=en_US.UTF-8 \
+   	&& apt-get autoremove
+ ##  <----  Install required packages, including git
+ apt-get install -y --no-install-recommends apt-transport-https git \
+	wget less vim-tiny vim python3 python3-pip time lsb-release gnupg2 dirmngr ca-certificates software-properties-common && rm -rf /var/lib/apt/lists/*
+    # gnupg2 needed for gpg command and FOR R key installation
+
+    ## <---- Now install R and littler, and create a link for littler in /usr/local/bin
+    ## <---- Also set a default CRAN repo, and make sure littler knows about it too
+  apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		littler \
+        	r-cran-littler \
+		r-base \
+		r-base-dev \
+		r-recommended \
+		r-cran-rcolorbrewer \
+        && echo 'options(repos = c(CRAN = "https://cloud.r-project.org/"), download.file.method = "libcurl")' >> /etc/R/Rprofile.site \
+        && echo 'source("/etc/R/Rprofile.site")' >> /etc/littler.r \
+	&& ln -s /usr/share/doc/littler/examples/install.r /usr/local/bin/install.r \
+	&& ln -s /usr/share/doc/littler/examples/install2.r /usr/local/bin/install2.r \
+	&& ln -s /usr/share/doc/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
+	&& ln -s /usr/share/doc/littler/examples/testInstalled.r /usr/local/bin/testInstalled.r \
+	&& install.r docopt \
+	&& rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
+	&& rm -rf /var/lib/apt/lists/*
+
+    echo $INSTALL_ROOT && mkdir -p ${INSTALL_ROOT}/
+    cd /packages
+
+    git clone https://github.com/rsa-tools/rsat-code.git  --branch 20240828 --single-branch
+    mv rsat-code rsat
+
+    wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
+	&& mv /packages/rsat.eead.csic.es/plants/motif_databases/ /packages \
+	&& rm -rf /packages/rsat.eead.csic.es 
+
+    cd rsat/public_html/ \
+        && ln -s ../../motif_databases/
+    rm -rf /packages/motif_databases/cisBP2
+    grep -v cisBP2 /packages/motif_databases/db_matrix_files.tab > /packages/motif_databases/db_matrix_files.filt.tab
+    mv /packages/motif_databases/db_matrix_files.filt.tab /packages/motif_databases/db_matrix_files.tab
+    
+    echo $RSAT
+    cd $RSAT
+
+    perl perl-scripts/configure_rsat.pl -auto  rsat=${RSAT} rsat_site=${RSAT_SITE} rsat_www=http://${MY_IP}/rsat/ \
+  	rsat_ws=http://${MY_IP}/rsat/ package_manager="apt-get" ucsc_tools=1 ensembl_tools=1
+
+    apt-get update && apt-get install -y --no-install-recommends sudo apt-utils rsync
+
+    cd ${RSAT}
+    cd ${RSAT}
+
+    source /packages/rsat/RSAT_config.bashrc \
+	&& bash installer/01_ubuntu_packages.bash \
+	&& bash installer/02_python_packages.bash
+
+    ########################################################       Notes       ########################################################
+    # When installinng python dependencies you might error with rpy2-3.5.12.tar.gz or PySimpleSOAP-1.16.2.tar.gz
+    # "note: This error originates from a subprocess, and is likely not a problem with pip"
+    # To fix this, we need to pgrade versions of pip, setuptools and wheel -> see installer/02_python_packages.bash
+    # end https://bobbyhadz.com/blog/python-note-this-error-originates-from-subprocess
+
+    bash installer/03_install_rsat.bash 
+    bash installer/04_perl_packages.bash 
+    bash installer/07_R-and-packages.bash 
+    bash installer/08_apache_config.bash 
+    bash installer/10_clean_unnecessary_files.bash
+    
+#	&& bash installer/06_install_organisms.bash \ skipped to save 243MB
+
+    echo "source ${RSAT}/RSAT_config.bashrc" >> /etc/bash.bashrc \
+        && echo "service apache2 start" >>  /etc/bash.bashrc 
+
+
+
+    ## <---- remove some uneeded folders to save space 
+    rm -rf ${RSAT}/ext_lib/ensemblgenomes*/ensembl-*/modules/t \
+        ${RSAT}/ext_lib/ensemblgenomes*/ensembl-*/.git \
+        ${RSAT}/ext_lib/bioperl*/bioperl-live/t \
+        ${RSAT}/ext_lib/bioperl*/bioperl-live/.git \
+        ${RSAT}/.git
+    
+    useradd ${RSATUSER} \
+	&& echo "${RSATUSER}:${RSATPASS}" | chpasswd \
+	&& adduser ${RSATUSER} sudo \
+	&& chown -R "${RSATUSER}:${RSATUSER}" ${RSAT} \
+	&& chmod 755 ${RSAT} \
+	&& mkdir -p ${TESTPATH} \
+	&& mkdir -p ${EXTMOTIFPATH} \
+	&& chmod -R a+w ${RSATUSERHOME}
+
+    wget ${TESTRSATFILEREMOTE} -O ${TESTRSATFILELOCAL}
+    wget ${TESTMAKEURL} -O ${TESTMAKEFILELOCAL}
+
+
