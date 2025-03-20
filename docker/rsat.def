@@ -84,7 +84,7 @@ From: ubuntu:focal
     echo $INSTALL_ROOT && mkdir -p ${INSTALL_ROOT}/
     cd /packages
 
-    git clone https://github.com/rsa-tools/rsat-code.git  --branch 20240828 --single-branch
+    git clone https://github.com/rsa-tools/rsat-code.git  --branch 2025-03-20 --single-branch
     mv rsat-code rsat
 
     wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
