@@ -5,9 +5,7 @@
 <link rel='stylesheet' type='text/css' href='css/home.css' />
 
 <?php
-
-require_once ('functions.php');
-$properties = load_props($rsat_main."/RSAT_config.props");
+ require_once('functions.php'); // this calls load_props() and getGitLastReleaseDate()
 
  echo "<!-- Google tag (gtag.js) -->";
  echo "<script async src=https://www.googletagmanager.com/gtag/js?id=".$properties["GOOGLE_ANALYTICS"]."></script>";
@@ -89,7 +87,7 @@ $properties = load_props($rsat_main."/RSAT_config.props");
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-4'><a class='fa fa-envelope' href='javascript:void(0)' onclick="window.location='mailto:rsat-contact@list01.biologie.ens.fr?subject='"></a> contact RSAT team</div>
 			<div class='col-sm-4'><a class='fa fa-twitter' href='https://twitter.com/RSATools' target='_blank'></a> Twitter</div>
-			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code version: <?php echo $properties['git_date'];?></div>
+			<div class='col-sm-4'><a class='fa fa-code' href='#' style='cursor:default'></a> Code release: <?php echo $properties['git_release'];?></div>
 		</div><br/>
 		<div class='social-circle'><div class='row'>
 			<div class='col-sm-8'><a class='fa fa-paint-brush' href='http://www.altamirastudio.com/' target='_blank'></a> RSAT logos designed by Mauricio Guzman (<a target="_blank" href="http://www.altamirastudio.com.mx/">http://www.altamirastudio.com.mx/</a>)</div>
