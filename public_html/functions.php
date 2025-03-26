@@ -200,6 +200,21 @@ Function load_props($props) {
   return $prop_array;
 }
 
+// Requires parsing file $RSAT/version.txt, returns 1st word in file $RSAT/version.txt,
+// which should be an ISO data such as 2024-08-28
+Function getGitLastReleaseDate(){
+
+   // Guess the main RSAT directory
+   $rsat_main = getcwd()."/..";
+
+   $date = shell_exec("head $rsat_main/version.txt");
+
+   return chop($date);
+}
+
+// Deprecated for the problems described and the fact that Docker and conda versions
+// are built from releases not repos, see https://github.com/rsa-tools/rsat-code/issues/49
+//
 // PHP Warning:  Trying to access array offset on value of type null in 
 // /var/www/html/rsat/public_html/functions.php on line ...
 // fatal: detected dubious ownership in repository at '/var/www/html/rsat'
@@ -240,7 +255,9 @@ $rsat_logs = $rsat_main."/logs";
 
 // Load properties from the site-specific configuration file RSAT_config.props
 $properties = load_props($rsat_main."/RSAT_config.props");
-$properties['git_date'] = getGitLastCommitDate();
+$properties['git_release'] = getGitLastReleaseDate();
+//$properties['git_date'] = getGitLastCommitDate();//deprecated
+
 // Check if the property rsat_www has been set to "auto", and, if so,
 // set it automatically
 if ($properties['rsat_www'] == "auto") {
