@@ -63,10 +63,10 @@ BEGIN {
 }
 require "RSA.lib";
 require RSAT::email;
-use Email::Sender::Simple qw(sendmail);
-use Email::Simple;
-use Email::Simple::Creator;
-use Email::Sender::Transport::SMTP;
+#use Email::Sender::Simple qw(sendmail);
+#use Email::Simple;
+#use Email::Simple::Creator;
+#use Email::Sender::Transport::SMTP;
 
 
 ################################################################
