@@ -47,7 +47,7 @@ NeAT code.
 - [**Installing RSAT**](https://rsa-tools.github.io/installing-RSAT): 
 	+ on [Unix systems](https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html)
 	+ with [conda](https://rsa-tools.github.io/installing-RSAT/conda-install-rsat/bioconda-rsat-core.html)
-	+ as container: [Docker container](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html), [Apptainer](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html)
+	+ as container with motif collections: [Docker](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html), [Apptainer](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html)
 
 - [**Managing RSAT**](https://rsa-tools.github.io/managing-RSAT)
 
