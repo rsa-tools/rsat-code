@@ -110,7 +110,7 @@
       Deployment of RSAT::Plants & footprintDB, part of the <a href="https://inb-elixir.es">INB/ELIXIR-ES</a> resources portfolio.<br>
       Integration of plant genomes from Ensembl.<br>
       Protocols for the analysis of regulatory sequences in plants.<br>
-      Docker container
+      Containerization
     </td>
   </tr>		    
 		    
@@ -172,7 +172,7 @@
 	<img border=0
 	     src="images/people/najla_ksouri.jpeg" width="80" alt=""></a></td>
     <td><b>Najla Ksouri</b>
-      <br>PhD student at Estacion Experimental Aula Dei-CSIC
+      <br>Estaci&oacute;n Experimental Aula Dei-CSIC, Spain
       <br>ORCID: <a target=_blank href="https://orcid.org/0000-0001-8956-2920">0000-0001-8956-2920</a>
     </td>
     <td>Since 2019
@@ -184,7 +184,21 @@
   </tr>
 
   <tr><td colspan=4><hr class='portal'></td></tr>
+  <tr>
+    <td><a name=walter></a><a href="images/people/robledo.jpeg">
+        <img border=0
+             src="images/people/fabian_robledo.jpeg" width="80" alt=""></a></td>
+    <td><b>Fabi&aacute;n Robledo</b>
+      <br>I2SysBio, Spain
+    </td>
+    <td>Since 2025
+    </td>
+    <td>
+      Containerization<br/>
+    </td>
+  </tr>
 
+  <tr><td colspan=4><hr class='portal'></td></tr>
   <tr>
     <td><a name=oly></a><a href="images/people/olivier_sand.jpeg">
 	<img border=0
