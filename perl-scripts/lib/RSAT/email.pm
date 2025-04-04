@@ -1,6 +1,8 @@
 package RSAT::email;
 
-# check modules are actually installed; they are not in conda 
+use Email::Simple;
+use Email::Simple::Creator;
+# check dispatch modules are actually installed; they are not in conda!
 our $SEND_SIMPLE_AVAIL = eval "use Email::Sender::Simple; 1" ? 1 : 0;
 our $SEND_SMTP_AVAIL = eval "use Email::Sender::Transport::SMTP; 1" ? 1 : 0;
 
