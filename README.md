@@ -1,6 +1,6 @@
 # Regulatory Sequence Analysis Tools (RSAT)
 
-This folder contains the code required to run a local version of the
+This folder contains the code required to run a local version of the 
 software suite **Regulatory Sequence Analysis Tools** (**RSAT**).
 
 
@@ -44,7 +44,10 @@ NeAT code.
 
 # Documentation
 
-- [**Installing RSAT**](https://rsa-tools.github.io/installing-RSAT): on [Unix systems](https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html), [Docker container](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html)
+- [**Installing RSAT**](https://rsa-tools.github.io/installing-RSAT): 
+	+ on [Unix systems](https://rsa-tools.github.io/installing-RSAT/unix-install-rsat/installing_RSAT_procedure.html)
+	+ with [conda](https://rsa-tools.github.io/installing-RSAT/conda-install-rsat/bioconda-rsat-core.html)
+	+ as container: [Docker container](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html), [Apptainer](https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html)
 
 - [**Managing RSAT**](https://rsa-tools.github.io/managing-RSAT)
 
