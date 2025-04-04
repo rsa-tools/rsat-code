@@ -190,6 +190,7 @@
              src="images/people/fabian_robledo.jpeg" width="80" alt=""></a></td>
     <td><b>Fabi&aacute;n Robledo</b>
       <br>I2SysBio, Spain
+      <br>ORCID: <a target=_blank href="https://orcid.org/0009-0005-9047-3315">0009-0005-9047-3315</a>
     </td>
     <td>Since 2025
     </td>
