@@ -1,10 +1,8 @@
 package RSAT::email;
 
-## use Mail::Sendmail;
-use Email::Sender::Simple qw(sendmail);
-use Email::Simple;
-use Email::Simple::Creator;
-use Email::Sender::Transport::SMTP;
+# check modules are actually installed; they are not in conda 
+our $SEND_SIMPLE_AVAIL = eval "use Email::Sender::Simple; 1" ? 1 : 0;
+our $SEND_SMTP_AVAIL = eval "use Email::Sender::Transport::SMTP; 1" ? 1 : 0;
 
 =pod
 
@@ -56,16 +54,15 @@ sub MessageToAdmin {
 
 =pod
 
-=item B<Send an email from a TLS server
+=item B<Send an email from a TLS server, uses $ENV{mail_supported} and $SEND_SMTP_AVAIL>
 
 =cut
 
 sub send_mail_STARTTLS {
     my ($message, $recipient, $subject, $smtp_server, $user, $pass, $from, $warn_message) = @_;
 
-
-    if ($ENV{mail_supported} eq "no") {
-	&RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+    if ($ENV{mail_supported} eq 'no' || $SEND_SMTP_AVAIL == 0) {
+	&RSAT::message::Warning("This RSAT Web site does not support email sending (TLS). ", $subject);
 	return();
     } 
 
@@ -107,25 +104,25 @@ sub send_mail_STARTTLS {
 	body => $message,
 	);
     
-    ## Try to send the email
-    eval  "use Email::Sender::Transport::SMTP";  die $@ if $@;
+    ## Try to send the email only if required module is available
     my $transport = Email::Sender::Transport::SMTP->new(
-	host => $smtp_server,
-	ssl  => 'starttls',
-	sasl_username => $user,
-	sasl_password => $pass,
+        host => $smtp_server,
+        ssl  => 'starttls',
+        sasl_username => $user,
+        sasl_password => $pass,
         debug => 0, # or 1
-	);
+    );
     
     eval { Email::Sender::Simple->send($email, {transport => $transport}) };
     &RSAT::error::FatalError ("Error sending email ", $@) if $@;
+
     return();
 }
 
 
 =pod
 
-=item B<Send an email message>
+=item B<Send an email message, uses $ENV{mail_supported} and $SEND_SIMPLE_AVAIL>
 
 =cut
 sub send_mail {
@@ -142,8 +139,8 @@ sub send_mail {
     }
   }
 
-  if ($ENV{mail_supported} eq "no") {
-    &RSAT::message::Warning("This RSAT Web site does not support email sending. ", $subject);
+  if ($ENV{mail_supported} eq 'no' || $SEND_SIMPLE_AVAIL == 0) {
+    &RSAT::message::Warning("This RSAT Web site does not support email sending (SIMPLE). ", $subject);
   } else {
 
     ## Check if recipient argument contains a valid email address
@@ -206,8 +203,10 @@ sub send_mail {
 	);
     &RSAT::message::Debug( "email", $email) if ($main::verbose >= 3);
 
+    print "# $SEND_SIMPLE_AVAIL $SEND_SMTP_AVAIL\n";
+
 #    &RSAT::message::Debug("INC", join (";", @INC)) if ($main::verbose >= 3);
-    eval  {use Email::Sender::Transport::SMTP} ;  die $@ if $@;  ## Load the Perl module only if required
+    #    eval  {use Email::Sender::Transport::SMTP} ;  die $@ if $@;  ## Load the Perl module only if required
     &RSAT::message::Debug("smtp_server", $smtp_server) if ($main::verbose >= 5);
     
     my $transport;
