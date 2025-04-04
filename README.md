@@ -1,8 +1,12 @@
 # Regulatory Sequence Analysis Tools (RSAT)
 
-This folder contains the code required to run a local version of the 
+This folder contains the code required to run an instance of the 
 software suite **Regulatory Sequence Analysis Tools** (**RSAT**).
 
+Releases are used to mark development progress and might trigger
+updates [Docker containers](https://hub.docker.com/r/biocontainers/rsat/tags) and 
+[conda recipes](https://anaconda.org/bioconda/rsat-core). 
+Release names have the format 2025.04.04 so that they work also in conda.
 
 **Contact**: Jacques.van-Helden[AT]univ-amu.fr , rsat-contact[AT]list01.bio.ens.psl.eu
 
