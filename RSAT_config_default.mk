@@ -123,12 +123,12 @@ QUEUE_MANAGER=batch
 CLUSTER_QUEUE=
 
 ################################################################
-## Ensembl and EnsemblGenomes releases.
+## Ensembl (and old EnsemblGenomes) releases.
 ##
 ## These variables should in principle be updated according to the
 ## relases of the two databases:
 ##
-##  Ensembl: http://www.ensembl.org/
-##  EnsemblGenomes: http://ensemblgenomes.org/
+##  Ensembl: https://www.ensembl.org/
+##  EnsemblGenomes: https://plants.ensembl.org
 ENSEMBL_RELEASE=97
 ENSEMBLGENOMES_RELEASE=44
