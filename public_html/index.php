@@ -57,7 +57,7 @@
 						<li>comparative genomics</li>
 						<li>analysis of regulatory variations</li>
 						</ul>
-					These tools are also available at the command line: 
+					Also available at the command line: 
 					<a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html">Docker</a>, 
 					<a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html">Apptainer</a>,
 					<a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html">conda</a>
