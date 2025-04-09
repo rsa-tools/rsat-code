@@ -103,7 +103,7 @@ initio</i>" from the sequences.</li></p>
 <li><a href="htmllink.cgi?title=RSAT-tutorials&file=tutorials/abbreviations.html"><b>Abbreviation table</b></a></li>
 <li>How to run RSAT on the command line: <a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Docker-tuto.html"><b>Docker</b></a>, 
 <a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html"><b>Apptainer</b></a>,
-<a href="https://rsa-tools.github.io/installing-RSAT/RSAT-Docker/RSAT-Apptainer-tuto.html"><b>conda</b></a>
+<a href="https://rsa-tools.github.io/installing-RSAT/conda-install-rsat/bioconda-rsat-core.html"><b>conda</b></a>
 </li>
 
 </ul><ol>
