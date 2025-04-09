@@ -1,5 +1,8 @@
 # Regulatory Sequence Analysis Tools (RSAT)
 
+[![Biocontainers](https://badgen.net/badge/icon/docker?icon=docker&label)](https://hub.docker.com/r/biocontainers/rsat/tags)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/rsat-core/badges/version.svg)](https://anaconda.org/bioconda/rsat-core)
+
 This folder contains the code required to run an instance of the 
 software suite **Regulatory Sequence Analysis Tools** (**RSAT**).
 
