@@ -59,3 +59,15 @@ NeAT code.
 - [**Managing RSAT**](https://rsa-tools.github.io/managing-RSAT)
 
 - [**Motif databases**](https://github.com/rsa-tools/motif_databases)
+
+****************************************************************
+
+# Funding
+
+## RSAT Plants
+
+Spanish Ministry of Economy and Competitiveness grants [AGL2014-52063R, AGL2016-80967-R, AGL2017-83358-R] (MCIU/AEI/FEDER/UE).
+Government of Aragón grants [A44, A09_17R, A09_23R, A10_23R] which were co-financed with FEDER funds. 
+Consejo Superior de Investigaciones Científicas grants [2020AEP119, FAS2022_052, INFRA24018].
+Programa Euroinvestigación/Plant KBBE 2008 [EUI2008-03612].
+PRIMA project [PCI2019-103526].
