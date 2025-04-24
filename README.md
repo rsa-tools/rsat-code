@@ -66,7 +66,7 @@ NeAT code.
 
 
 
-### RSAT Plants
+### RSAT Plants and footprintDB
 
 Spanish Ministry of Economy and Competitiveness grants [AGL2014-52063R, AGL2016-80967-R, AGL2017-83358-R] (MCIU/AEI/FEDER/UE).
 Government of Aragón grants [A44, A09_17R, A09_23R, A10_23R] which were co-financed with FEDER funds. 
