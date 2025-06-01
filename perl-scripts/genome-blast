@@ -1046,6 +1046,14 @@ sub FormatDB {
     #/ahcorcha
     
     &doit($command, $dry, $die_on_error, $main::verbose);
+
+    ## Make the blast_db file readable by all users
+    # &RSAT::message::Debug("Setting mode", '0644', "for blastdb file", $outfile{blast_db}) if ($main::verbose >= 10);
+    if ($main::diamond ==1) {
+	chmod(0644, $outfile{blast_db}.".dmnd");
+    } else {
+	chmod(0644, $outfile{blast_db});
+    }
     
     &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*")) if ($main::verbose >= 2);
 }
@@ -1220,6 +1228,9 @@ sub BlastAndRank {
     }
 #    close $bbh if ($task{blast_bbh});
     close $output if ($task{blast_ranks});
+
+    #&RSAT::message::Debug("Setting mode", '0644', "for blast ranked hits table", $outfile{blast_ranks}) if ($main::verbose >= 10);
+    chmod(0644, $outfile{blast_ranks}); ## Make sure the ranked blast hits are readable by all users
 }
 
 
