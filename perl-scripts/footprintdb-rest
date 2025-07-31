@@ -122,7 +122,7 @@ package main;
     || RSAT::error::FatalError("cannot run $curlEXE -d '$params{'json'}' $server");
   while(<REST>) {
 
-    $motif .= $_;    
+    $motif .= $_; 
 
     if(/^\/\//){
       if($params{'db'}) {
