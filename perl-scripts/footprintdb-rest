@@ -1,0 +1,274 @@
+#!/usr/bin/env perl
+
+=pod
+
+=head1 NAME
+
+footprintdb-rest
+
+=head1 DESCRIPTION
+
+Scans protein sequences against footprintDB collections to predict recognized 
+DNA motifs based on i) overall and ii) binding interface sequence similarity.
+Queries the REST service at http://footprintdb.eead.csic.es:8080/protein
+
+=head1 AUTHORS
+
+=over
+
+=item Bruno Contreras Moreira <bcontreras\@eead.csic.es>
+
+=back
+
+=head1 CATEGORY
+
+genomics
+
+=head1 USAGE
+
+ footprintdb-rest -i protein.fasta
+ 
+ footprintdb-rest -i protein.fasta -db JASPAR
+
+=head1 INPUT FORMAT
+
+File with protein sequences in FASTA format. 
+
+=head1 OUTPUT FORMAT
+
+Predicted DNA motifs in TRANSFAC format.
+
+=head1 EXAMPLES
+
+=head2 Quick demo
+
+The option I<-demo> runs a simple demo with two plant transcription factor sequences.
+
+ footprintdb-rest -demo     
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+require "RSA.lib";
+use JSON;
+use HTTP::Tiny;
+
+################################################################
+## Main package
+package main;
+{
+  
+  ################################################################
+  #### initialise parameters and vars
+  our $start_time = &RSAT::util::StartScript();
+
+  my $server = 'http://footprintdb.eead.csic.es:8080/protein';
+  
+  our %params = ( 'demo' => 0 );
+
+  our $verbose = 0;
+  our $in = STDIN;
+  our $out = STDOUT;
+  
+  # parse arguments
+  &ReadArguments();
+
+  # check  organism and other params
+  &RSAT::error::FatalError("Please select an organism")
+    unless ($params{'org'});
+ 
+  if($params{'n'}){
+    if($params{'n'} < 0){
+      &RSAT::error::FatalError("Parameter n should be a natural number");
+    }
+  }
+
+  &Verbose() if ($main::verbose >= 1);
+
+  # start actual job
+  my $identical = 0;
+  my ($random_gene_ids,$coords,$ext,$response,%genes,%rsat_seqs);
+
+  RSAT::message::Info("Checking ",$params{'n'},$params{'org'},"upstream sequences") if($verbose >=2);
+
+  # shuffle genes from  
+  open(RND,"random-genes -org $params{'org'} -n $params{'n'} |")
+    || die "# failed running random-genes -org $params{'org'} -n $params{'n'}\n";  
+  while(<RND>)
+  {
+    $random_gene_ids .= ' -q '.(split)[0];
+  }
+  close(RND);
+
+  # get the corresponding DNA sequences and parse the coords from the header
+  my $ret_command = "retrieve-seq -org $params{'org'} $random_gene_ids ";
+  if($params{'rm'}){ $ret_command .= '-rm ' }
+  open(SEQ,"$ret_command |")|| die "# failed running $ret_command\n";
+  while(<SEQ>)
+  {
+    #>AT5G36350  ... location: arabidopsis_thaliana:5:14333830:14335829:R
+    if(/^>(\S+).*?location: (\S+)/)
+    {
+      my @loc = split(/:/,$2);
+      $coords = $loc[1].':'.$loc[2].'..'.$loc[3].':';
+      if($loc[4] eq 'D'){ $coords .= '1' }
+      else{ $coords .= '-1' } # print "$coords\n";
+      $genes{$coords} = $1;
+    }
+    else
+    {
+      chomp;
+      $rsat_seqs{$coords} .= $_;
+    }
+  }
+  close(SEQ);
+
+  # start output with header   
+  $header =  join("\t",
+      'gene_id',
+      'coordinates',
+      'equal',
+      'RSAT',
+      'REST'
+  );
+  print $out "; $header\n";
+
+  my $http = HTTP::Tiny->new();
+
+  foreach $coords (keys(%rsat_seqs))
+  {
+    $ext = "/sequence/region/$params{'org'}/".$coords.'?';
+    if($params{'rm'}){ $ext .= 'mask=hard' }
+    $response = $http->get($server.$ext,{ headers => { 'Content-type' => 'application/json' } });
+    RSAT::error::FatalError("Failed connecting to",$server.$ext) unless $response->{success};
+
+    if(length $response->{content})
+    {
+      my $json = decode_json($response->{content});
+      if($json->{'seq'} ne $rsat_seqs{$coords})
+      {
+        print $out "$genes{$coords}\t$coords\t0\t$rsat_seqs{$coords}\t$json->{'seq'}\n";
+      }
+      else
+      {
+        print $out "$genes{$coords}\t$coords\t1\tNA\tNA\n";
+        $identical++;
+      }
+    }
+  }
+
+  RSAT::message::Info("Identical sequences:",$identical,"out of",$params{'n'}) if($verbose >=2);
+
+  close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+### Close output file and quit
+sub close_and_quit {
+  if ($main::verbose >= 1) 
+  {
+    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    print $main::out $exec_time;
+  }
+
+  exit(0);
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  my $arg = "";
+  
+  my @arguments = @ARGV; 
+ 
+  while ($arg = shift(@arguments)) {
+
+=pod
+    
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])){ $main::verbose = shift(@arguments) } 
+    
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+	  &PrintHelp();
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	  &PrintOptions();
+	
+=pod
+
+=item B<-db database>
+
+Take only motifs from this footprintDB database, see https://footprintdb.eead.csic.es/index.php?databases
+
+=cut
+
+	} elsif ($arg eq '-db') {
+	  $main::params{'db'} = shift (@arguments);
+=pod
+
+=back
+
+=cut
+
+
+    }
+  }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $main::out "; footprintpdb-rest ";
+  &PrintArguments($main::out);
+   
+  printf $main::out "; %-21s\t%s\n", "org", $main::params{'org'};
+  printf $main::out "; %-21s\t%s\n", "n", $main::params{'n'};
+}
+
+__END__
+
