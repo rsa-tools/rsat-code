@@ -8,9 +8,9 @@ footprintdb-rest
 
 =head1 DESCRIPTION
 
-Scans protein sequences against footprintDB collections to predict recognized 
-DNA motifs based on i) overall and ii) binding interface sequence similarity.
-Requires curl to query the REST service at http://footprintdb.eead.csic.es:8080/protein
+Scans protein sequences against https://footprintdb.eead.csic.es databases to predict 
+recognized DNA motifs based on i) overall and ii) binding interface sequence similarity.
+Depends on curl to query the REST service http://footprintdb.eead.csic.es:8080/protein
 
 =head1 AUTHORS
 
@@ -42,7 +42,7 @@ Predicted DNA motifs in TRANSFAC format.
 
 =head2 Quick demo
 
-The option I<-demo> runs a simple demo with two plant transcription factor sequences.
+Option I<-demo> runs a simple demo with one transcription factor sequence
 
  footprintdb-rest -demo     
 
@@ -55,8 +55,6 @@ BEGIN {
 }
 
 require "RSA.lib";
-use JSON;
-use HTTP::Tiny;
 
 ################################################################
 ## Main package
@@ -67,10 +65,13 @@ package main;
   #### initialise parameters and vars
   our $start_time = &RSAT::util::StartScript();
 
-  my $server = 'http://footprintdb.eead.csic.es:8080/protein';
-  
+  my $server = 'http://footprintdb.eead.csic.es:8080/protein'; #/echo useful while debugging
+
+  my $curlEXE = 'curl --no-progress-meter --stderr - -X POST -H "Content-Type: application/json" ';
+
   our %params = ( 'json' => '' );
 
+  our $out = STDOUT;
   our $verbose = 0;
   
   # parse arguments
@@ -83,21 +84,22 @@ package main;
     open(FAA,'<',$params{'seq'})|| 
       RSAT::error::FatalError("cannot read $params{'seq'}");
     while(<FAA>) {
+      chomp;	    
       if(/^>(\S+)/){ 
         $h = $1;	      
         push(@headers, $h) 
 
       } else { 
-	chomp;
         $seqs{$h} .= $_;
       }
     }
     close(FAA);
 
     $params{'json'} = '{';    
-    foreach $h (%seqs) {
-      $params{'json'} .= "'$h':'$seqs{$h}',";
+    foreach $h (@headers) {
+      $params{'json'} .= sprintf("\"%s\":\"%s\",",$h,$seqs{$h});
     }
+    chop($params{'json'}); # remove trailing ,  
     $params{'json'} .= '}';
 
   } elsif($params{'demo'}) {
@@ -107,12 +109,7 @@ package main;
   }
  
   if($params{'demo'}){
-    $params{'json'} = 
-      '{"demo1":"MVAKVKRDGEVLVAAATGDSEEQDDLVLPGFRFHPTDEELVTFYLRRKVARKPLSMEIIKEMDIYKHDPWDLPKAS".
-       "TVGGEKEWYFFCLRGRKYRNSIRPNRVTGSGFWKATGIDRPIYPAAAGESVGLKKSLVYYRGSAGKGAKTDWMMHEFRLPPAASS".
-       "PSTQEAVEVWTICRIFKRNIAYKKRQPAGSNAPPPPLAESSSNTGSFESGGGGDDGEYMNCLPVPVPATAAVVPRQQHRIGSMLN".
-       "GGGVTASGSSFFREVGVHGQQFQGHWLNRFAAPEIERKPQLLGSSAMTIAFHQNDQTAATNECYKDGHWDEIARFMEVNDPTVLYDCRYA",
-       "demo2":"IYNLSRRFAQRGFSPREFRLTMTRGDIGNYLGLTVETISRLLGRFQKSGMLAVKGKYITIEN"}';
+    $params{'json'} = '{"demo":"IYNLSRRFAQRGFSPREFRLTMTRGDIGNYLGLTVETISRLLGRFQKSGMLAVKGKYITIEN"}';
   }
 
   if ($main::verbose >= 1) {
@@ -120,14 +117,26 @@ package main;
   }
 
   # actually perform REST request
-  open(REST,"curl -X POST -H \"Content-Type: application/json\" -d \"$params{'json'}\" $server |")
-    || RSAT::error::FatalError("cannot run curl -X POST -H \"Content-Type: application/json\" -d \"$params{'json'}\" $server");
+  my $motif = '';
+  open(REST,"$curlEXE -d '$params{'json'}' $server |")
+    || RSAT::error::FatalError("cannot run $curlEXE -d '$params{'json'}' $server");
   while(<REST>) {
-    print
+
+    $motif .= $_;    
+
+    if(/^\/\//){
+      if($params{'db'}) {
+        print $motif if($motif =~ m/$params{'db'}/i)
+      } else {
+        print $motif
+      }
+
+      # init new motif
+      $motif = '';  
+    }
+    
   }
   close(REST);
-
-  #RSAT::message::Info("Identical sequences:",$identical,"out of",$params{'n'}) if($verbose >=2);
 
   close_and_quit();
 }
@@ -139,8 +148,7 @@ package main;
 ################################################################
 ### Close output file and quit
 sub close_and_quit {
-  if ($main::verbose >= 1) 
-  {
+  if ($main::verbose >= 1) {
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
     print $main::out $exec_time;
   }
@@ -252,7 +260,7 @@ sub Verbose {
 
   printf $main::out "; %-21s\t%s\n", "seq", $main::params{'seq'};  
   printf $main::out "; %-21s\t%s\n", "db", $main::params{'db'};
-  printf $main::out "; %-21s\t%s\n", "json", $main::params{'json'};
+  printf $main::out "; %-21s\t%s\n\n", "json", $main::params{'json'};
 }
 
 __END__
