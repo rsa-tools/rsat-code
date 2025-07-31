@@ -548,8 +548,15 @@ sub CheckOutDir {
 
 
   ## Specify a mask for the new directory
-  $umask = 0002 unless ($umask);
-  $chmod = '0775' unless ($chmod);
+  $umask = 0002 unless ($umask); ## Octal number specification
+
+  ## 2025-06-01: JvH replaced '0775' (quoted string) by 0755
+  ## - Use of the octal number, more appropriate for Perl chmod() command
+  ## - mode set to 0755 instead of 0775, for safety reasons
+
+  #  $chmod = '0775' unless ($chmod);
+  $chmod = 0755 unless (defined $chmod); ## Octal number specification
+  
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = $ENV{PWD}; #`pwd`;
@@ -564,15 +571,17 @@ sub CheckOutDir {
     }
 
 
-    &RSAT::message::Info("Creating directory", $output_dir) if ($main::verbose >= 3);
+    &RSAT::message::Info("Creating directory", $output_dir, "mode=".$chmod, "umask=".$umask) if ($main::verbose >= 5);
     mkdir ($output_dir, $chmod);
 
 
+    ## If the directory has not been created, use the Unix command
+    ## with argument -p in order to create it with its parents. 
     unless (-d $output_dir) {
-      &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 3);
+      &RSAT::message::Info("Creating directory with all parents", $output_dir) if ($main::verbose >= 5);
       system("mkdir -p $output_dir"); ## create output directory with all parents
     }
-    chmod $chmod, $output_dir; ## Not sure the $chmod argument works with mkdir)
+    chmod $chmod, $output_dir; ## Not sure the $chmod argument works with Perl mkdir()
 
     unless (-d $output_dir) {
       &RSAT::error::FatalError("Could not create output directory $output_dir");
@@ -583,12 +592,14 @@ sub CheckOutDir {
     $output_dir = ".";
   }
 
-
+  ## Commented on 2025-06-01 because the system call is redundant with
+  ## the Perl chmod above, and the Perl call is more secure.
+  ##
   ## Change access mode if required
-  if ((defined($chmod)) && ($chmod =~ /\d{3}/)) {
-    &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 5);
-    system("chmod ".$chmod." ".$output_dir);
-  }
+#  if ((defined($chmod)) && ($chmod =~ /\d{3}/)) {
+#    &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 5);
+#    system("chmod ".$chmod." ".$output_dir);
+#  }
 }
 
 
@@ -978,7 +989,7 @@ sub make_temp_file {
   # 	    "OK"));
   # die "HEREAMI";
 
-  &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
+  &CheckOutDir($tmp_dir, "", 0755); ## temporary dir and all of its parents must be writable by all users
 
   ## Create an index file in the new directory to prevent Web users
   ## from seing its whole content
