@@ -69,7 +69,8 @@ package main;
 
   my $curlEXE = 'curl --no-progress-meter --stderr - -X POST -H "Content-Type: application/json" ';
 
-  our %params = ( 'json' => '' );
+  our %outfile = ();
+  our %params = ('json' => '');
 
   our $out = STDOUT;
   our $verbose = 0;
@@ -103,18 +104,18 @@ package main;
     $params{'json'} .= '}';
 
   } elsif($params{'demo'}) {
+    $params{'json'} = '{"demo":"IYNLSRRFAQRGFSPREFRLTMTRGDIGNYLGLTVETISRLLGRFQKSGMLAVKGKYITIEN"}';
 
   } else {
     RSAT::error::FatalError("You must either specify an input FASTA file (-seq) or run the demo (-demo)");
   }
  
-  if($params{'demo'}){
-    $params{'json'} = '{"demo":"IYNLSRRFAQRGFSPREFRLTMTRGDIGNYLGLTVETISRLLGRFQKSGMLAVKGKYITIEN"}';
-  }
-
   if ($main::verbose >= 1) {
     Verbose();
   }
+
+  # open output stream
+  $main::out = OpenOutputFile($main::outfile{'output'});
 
   # actually perform REST request
   my $motif = '';
@@ -126,9 +127,9 @@ package main;
 
     if(/^\/\//){
       if($params{'db'}) {
-        print $motif if($motif =~ m/$params{'db'}/i)
+        print $out $motif if($motif =~ m/$params{'db'}/i)
       } else {
-        print $motif
+        print $out $motif
       }
 
       # init new motif
@@ -195,7 +196,7 @@ Level of verbosity (detail in the warning messages during execution)
     
 =pod
 
-=item B<-seq sequence file>
+=item B<-seq input sequence file>
 
 FASTA file with protein sequences
 
@@ -213,6 +214,17 @@ Take only motifs from this footprintDB database, see https://footprintdb.eead.cs
 
         } elsif ($arg eq '-db') {
           $main::params{'db'} = shift (@arguments);
+=pod
+
+=item   B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+    } elsif ($arg eq "-o") {
+      $main::outfile{'output'} = shift(@arguments);
+
 =pod
 
 =item B<-demo>
@@ -260,6 +272,7 @@ sub Verbose {
 
   printf $main::out "; %-21s\t%s\n", "seq", $main::params{'seq'};  
   printf $main::out "; %-21s\t%s\n", "db", $main::params{'db'};
+  printf $main::out "; %-21s\t%s\n", "output", $main::outfile{'output'};
   printf $main::out "; %-21s\t%s\n\n", "json", $main::params{'json'};
 }
 
