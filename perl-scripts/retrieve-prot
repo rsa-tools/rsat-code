@@ -9,6 +9,7 @@ retrieve-prot
 =head1 DESCRIPTION
 
 Returns amino acid sequences encoded by list of query genes.
+Will retrieve all isoforms of the same gene.
 Depends on genomes locally-installed in RSAT.
 
 =head1 AUTHORS
@@ -50,6 +51,7 @@ BEGIN {
 }
 
 require "RSA.lib";
+use strict;
 
 ################################################################
 ## Main package
@@ -64,8 +66,8 @@ package main;
   our %outfile = ();
 
   our $verbose = 0;
-  our $in = STDIN;
-  our $out = STDOUT;
+  our $in = *STDIN;
+  our $out = *STDOUT;
   
   our @query_genes = ();
   our %params = (
@@ -73,15 +75,24 @@ package main;
     'all' => 0
   );
 
-  # parse arguments
-  &ReadArguments();
-  
+  my ($id,$geneOK,$header);
+
+  ReadArguments();
+ 
   # open output stream
   $main::out = &OpenOutputFile($main::outfile{'output'});
 
   # check arguments
-  RSAT::error::FatalError("Please select an organism")
-    unless ($params{'org'});
+  my $organism = new RSAT::organism(); 
+
+  if(!$params{'org'} || !$organism->is_supported($params{'org'})) {
+    RSAT::error::FatalError("Please select a supported organism")
+  }
+
+  my $FASTAfile = $organism->has_proteins_file($params{'org'});
+  if(!$FASTAfile) {
+    RSAT::error::FatalError("This installed organism does not provide protein sequences")
+  }
 
   # -q genes already parsed in ReadArguments
   if($main::infile{'input'}) {
@@ -93,17 +104,44 @@ package main;
       s/\r/\n/g;
       $id = (split)[0];
       push(@query_genes,$id);
+      RSAT::message::Info("$id") if($verbose >= 3);
     }
     close($genefile);
-
   } 
 
   RSAT::error::FatalError("You should indicate at least a query gene")
     unless(scalar(@query_genes) > 0 || $params{'all'});
 
-  ## Print verbosity
-  &Verbose() if ($main::verbose >= 1);
+  Verbose() if ($main::verbose >= 1);
 
+  # read FASTA file and retrieve requested sequences
+  ($geneOK,$header) = (0,'');
+  open(FASTA,"<",$FASTAfile) ||
+    RSAT::error::FatalError("cannot read $FASTAfile");
+  while(<FASTA>) {
+
+    if(/^>(.*)/) {
+      ($geneOK,$header) = (0,$1);
+
+      if($params{'all'}) {
+        $geneOK = 1;
+        print $out $_;
+
+      } else {
+        foreach $id (@query_genes) {
+          if($header =~ m/^>$id$/ || $header =~ m/gene:$id\s/) {
+            $geneOK = 1;
+            print $out $_;
+            last;
+          }
+        }
+      }  
+
+    } else {
+      print $out $_ if($geneOK);
+    }
+  }
+  close(FASTA);
 
   close_and_quit();
 }
@@ -116,7 +154,7 @@ package main;
 ### Close output file and quit
 sub close_and_quit {
 	
-    my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
+    my $exec_time = RSAT::util::ReportExecutionTime($main::start_time);
 	print $main::out $exec_time;
     
     if($main::outfile{'output'}) {
@@ -265,7 +303,7 @@ Retrieve all amino acid sequences of selected organism.
 #### verbose message
 sub Verbose {
   print $main::out "; retrieve-prot ";
-  &PrintArguments($main::out);
+  PrintArguments($main::out);
   
   if (%main::infile) {
     print $main::out "; Input files\n";
@@ -280,15 +318,6 @@ sub Verbose {
 	  print $main::out ";\t$key\t$value\n";
     }
   }
-
-  print $main::out ("; Query genes\t",scalar(@main::query_genes),"\n");
-  if (scalar(@main::query_genes) <= 100) {
-    foreach my $query (@main::query_genes) {
-	  print $main::out ";\t$query\n";
-    }
-  }
-
-  print $main::out "; organisms\t", $main::params{'org'}, "\n";
 }
 
 #######################################################
