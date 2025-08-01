@@ -75,7 +75,7 @@ package main;
     'all' => 0
   );
 
-  my ($id,$geneOK,$header);
+  my ($id,$geneOK,$header,%found);
 
   ReadArguments();
  
@@ -129,9 +129,11 @@ package main;
 
       } else {
         foreach $id (@query_genes) {
-          if($header =~ m/^>$id$/ || $header =~ m/gene:$id\s/) {
+          next if($found{$id});
+          if($header =~ m/^>$id$/ || $header =~ m/^>$id\.\d/ || $header =~ m/gene:$id\s/) {
             $geneOK = 1;
             print $out $_;
+            $found{$id}=1;
             last;
           }
         }
@@ -142,6 +144,13 @@ package main;
     }
   }
   close(FASTA);
+
+  if(!$params{'all'}) {
+    foreach $id (@query_genes) {
+      next if($found{$id});
+      RSAT::message::Info(";WARNING	invalid query $id");  
+    }
+  }
 
   close_and_quit();
 }
@@ -155,12 +164,12 @@ package main;
 sub close_and_quit {
 	
     my $exec_time = RSAT::util::ReportExecutionTime($main::start_time);
-	print $main::out $exec_time;
+	print $exec_time;
     
     if($main::outfile{'output'}) {
-      RSAT::message::TimeWarn("Output file:", $main::outfile{'output'}) if ($main::verbose >= 0);
-      close($main::out);
+      close($main::outfile{'output'});
     }
+
     exit(0);
 }
 
@@ -318,18 +327,6 @@ sub Verbose {
 	  print $main::out ";\t$key\t$value\n";
     }
   }
-}
-
-#######################################################
-## strips an ID of transcript number
-sub strip_gene_id
-{
-  my ($id) = @_;
-
-  my $trimmed_id = $id;
-  $trimmed_id =~ s/\.\d+$//;
-
-  return $trimmed_id;
 }
 
 __END__
