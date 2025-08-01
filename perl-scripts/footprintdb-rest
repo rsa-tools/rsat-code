@@ -151,7 +151,7 @@ package main;
 sub close_and_quit {
   if ($main::verbose >= 1) {
     my $exec_time = &RSAT::util::ReportExecutionTime($start_time);
-    print $main::out $exec_time;
+    print $exec_time;
   }
 
   exit(0);
