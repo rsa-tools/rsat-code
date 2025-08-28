@@ -608,13 +608,20 @@ sub CheckOutDir {
 
 =item B<OutFileName>
 
-Define one output file name by concatenating arguments.
+Define one output file name by concatenating arguments/ 
 
 The variable $main::dir{output} and $main::param{prefix} must have
 been defined beforehand.
 
 Usage:
  $outfile{key} = &OutFileName($subdir, $extension, @name_elements);
+
+$subdir :  sub-directory of $main::dir{output}
+
+$extension : file extension
+
+@name_elements : a list of strings that will be concatenated using "_"
+as separator to form the basename of the output file.
 
 =cut
 sub OutFileName {
@@ -652,7 +659,7 @@ sub CheckSubDir {
   my ($subdir) = @_;
   my $dir = $main::dir{output};
   $dir = join ("/", $main::dir{output}, $subdir);
-  &RSAT::util::CheckOutDir($dir,"",777);
+  &RSAT::util::CheckOutDir($dir, "", 0777);
   return($dir);
 }
 
@@ -1078,7 +1085,7 @@ sub doit {
     my $job_dir = $wd."/jobs";
     $job_dir .= "/".`date +%Y%m%d`;
     chomp($job_dir);
-    &CheckOutDir($job_dir, "", 777);
+    &CheckOutDir($job_dir, "", 0777);
 
     my $job_prefix = $job_prefix || "doit";
     &RSAT::util::CheckOutDir($job_dir);
