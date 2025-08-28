@@ -226,7 +226,7 @@ package main;
 
   ## Output directory is required
   &RSAT::error::FatalError("The output directory must be specified (option -o).") unless ($dir{output});
-  &RSAT::util::CheckOutDir($main::dir{output}, "", 775);
+  &RSAT::util::CheckOutDir($main::dir{output}, "", 0775);
   
 
   ## GTF file must be specified
