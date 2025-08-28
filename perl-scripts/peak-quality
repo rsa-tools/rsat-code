@@ -211,7 +211,7 @@ package main;
 
   ## Output directory
   if ($dir{output}) {
-    &RSAT::util::CheckOutDir($dir{output}, "", 755);
+    &RSAT::util::CheckOutDir($dir{output}, "", 0755);
   } else {
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");
   }
