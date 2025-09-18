@@ -3382,7 +3382,7 @@ sub OpenSynthesis {
 
   ## Create a directory to store the arrow icons
   $main::dir{images_html} = $dir{output}."/images_html";
-  &RSAT::util::CheckOutDir($main::dir{images_html}, "", 775);
+  &RSAT::util::CheckOutDir($main::dir{images_html}, "", 0775);
   my $cmd = "rsync -ruptl ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/arrow*.gif ";
   $cmd .= $ENV{RSAT}."/perl-scripts/lib/images/UCSC_icon.jpg ";
@@ -5320,7 +5320,7 @@ sub CheckArguments {
   ################################################################
   ## Output directory
   if ($main::dir{output}) {
-    &RSAT::util::CheckOutDir($main::dir{output}, "", 755);
+    &RSAT::util::CheckOutDir($main::dir{output}, "", 0755);
     push @outdir, "output";
   } else {
     &RSAT::error::FatalError("You must define the output directory (option -outdir)");

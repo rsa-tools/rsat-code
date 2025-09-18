@@ -199,6 +199,38 @@ sub has_variations{
 
 =pod
 
+=item has_proteins_file()
+
+Usage: my $protfile = has_proteins_file($organism);
+
+Returns name of protein sequences file if installed, else empty string.
+Two types of files are supported ie
+Abiotrophia_defectiva_GCF_013267415.1_ASM1326741v1_aa.fasta
+Ananas_comosus.F153.60.pep.all.fa
+
+=cut
+sub has_proteins_file {
+
+  my ($self,$organism_name) = @_;
+  
+  my $protfile = '';
+
+  my $install_dir=join("/",$ENV{RSAT},"data","genomes",$organism_name ,"genome");
+  if (-e $install_dir) {
+    if(-s "$install_dir/$organism_name\_aa.fasta") {
+      $protfile = "$install_dir/$organism_name\_aa.fasta";
+    } elsif(-s "$install_dir/$organism_name\.pep.all.fa") {
+      $protfile = "$install_dir/$organism_name\.pep.all.fa";
+    }
+  } 
+
+  return $protfile;
+}
+
+################################################################
+
+=pod
+
 =item OpenContigs
 
 Check if an organism is supported on the current installation,

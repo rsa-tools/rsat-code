@@ -277,7 +277,7 @@ package main;
 
   ## Output directory
   if ($output_dir) {
-    &RSAT::util::CheckOutDir($output_dir, "", 755);
+    &RSAT::util::CheckOutDir($output_dir, "", 0755);
   } else {
     &RSAT::error::FatalError("You must define the output directory (option -o)");
   }
@@ -348,7 +348,7 @@ package main;
 
     ## Define organism-specific subdirectory
     $dir{output} = $output_dir."/".$organism_name;
-    &RSAT::util::CheckOutDir($dir{output}, "", 755);
+    &RSAT::util::CheckOutDir($dir{output}, "", 0755);
 
     ## Prefix
     $param{prefix} = $organism_name;
@@ -1004,7 +1004,7 @@ sub InferOperonsOrDirectons {
 
   ## Define output directory and files
   $dir{$operons_or_directons} = $dir{output}."/".$operons_or_directons;
-  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
+  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 0755);
 
   $outfile{"gene_".$operons_or_directons} = &OutFileName($operons_or_directons, ".tab", "gene_".$operons_or_directons."_".$operon_suffix); push @files_to_index, "gene_".$operons_or_directons;
   $outfile{"gene_".$operons_or_directons."_html"} = $outfile{"gene_".$operons_or_directons}; $outfile{"gene_".$operons_or_directons."_html"} =~ s/\.tab$/\.html/; push @files_to_index, "gene_".$operons_or_directons."_html";
@@ -1012,7 +1012,7 @@ sub InferOperonsOrDirectons {
   ## Infer operon for each gene
   #  if ($task{$operons_or_directons}) {
   &RSAT::message::TimeWarn("\tInferring ".$operons_or_directons, "dist=".$dist, "min_genes=".$param{operon_min_genes}) if ($main::verbose >= 1);
-  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 755);
+  &RSAT::util::CheckOutDir($dir{$operons_or_directons}, "", 0755);
   my $cmd = $SCRIPTS."/infer-operons -v 1 ";
   $cmd .= " -sep '-' -return q_info,operon,leader,gene_nb";
   $cmd .= " -org ".$organism_name;
@@ -1193,7 +1193,7 @@ sub FootprintsAndCoregulation {
 
   ## Output directory for footprints
   $dir{footprints} = $dir{output}."/footprints";
-  &RSAT::util::CheckOutDir($dir{footprints}, "", 755);
+  &RSAT::util::CheckOutDir($dir{footprints}, "", 0755);
 
   ## Build the command
   my $cmd = $SCRIPTS."/footprint-discovery -v 1";
@@ -1224,7 +1224,7 @@ sub GetGER() {
 
   ## Output directory for GER
   $dir{GER} = $dir{output}."/GER";
-  &RSAT::util::CheckOutDir($dir{GER}, "", 755);
+  &RSAT::util::CheckOutDir($dir{GER}, "", 0755);
 
   ## Determine suffix
   if ($args{get_reactions}) {
@@ -1683,7 +1683,7 @@ sub pathways_vs_genome {
   ## Build a two-column file with EC numbers in the first column, and
   ## the organism name in the second one.
   $dir{pathways_vs_genome} = $dir{output}."/pathways_vs_genome";
-  &RSAT::util::CheckOutDir($dir{"pathways_vs_genome"}, "", 755);
+  &RSAT::util::CheckOutDir($dir{"pathways_vs_genome"}, "", 0755);
 
   $outfile{"genome_ecs"} = $dir{pathways_vs_genome}."/genome_ecs_".$organism_name.".tab"; push @files_to_index, "genome_ecs";
   $outfile{"pathways_vs_genome"} = $dir{pathways_vs_genome}."/pathways_vs_genome_".$organism_name.".tab"; push @files_to_index, "pathways_vs_genome";

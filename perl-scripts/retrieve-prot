@@ -1,0 +1,332 @@
+#!/usr/bin/env perl
+
+=pod
+
+=head1 NAME
+
+retrieve-prot
+
+=head1 DESCRIPTION
+
+Returns amino acid sequences encoded by list of query genes.
+Will retrieve all isoforms of the same gene.
+Depends on genomes locally-installed in RSAT.
+
+=head1 AUTHORS
+
+=over
+
+=item Bruno Contreras-Moreira <bcontreras\@eead.csic.es>
+
+=back
+
+=head1 CATEGORY
+
+sequences
+
+=head1 USAGE
+
+retrieve-prot -q GENE1 -q GENE2 -org organism_name [...]
+
+=head1 INPUT FORMAT
+
+Query genes can be directly entered on the command line (option I<-q>)
+or in an input file (option I<-i>). The first word of each row of such
+a file is handled as a gene. Any additional information on the same
+row is ignored.
+
+The organism matching those genes can be entered on the
+command line (option I<-org>).
+
+=head1 OUTPUT FORMAT
+
+Protein sequences in FASTA format.
+
+=cut
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+
+require "RSA.lib";
+use strict;
+
+################################################################
+## Main package
+package main;
+{
+  
+  ################################################################
+  #### initialise parameters and vars
+  our $start_time = &RSAT::util::StartScript();
+  
+  our %infile = ();
+  our %outfile = ();
+
+  our $verbose = 0;
+  our $in = *STDIN;
+  our $out = *STDOUT;
+  
+  our @query_genes = ();
+  our %params = (
+    'org' => '',
+    'all' => 0
+  );
+
+  my ($id,$geneOK,$header,%found);
+
+  ReadArguments();
+ 
+  # open output stream
+  $main::out = &OpenOutputFile($main::outfile{'output'});
+
+  # check arguments
+  my $organism = new RSAT::organism(); 
+
+  if(!$params{'org'} || !$organism->is_supported($params{'org'})) {
+    RSAT::error::FatalError("Please select a supported organism")
+  }
+
+  my $FASTAfile = $organism->has_proteins_file($params{'org'});
+  if(!$FASTAfile) {
+    RSAT::error::FatalError("This installed organism does not provide protein sequences")
+  }
+
+  # -q genes already parsed in ReadArguments
+  if($main::infile{'input'}) {
+    RSAT::message::Info("Reading genes from file",$main::infile{'input'}) if($verbose >= 2);
+
+    my ($genefile,$listdir) = OpenInputFile($main::infile{'input'});
+    while(<$genefile>) {
+      next if(/^[#;]/);
+      s/\r/\n/g;
+      $id = (split)[0];
+      push(@query_genes,$id);
+      RSAT::message::Info("$id") if($verbose >= 3);
+    }
+    close($genefile);
+  } 
+
+  RSAT::error::FatalError("You should indicate at least a query gene")
+    unless(scalar(@query_genes) > 0 || $params{'all'});
+
+  Verbose() if ($main::verbose >= 1);
+
+  # read FASTA file and retrieve requested sequences
+  ($geneOK,$header) = (0,'');
+  open(FASTA,"<",$FASTAfile) ||
+    RSAT::error::FatalError("cannot read $FASTAfile");
+  while(<FASTA>) {
+
+    if(/^>(.*)/) {
+      ($geneOK,$header) = (0,$1);
+
+      if($params{'all'}) {
+        $geneOK = 1;
+        print $out $_;
+
+      } else {
+        foreach $id (@query_genes) {
+          next if($found{$id});
+          if($header =~ m/^>$id$/ || $header =~ m/^>$id\.\d/ || $header =~ m/gene:$id\s/) {
+            $geneOK = 1;
+            print $out $_;
+            $found{$id}=1;
+            last;
+          }
+        }
+      }  
+
+    } else {
+      print $out $_ if($geneOK);
+    }
+  }
+  close(FASTA);
+
+  if(!$params{'all'}) {
+    foreach $id (@query_genes) {
+      next if($found{$id});
+      RSAT::message::Info(";WARNING	invalid query $id");  
+    }
+  }
+
+  close_and_quit();
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+################################################################
+### Close output file and quit
+sub close_and_quit {
+	
+    my $exec_time = RSAT::util::ReportExecutionTime($main::start_time);
+	print $exec_time;
+    
+    if($main::outfile{'output'}) {
+      close($main::outfile{'output'});
+    }
+
+    exit(0);
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  my $arg = "";
+  
+  my @arguments = @ARGV; 
+ 
+  while ($arg = shift(@arguments)) {
+
+=pod
+    
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])){ $main::verbose = shift(@arguments) } 
+    
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+	  &PrintHelp();
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	  &PrintOptions();
+	
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	  &RSAT::error::FatalError("option -i is incompatible with option -q")
+	    if (scalar(@main::query_genes) > 0);
+	  $main::infile{'input'} = shift(@arguments);    
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	  $main::outfile{'output'} = shift(@arguments);
+	    
+=pod
+
+=item B<-org organism>
+
+Reports amino acid sequences of this organism.
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	  $main::params{'org'} = shift (@arguments);
+	  
+=pod
+
+=item B<-q query_gene>
+
+Query gene ID. 
+
+This option can be used iteratively on the same command to specify
+multiple query genes.
+
+Alternatively, a list of query genes can be provided in a text file,
+specified with the option I<-i>.
+
+=cut
+    } elsif ($arg eq "-q") {
+      &RSAT::error::FatalError("Option -q is incompatible with option -i")
+        if ($main::infile{input});
+      push(@main::query_genes, shift(@arguments));
+
+=pod
+
+=item B<-all>
+
+Retrieve all amino acid sequences of selected organism.
+
+=cut
+    } elsif ($arg eq "-all") {
+      $main::params{'all'} = 1;
+
+      &RSAT::error::FatalError("Option -all is incompatible with option -q")
+        if (@main::query_genes);
+
+      &RSAT::error::FatalError("Option -all is incompatible with option -i")
+        if ($main::infile{input});
+
+=pod
+
+=back
+
+=cut
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+  print $main::out "; retrieve-prot ";
+  PrintArguments($main::out);
+  
+  if (%main::infile) {
+    print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	print $main::out ";\t$key\t$value\n";
+    }
+  }
+  
+  if (%main::outfile) {
+    print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  print $main::out ";\t$key\t$value\n";
+    }
+  }
+}
+
+__END__

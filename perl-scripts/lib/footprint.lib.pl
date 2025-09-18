@@ -377,7 +377,7 @@ sub GetOutfilePrefix {
 #    $dir{output_per_query} = join("/",$main::dir{output_root}, $main::org_selection_prefix, $organism_name, $query_prefix);
     $dir{output_per_query} = join("/",$main::dir{main_output}, $query_prefix);
   }
-  &RSAT::util::CheckOutDir($dir{output_per_query}, "", 775);
+  &RSAT::util::CheckOutDir($dir{output_per_query}, "", 0775);
   &RSAT::message::Debug("Checked query output directory", $query , $dir{output_per_query}) if ($main::verbose  >= 5);
 
   ## Compute a query-specific file prefix including the main parameters
