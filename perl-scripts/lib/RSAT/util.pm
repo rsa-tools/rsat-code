@@ -549,7 +549,7 @@ sub CheckOutDir {
 
   ## Specify a mask for the new directory
   $umask = 0002 unless ($umask);
-  $chmod = '0775' unless ($chmod);
+  $chmod = 0775 unless ($chmod);
   umask($umask);
   if ($main::verbose >= 4) {
     my $wd = $ENV{PWD}; #`pwd`;
@@ -587,7 +587,7 @@ sub CheckOutDir {
   ## Change access mode if required
   if ((defined($chmod)) && ($chmod =~ /\d{3}/)) {
     &RSAT::message::Info("Changing access mode", $chmod, $output_dir) if ($main::verbose >= 5);
-    system("chmod ".$chmod." ".$output_dir);
+    chmod($chmod, $output_dir);
   }
 }
 
