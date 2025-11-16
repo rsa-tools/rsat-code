@@ -77,7 +77,7 @@ RUN mv rsat-code rsat
 # git clone https://github.com/rsa-tools/sample_outputs.git
 
 ## <---- Download licensed motif_databases, move to /packages/motif_databases and symb link
-RUN wget --no-parent -r --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
+RUN wget --no-parent -r -X REGULONDB --reject "index.html*" https://rsat.eead.csic.es/plants/motif_databases/ \
 	&& mv /packages/rsat.eead.csic.es/plants/motif_databases/ /packages \
 	&& rm -rf /packages/rsat.eead.csic.es 
 RUN cd rsat/public_html/ \
