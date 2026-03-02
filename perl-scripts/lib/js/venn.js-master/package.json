@@ -4,7 +4,7 @@
   "author": "Ben Frederickson <ben@benfrederickson.com> (http:/www.benfrederickson.com)",
   "url": "https://github.com/benfred/venn.js/issues",
   "devDependencies": {
-    "rollup": "2.79.2",
+    "rollup": "2.80.0",
     "uglify-js": "2.4.24",
     "faucet": "0.0",
     "tape": "4",
