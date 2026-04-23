@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 use CGI;
+use Cwd qw(abs_path);
+use File::Spec;
 
 use LWP::Simple;
 use JSON;
@@ -197,8 +199,9 @@ sub ListParameters {
   print "<ul><table>\n";
   foreach my $key (@param) {
     print "<tr>";
-    print "<td valign=top><b>$key</b></td>";
+    print "<td valign=top><b>", &rsat_safe_html($key), "</b></td>";
     my $value = $query->param($key);
+    $value = &rsat_safe_html($value);
     $value =~ s/\n/<br>/g;
     print "<td valign=top>$value</td>";
     print "</tr>\n";
@@ -216,8 +219,9 @@ sub ListDefaultParameters {
   print "<ul><table>\n";
   foreach my $key (sort keys %main::default) {
     print "<tr>";
-    print "<td valign=top><b>$key</b></td>";
+    print "<td valign=top><b>", &rsat_safe_html($key), "</b></td>";
     my $value = $default{$key};
+    $value = &rsat_safe_html($value);
     $value =~ s/\n/<br>/g;
     print "<td valign=top>$value</td>";
     print "</tr>\n";
@@ -231,11 +235,71 @@ sub ListDefaultParameters {
 sub Print_CGI_Input {
     print "<pre>";
     foreach $key (sort keys %input) {
-	print "$key\t$input{$key}\n";
+	print &rsat_safe_html($key), "\t", &rsat_safe_html($input{$key}), "\n";
     }
     print "</pre>";
 
-    print "Parameters: $parameters<P><P>\n";
+    print "Parameters: ", &rsat_safe_html($parameters), "<P><P>\n";
+}
+
+## Escape a value for safe insertion as plain HTML text content.
+## This is meant for text nodes, not for raw HTML, URLs, or full attribute validation.
+sub rsat_safe_html {
+  my ($value) = @_;
+  return '' unless defined $value;
+  return CGI::escapeHTML("$value");
+}
+
+## Encode a value as a JavaScript string literal.
+## The extra escaping keeps it safer when embedded in inline handlers inside HTML.
+sub rsat_safe_js_string {
+  my ($value) = @_;
+  $value = '' unless defined $value;
+  my $json = encode_json("$value");
+  $json =~ s/</\\u003C/g;
+  $json =~ s/>/\\u003E/g;
+  $json =~ s/&/\\u0026/g;
+  $json =~ s/'/\\u0027/g;
+  return $json;
+}
+
+## Accept only readable regular files from approved local server-side roots.
+## The path is trimmed, canonicalized, and rejected if it escapes the allowed directories.
+sub rsat_safe_local_file_param {
+  my ($path) = @_;
+  return undef unless defined $path;
+  $path =~ s/^\s+//;
+  $path =~ s/\s+$//;
+  return undef unless length $path;
+  return undef if $path =~ /[\0\r\n]/;
+
+  my $abs_path = abs_path($path);
+  return undef unless defined $abs_path;
+  return undef unless -f $abs_path;
+  return undef unless -r $abs_path;
+
+  my @allowed_roots = grep { defined && length($_) }
+    ($ENV{RSAT}, $ENV{TMPDIR}, '/tmp');
+
+  foreach my $root (@allowed_roots) {
+    my $abs_root = abs_path($root);
+    next unless defined $abs_root;
+    return $abs_path if $abs_path eq $abs_root;
+    return $abs_path if index($abs_path, $abs_root . '/') == 0;
+  }
+
+  return undef;
+}
+
+## Quote one shell argument for POSIX shells after minimal validation.
+## This protects a single argument, but building full shell command strings is still risky.
+sub rsat_shell_quote {
+  my ($value) = @_;
+  die "Undefined shell argument" unless defined $value;
+  $value = "$value";
+  die "Invalid NUL byte in shell argument" if $value =~ /\0/;
+  $value =~ s/'/'"'"'/g;
+  return "'" . $value . "'";
 }
 
 

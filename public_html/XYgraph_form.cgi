@@ -55,8 +55,9 @@ foreach $key (keys %default) {
 
 
 #### specific treatment for internal XYgraph file (piped from dna-patttern)
-if (-e $query->param('XYgraph_file')) {
-    $file = $query->param('XYgraph_file');
+my $xygraph_file = &rsat_safe_local_file_param($query->param('XYgraph_file'));
+if ($xygraph_file) {
+    $file = $xygraph_file;
     $default{data} = `cat $file`;
 } else {
     $default{data} = $query->param('data');
@@ -325,7 +326,7 @@ function setDemo(demo_data){
 </script>';
 
 print "<TD><B>";
-print '<button type="button" onclick="setDemo('. "'$demo_data'" .')">DEMO</button>';
+print '<button type="button" onclick="setDemo(' . &rsat_safe_js_string($demo_data) . ')">DEMO</button>';
 print "</B></TD>\n";
 #print "<TD><B><A HREF='help.XYgraph.html'>MANUAL</A></B></TD>\n";
 
@@ -386,4 +387,3 @@ EndCredits
 ## close the form
 print $query->end_html;
 exit();
-
