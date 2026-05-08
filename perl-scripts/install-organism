@@ -450,12 +450,31 @@ package main;
 	  ## Create local download directory if needed
 	  &RSAT::util::CheckOutDir($strain_info{$strain}->{"downloads"});
 
-	  ## Build the download command
-	  $RSYNC_URL = $URL;
-	  $RSYNC_URL =~ s/https/rsync/;
-	  $EXCLUDE = " --exclude '*_graph.bw'";
-	  $EXCLUDE .= " --exclude RefSeq_transcripts_alignments";
-	  my $command = "rsync --copy-links --times --recursive --verbose ".${EXCLUDE}." ".$RSYNC_URL."/* ".$strain_info{$strain}->{"downloads"}."/";
+
+    #=============================================0      old block          =====================================================
+    # rsync is going to be be retired by NCBI on june 2026, should be replaced by wget 
+    # also The directory structure available through https at NCBI is not the same as the one with rsync:
+    # in particular the https://ftp.ncbi.nlm.nih.gov/genomes/..... is not available and we get 
+    # @ERROR: Unknown module "genomes"
+    #
+    #
+	## Create local download directory if needed
+	  #&RSAT::util::CheckOutDir($strain_info{$strain}->{"downloads"});
+	  #$RSYNC_URL = $URL;
+	  #$RSYNC_URL =~ s/https/rsync/;
+	  #my $command = "rsync --copy-links --times --recursive --verbose ".$RSYNC_URL."/* ".$strain_info{$strain}->{"downloads"}."/";
+    #==============================================================================================================================
+
+    #--------------------------------------      new block 07-05-2026  ------------------------------------------------------------
+
+    ## Create local download directory if needed
+    &RSAT::util::CheckOutDir($strain_info{$strain}->{"downloads"});
+
+    my $command = "wget -r -l1 -np -nd -e robots=off "
+    ."--accept '*.gz,*.txt,*.md5' "
+    ."--reject 'index.html*' "
+    ."-P ".$strain_info{$strain}->{"downloads"}." ".$URL;
+
 
 	  ## Download data from NCBI
 	  &doit($command, $dry, $die_on_error, $main::verbose);
@@ -2850,7 +2869,13 @@ sub CleanUp {
 sub DownloadAssemblySummary {
     my ($group) = @_;
 
-    my $assembly_summary_url = join("/", "rsync://ftp.ncbi.nlm.nih.gov", "genomes", "refseq", $group, "assembly_summary.txt");
+    #==============================================      old code        ==============================================
+    # again here "genomes" directory is not available in the current NCBI rsync server
+    #my $assembly_summary_url = join("/", "rsync://ftp.ncbi.nlm.nih.gov", "genomes", "refseq", $group, "assembly_summary.txt");
+    
+    #---------------------- New changes 07-0-2026: URL changed from rsync:// to https:// ----------------------------------
+    my $assembly_summary_url = join("/", "https://ftp.ncbi.nlm.nih.gov", "genomes", "refseq", $group, "assembly_summary.txt");
+
     
     if ($main::verbose >= 1) {
 	&RSAT::message::TimeWarn("Downloading NCBI assembly summary file for group\t", $group);
@@ -2862,10 +2887,21 @@ sub DownloadAssemblySummary {
     my $command = "wget --no-clobber -O ".$dir{downloads}."/README_assembly_summary.txt https://ftp.ncbi.nlm.nih.gov/genomes/README_assembly_summary.txt; ";
     &doit($command, $dry, $die_on_error, $main::verbose);
 
-#     $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-    $command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
-    $command .= " && head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
+    #===============================        old block of downloading using rsync        ==============================================
+
+    #$command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    #$command = "rsync -ruptvl -R --verbose ".$assembly_summary_url." ".$dir{downloads};
+    #$command .= " && head -2 $outfile{assembly_summary} | tail -1 | perl -pe 's/\t/\n/g' | awk '{sum +=1; {print sum\"\t\"\$0}}' > $outfile{assembly_columns}";
+   
+    # ------------------------------------ New changes 07-0-2026: downloading with wget  ---------------------------------------------
+    &RSAT::util::CheckOutDir($dir{assembly_summary});
+    $command = "wget -O ".$outfile{assembly_summary}." ".$assembly_summary_url;
+    $command .= " && grep '^#assembly_accession' ".$outfile{assembly_summary}
+    ." | sed 's/^#//' "
+    ." | tr '\\t' '\\n' "
+    ." | awk '{print NR\"\\t\"\$0}' > ".$outfile{assembly_columns};
     &doit($command, $dry, $die_on_error, $main::verbose);
+
 
     ## Display file names
     if ($main::verbose >= 1) {
