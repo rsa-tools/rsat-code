@@ -43,10 +43,10 @@ $parameters = " -v 1";
 
 ### general parameters ###
 if ($query->param('title')) {
-    $parameters .= " -title1 \"".$query->param('title')."\" ";
+    $parameters .= " -title1 ".&rsat_shell_quote($query->param('title'))." ";
 }
 if ($query->param('title2')) {
-    $parameters .= " -title2 \"".$query->param('title2')."\" ";
+    $parameters .= " -title2 ".&rsat_shell_quote($query->param('title2'))." ";
 }
 if (&IsNatural($query->param('pointsize'))) {
     $parameters .= " -pointsize ".$query->param('pointsize');
@@ -81,10 +81,10 @@ if ($query->param('xcol')) {
     $parameters .= " -xcol ".$query->param('xcol');
 }
 if ($query->param('xleg1')) {
-    $parameters .= " -xleg1 \"".$query->param('xleg1')."\"";
+    $parameters .= " -xleg1 ".&rsat_shell_quote($query->param('xleg1'));
 }
 if ($query->param('xleg2')) {
-    $parameters .= " -xleg2 \"".$query->param('xleg2')."\"";
+    $parameters .= " -xleg2 ".&rsat_shell_quote($query->param('xleg2'));
 }
 if (&IsReal($query->param('xmin'))) {
     $parameters .= " -xmin ".$query->param('xmin');
@@ -110,10 +110,10 @@ if ($query->param('ycol')) {
     $parameters .= " -ycol ".$query->param('ycol');
 }
 if ($query->param('yleg1')) {
-    $parameters .= " -yleg1 \"".$query->param('yleg1')."\"";
+    $parameters .= " -yleg1 ".&rsat_shell_quote($query->param('yleg1'));
 }
 if ($query->param('yleg2')) {
-    $parameters .= " -yleg2 \"".$query->param('yleg2')."\"";
+    $parameters .= " -yleg2 ".&rsat_shell_quote($query->param('yleg2'));
 }
 if (&IsReal($query->param('ymin'))) {
     $parameters .= " -ymin ".$query->param('ymin');
@@ -142,7 +142,8 @@ if ($ENV{R_supported} && !$query->param('htmap')){
 ## data file 
 if ($query->param('data_file') =~ /\S/) {
     ### file on the server
-    $data_file = $query->param('data_file');
+    $data_file = &rsat_safe_local_file_param($query->param('data_file'));
+    &FatalError("Invalid data file") unless $data_file;
 
 } elsif ($query->param('uploaded_file')) {
     ### upload file from the client
@@ -168,21 +169,24 @@ if ($query->param('data_file') =~ /\S/) {
 }
 push @result_files, "Input data (tab)", $data_file;
 
-$parameters .= " -i ".$data_file;
+$parameters .= " -i ".&rsat_shell_quote($data_file);
 
 ### graph file ###
 $image_format = $query->param('format') || $ENV{rsat_img_format} || "png";
+unless ($image_format =~ /^(png|jpg|jpeg|gif|svg|ps|pdf|eps)$/i) {
+    $image_format = "png";
+}
 $graph_file = $tmp_file_path.".".$image_format;
 push @result_files, "XY graph ($image_format)", $graph_file;
 $parameters .= " -format ".$image_format;
-$parameters .= " -o ".$graph_file;
+$parameters .= " -o ".&rsat_shell_quote($graph_file);
 
 if ($query->param('htmap')) {
     $htmap = 1;
     $htmap_file = $tmp_file_path.".html";
     push @result_files, "HTML map", $htmap_file;
 #    $parameters .= " -htmap ";
-    $parameters .= " -htmap > ".$htmap_file;
+    $parameters .= " -htmap > ".&rsat_shell_quote($htmap_file);
 }
 
 $XYgraph_command .= " ".$parameters;
@@ -232,6 +236,5 @@ print &HtmlBot();
 &DelayedRemoval($data_file);
 
 exit(0);
-
 
 

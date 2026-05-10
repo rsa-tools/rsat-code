@@ -48,7 +48,9 @@ $data_file = $tmp_file_path."_input.tab";
 
 if ($query->param('transferred_file') =~ /\S/) {
   ## Use local data file (transferred from previous query)
-  $data_file = $query->param('transferred_file');
+  my $transferred_file = &rsat_safe_local_file_param($query->param('transferred_file'));
+  &cgiError("Invalid transferred file") unless $transferred_file;
+  $data_file = $transferred_file;
 } elsif ($query->param('uploaded_file')) {
   ## Upload file from the client computer
   open DATA, ">$data_file";
@@ -71,7 +73,7 @@ if ($query->param('transferred_file') =~ /\S/) {
     &cgiError("The data box cannot be empty\n");
 }
 
-$parameters .= " -i ".$data_file;
+$parameters .= " -i ".&rsat_shell_quote($data_file);
 push @result_files, ("data",$data_file);
 
 ## Parameters
@@ -142,34 +144,23 @@ exit(0);
 sub PipingForm {
     my $data = `cat $result_file`;
     ### prepare data for piping
-    print <<End_of_form;
-<hr>
-<table class='nextstep'>
-
-<tr><td colspan=2>
-<h3>Next step</h3>
-</td></tr>
-
-<tr>
-
-<td><form method="post" action="XYgraph_form.cgi">
-<input type="hidden" name="data" VALUE="$data">
-<input type="hidden" name="xcol" VALUE="3">
-<input type="hidden" name="ycol" VALUE="4,5,6">
-<input type="hidden" name="title" VALUE="Frequency distribution">
-<input type="hidden" name="xsize" VALUE="600">
-<input type="hidden" name="xleg1" VALUE="Values">
-<input type="hidden" name="ysize" VALUE="400">
-<input type="hidden" name="yleg1" VALUE="Frequencies">
-<input type="hidden" name="lines" VALUE="on">
-<input type="submit" value="XYgraph">
-</form></td>
-
-</tr>
-
-
-</TABLE>
-End_of_form
+    print "<hr>\n";
+    print "<table class='nextstep'>\n";
+    print "<tr><td colspan=2><h3>Next step</h3></td></tr>\n";
+    print "<tr>\n";
+    print "<td>", $query->start_form(-method => 'post', -action => 'XYgraph_form.cgi'), "\n";
+    print $query->hidden(-name => 'data', -default => $data);
+    print $query->hidden(-name => 'xcol', -default => '3');
+    print $query->hidden(-name => 'ycol', -default => '4,5,6');
+    print $query->hidden(-name => 'title', -default => 'Frequency distribution');
+    print $query->hidden(-name => 'xsize', -default => '600');
+    print $query->hidden(-name => 'xleg1', -default => 'Values');
+    print $query->hidden(-name => 'ysize', -default => '400');
+    print $query->hidden(-name => 'yleg1', -default => 'Frequencies');
+    print $query->hidden(-name => 'lines', -default => 'on');
+    print $query->submit(-value => 'XYgraph');
+    print $query->end_form, "</td>\n";
+    print "</tr>\n";
+    print "</table>\n";
 
 }
-

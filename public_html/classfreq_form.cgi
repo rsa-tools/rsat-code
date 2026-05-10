@@ -56,10 +56,10 @@ if ($query->param('transferred_file')) {
   my $file_url = $transferred_file;
   $file_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
   $file =~ s|$ENV{rsat_www}|$ENV{RSAT}/public_html|;
-  print "<ul><a href=$file_url>";
+  print "<ul><a href='", &rsat_safe_html($file_url), "'>";
   print " transferred from previous query<BR>\n";
   print "</a></ul>";
-  print "<input type='hidden' NAME='transferred_file' VALUE='$transferred_file'>\n";
+  print $query->hidden(-name=>'transferred_file', -default=>$transferred_file), "\n";
 
 } else {
   $default{data} = $query->param('data');
@@ -197,4 +197,3 @@ print "</FONT>\n";
 print $query->end_html;
 
 exit(0);
-
