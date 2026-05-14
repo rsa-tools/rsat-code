@@ -25,14 +25,14 @@ apt install -y python3-rpy2
 apt install -y python3-pysimplesoap 
 apt install -y python3-requests 
 apt install -y python3-yaml
-apt install -y python3-wsdl
-apt install -y python3-wstools
+#apt install -y python3-wsdl
+pip3 install wstools
 apt install -y python3-suds
 apt install -y python3-venv
 apt install -y python3-pip
 # apt install -ypython3-fisher ## 2025-12-29: unable to install
 apt install -y python3-pygraphviz
-apt install -y python3-requests   # required for downloading GO terms from biomart
+# repeated # apt install -y python3-requests   # required for downloading GO terms from biomart
 
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
