@@ -30,6 +30,7 @@ apt install python3-pip
 # apt install python3-fisher ## 2025-12-29: unable to install
 apt install python3-pygraphviz
 apt install python3-requests   # required for downloading GO terms from biomart
+apt install python3-weblogo
 
 # SOAP/WSDL support deprecated and disabled
 # apt install python3-pysimplesoap 
