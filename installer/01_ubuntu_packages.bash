@@ -201,13 +201,9 @@ libole-storage-lite-perl
 libparallel-forkmanager-perl
 libpostscript-simple-perl
 librest-client-perl
-libsoap-lite-perl
-libsoap-wsdl-perl
 libspreadsheet-xlsx-perl
 libstatistics-distributions-perl
 libxml-compile-cache-perl
-libxml-compile-soap-perl
-libxml-compile-wsdl11-perl
 libxml-parser-perl
 libxml-perl
 libxml-simple-perl
@@ -216,6 +212,15 @@ perl-doc
 pmtools
 "
 #libemail-sender-transport-smtp-tls-perl
+
+
+## SOAP support deprecated and disabled
+PACKAGES_NOT_REQUIRED_ANYMORE="
+libsoap-lite-perl
+libsoap-wsdl-perl
+libxml-compile-soap-perl
+libxml-compile-wsdl11-perl
+"
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.
