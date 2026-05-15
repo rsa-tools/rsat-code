@@ -121,6 +121,12 @@ libapache2-mod-php
 rsync
 libmysqlclient-dev
 python-is-python3
+bedtools
+ghostscript
+gnuplot
+python3-weblogo
+ncbi-blast+
+diamond-aligner
 "
 
 ## Suppressed for Ubuntu 22.04
@@ -131,6 +137,7 @@ python-is-python3
 ## Packages to be checked by JvH.
 ## These are useful to me, but I am not sure they are required for RSAT.
 PACKAGES_OPT="
+mcl
 chrony
 ess
 yum
