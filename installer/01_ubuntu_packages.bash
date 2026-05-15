@@ -109,7 +109,6 @@ python3-rpy2
 emacs
 x11-apps
 eog
-ntp
 curl
 libcurl4-openssl-dev
 libcurl4-gnutls-dev
@@ -121,7 +120,6 @@ php
 libapache2-mod-php
 rsync
 libmysqlclient-dev
-libapache2-mod-wsgi-py3
 python-is-python3
 "
 
@@ -133,6 +131,7 @@ python-is-python3
 ## Packages to be checked by JvH.
 ## These are useful to me, but I am not sure they are required for RSAT.
 PACKAGES_OPT="
+chrony
 ess
 yum
 php-elisp
@@ -177,7 +176,6 @@ finger
 ## necessary, could be done with cpan, but ensure consistency with
 ## ubuntu OS)
 PACKAGES_PERL="
-bioperl-run
 libbio-das-lite-perl
 libbio-perl-perl
 libclass-std-perl
@@ -220,6 +218,7 @@ libsoap-lite-perl
 libsoap-wsdl-perl
 libxml-compile-soap-perl
 libxml-compile-wsdl11-perl
+libapache2-mod-wsgi-py3
 "
 
 ## We did not find apt-get packages for some required Perl

@@ -34,7 +34,6 @@ gnuplot
 graphviz
 openssl
 emacs
-ntp
 curl
 php
 pkg-config
@@ -43,6 +42,7 @@ blast
 "
 
 PACKAGED_NOT_REQUIRED="
+ntp
 java
 mysql-connector-c
 mysql

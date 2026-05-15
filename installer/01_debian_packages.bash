@@ -71,7 +71,6 @@ python3-yaml
 emacs
 x11-apps
 eog
-ntp
 curl
 libcurl4-openssl-dev
 libcurl4-gnutls-dev
@@ -92,6 +91,7 @@ python-is-python3
 ## Packages to be checked by JvH.
 ## These are useful to me, but I am not sure they are required for RSAT.
 PACKAGES_OPT="
+chrony
 ess
 yum
 php-elisp
