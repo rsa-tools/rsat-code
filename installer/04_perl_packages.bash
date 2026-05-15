@@ -37,6 +37,7 @@ cd ${RSAT}
 ##	apt-get install libssl-dev
 
 
+## Update YAML and CPAN packages
 yes yes | cpan YAML ## Type "yes" on request !!!
 yes yes | cpan CPAN ## Update CPAN
 
