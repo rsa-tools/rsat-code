@@ -127,6 +127,7 @@ gnuplot
 python3-weblogo
 ncbi-blast+
 diamond-aligner
+libcrypt-dev
 "
 
 ## Suppressed for Ubuntu 22.04
