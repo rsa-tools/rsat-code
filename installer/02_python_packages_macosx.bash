@@ -11,9 +11,7 @@ source $(dirname $0)/00_config.bash
 
 #${OS_INSTALLER} install python3-suds
 ## PROBLEM : No distributions at all found for python-suds
-## pip3 install python-suds
-
-echo "# Installing Python libraries for MAC OS with brew"; 
+## pip3 install python-sudsecho "# Installing Python libraries for MAC OS with brew"; 
 brew install numpy
 brew install scipy
 brew install python-matplotlib
@@ -47,6 +45,7 @@ brew install PyYAML
 # sudo pip3 install suds-jurko ## Inactivated on 2023-02-06 because does not work anymore with Ubuntu 22.04
 # soappy is not maintained, and don't install well on python3
 # sudo pip3 install soappy
+sudo python3 -m pip install weblogo
 
 # required for downloading GO terms from biomart
 
