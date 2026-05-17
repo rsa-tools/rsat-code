@@ -49,14 +49,14 @@ list_versions:
 EXT_APP_TARGETS=\
 	install_vmatch \
 	install_d3 \
-	install_bedtools \
-	install_ghostscript \
-	install_gnuplot \
-	install_weblogo3 \
 	install_ensembl_api \
 	install_ensembl_bioperl
 
 # Suppresed 2026-05-17
+#	install_bedtools
+#	install_ghostscript
+#	install_gnuplot
+#	install_weblogo3
 #	install_seqlogo
 #	install_mcl 
 #	install_rnsc 
