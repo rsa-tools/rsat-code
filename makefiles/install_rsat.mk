@@ -187,7 +187,6 @@ PERL_MODULES= \
 	Bio::Perl \
 	CGI \
 	Class::Std::Fast  \
-	DBD::mysql \
 	DBI \
 	DB_File \
 	Data::Dumper \
@@ -211,30 +210,35 @@ PERL_MODULES= \
 	Module::Build::Compat \
 	Number::Format \
 	OLE::Storage_Lite \
-	Object::InsideOut Util::Properties \
 	POSIX \
 	Parallel::ForkManager \
 	PostScript::Simple	 \
 	REST::Client \
 	Readonly \
-	SOAP::Lite \
-	SOAP::Packager \
-	SOAP::Transport::HTTP \
-	SOAP::WSDL \
 	Spreadsheet::WriteExcel \
 	Spreadsheet::WriteExcel::Big \
 	Statistics::Distributions \
 	Template::Plugin::Number::Format \
+	YAML
+
+PERL_MODULES_OLD= \
+	DBD::mysql \
+	Object::InsideOut \
+	Util::Properties \
+	SOAP::Lite \
+	SOAP::Packager \
+	SOAP::Transport::HTTP \
+	SOAP::WSDL \
 	XML::Compile \
 	XML::Compile::Cache \
 	XML::Compile::SOAP11 \
 	XML::Compile::Transport::SOAPHTTP \
-	XML::Compile::WSDL11 \
 	XML::DOM \
+	XML::Compile::WSDL11 \
 	XML::LibXML \
 	XML::LibXML::Simple \
-	XML::Parser::Expat \
-	YAML
+	XML::Parser::Expat
+
 
 #t/013_complexType.t ................................... 1/? Can't locate object method "new" via package "MyElement" (perhaps you forgot to load "MyElement"?) at lib/SOAP/WSDL/XSD/Typelib/ComplexType.pm line 213.
 
