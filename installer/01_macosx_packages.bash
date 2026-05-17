@@ -38,10 +38,13 @@ curl
 php
 pkg-config
 python3
+bedtools
 blast
+diamond
 "
 
 PACKAGED_NOT_REQUIRED="
+mcl
 ntp
 java
 mysql-connector-c
