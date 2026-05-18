@@ -27,7 +27,7 @@ Organisms can be loaded one by one (option -org), or by taxon (option
 
 =head1 AUTHORS
 
-Jacques.van.Helden@ulb.ac.be
+Jacques.van-Helden@univ-amu.fr
 
 =head1 CATEGORY
 
@@ -146,8 +146,9 @@ package main;
 
   ## Remote server from which genomes should be downloaded
 #  $RSAT_SERVER="http://teaching.rsat.eu/";
-#  $RSAT_SERVER="http://rsat-tagc.univ-mrs.fr/rsat/";
-  $RSAT_SERVER="https://rsat.france-bioinformatique.fr/rsat/";
+  #  $RSAT_SERVER="https://rsat.france-bioinformatique.fr/rsat/";
+  # Temporary: download genomes from plant server because the French server is down
+  $RSAT_SERVER="https://rsat.eead.csic.es/plants/";
 
   ## List of organisms to install
   @organisms = ();
@@ -642,7 +643,8 @@ allows to use the command within a pipe.
 
 Specify an alternative server.
 
-Default: http://rsat-tagc.univ-mrs.fr/rsat/
+Example: plant server hosted in Spain
+    -server https://rsat.eead.csic.es/plants/
 
 =cut
 
