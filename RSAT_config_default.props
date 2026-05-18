@@ -328,7 +328,7 @@ biomart_urlconfig=[RSAT_PARENT_PATH]/rsat/perl-scripts/biomart/martDBLocation.xm
 ## install on all servers -> we temporarily keep seqlogo as
 ## alternative option.
 # LOGO_PROGRAM=seqlogo|weblogo
-LOGO_PROGRAM=seqlogo
+LOGO_PROGRAM=weblogo
 
 ###############################################################
 ## Google Analytics 
