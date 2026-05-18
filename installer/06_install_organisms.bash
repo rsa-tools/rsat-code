@@ -10,7 +10,12 @@ echo
 
 cd ${RSAT}; source RSAT_config.bashrc ## Reload the (updated) RSAT environment variables
 ## Install two model organisms, required for some of the Web tools.
-download-organism -v 1 -org Saccharomyces_cerevisiae \
+
+## Temporary fix: download demo genomes from Plants server because Fungi and Bacteria servers are down
+SERVER=https://rsat.eead.csic.es/plants/
+download-organism -v 1 \
+    -server ${SERVER} \
+    -org Saccharomyces_cerevisiae \
     -org Escherichia_coli_K_12_substr__MG1655_uid57779 \
     -org Escherichia_coli_GCF_000005845.2_ASM584v2
 
