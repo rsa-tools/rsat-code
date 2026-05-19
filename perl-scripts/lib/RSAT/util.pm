@@ -985,7 +985,7 @@ sub make_temp_file {
   # 	    "OK"));
   # die "HEREAMI";
 
-  &CheckOutDir($tmp_dir, "", 755); ## temporary dir and all of its parents must be writable by all users
+  &CheckOutDir($tmp_dir, "", 0755); ## temporary dir and all of its parents must be writable by all users
 
   ## Create an index file in the new directory to prevent Web users
   ## from seing its whole content
