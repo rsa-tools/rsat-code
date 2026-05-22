@@ -175,15 +175,15 @@ sequences. </a></li>
   href='http://www.ncbi.nlm.nih.gov/pubmed/18802440'>Pubmed 18802440</a>
 </li>
 
-<li><b>plant upstream sequences:</b> motif discovery on the <a href='https://github.com/RSAT-doc/motif_discovery_clusters'>Web browser</a> or running a <a href='https://eead-csic-compbio.github.io/coexpression_motif_discovery/peach/Tutorial.html'>Docker container</a>:
+<li><b>plant upstream sequences:</b> motif discovery on the <a href='https://doi.org/10.1007/978-1-0716-4972-5_14'>Web browser</a> or running a <a href='https://eead-csic-compbio.github.io/coexpression_motif_discovery/peach/Tutorial.html'>Docker container</a>:
   <br>Ksouri N, Castro-Mondrag&oacute;n JA, Montardit-Tard&aacute; F, van Helden J, Contreras-Moreira B, Gogorcena Y (2021)
   Tuning promoter boundaries improves regulatory motif discovery in nonmodel plants: the peach example.
   Plant Physiol 185(3):1242-1258. <a target='_blank' 
-  href='https://pubmed.ncbi.nlm.nih.gov/33744946'>Pubmed 33744946</a> (updates <a target='_blank' 
-  href='https://pubmed.ncbi.nlm.nih.gov/27557774'>Pubmed 27557774</a>)
+  href='https://pubmed.ncbi.nlm.nih.gov/33744946'>Pubmed 33744946</a> <!--(updates <a target='_blank' href='https://pubmed.ncbi.nlm.nih.gov/27557774'>Pubmed 27557774</a>i)-->
+  <br>
+  Ksouri N et al (2026) Web-Based Discovery of Regulatory Motifs in Non-model Plants. In: Franco-Zorrilla, J.M., Martín-Pizarro, C. (eds) Plant Transcription Factors. Methods in Moecular Biology, vol 2985. Humana, New York, NY. <a href="https://doi.org/10.1007/978-1-0716-4972-5_14">10.1007/978-1-0716-4972-5_14</a>
 </li>
 </p>
-
 
 </li>
 
