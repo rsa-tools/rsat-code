@@ -54,11 +54,14 @@ foreach $key (keys %default) {
 } 
 
 
-#### specific treatment for internal XYgraph file (piped from dna-patttern)
-my $xygraph_file = &rsat_safe_local_file_param($query->param('XYgraph_file'));
+#### specific treatment for internal XYgraph file: accept only job_id
+my $xygraph_file = &rsat_resolve_job_id_file($query->param('job_id'));
 if ($xygraph_file) {
-    $file = $xygraph_file;
-    $default{data} = `cat $file`;
+    if (open my $fh, "<", $xygraph_file) {
+        local $/ = undef;
+        $default{data} = <$fh>;
+        close $fh;
+    }
 } else {
     $default{data} = $query->param('data');
 }

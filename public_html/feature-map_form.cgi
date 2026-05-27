@@ -32,10 +32,14 @@ foreach $key (keys %default) {
     }
 }
 
-#### specific treatment for internal feature file (piped from dna-patttern)
-if (-e $query->param('feature_file')) {
-    $file = $query->param('feature_file');
-    $default{data} = `cat $file`;
+#### specific treatment for internal feature file: accept only job_id
+my $prefill_file = &rsat_resolve_job_id_file($query->param('job_id'));
+if ($prefill_file) {
+    if (open my $fh, "<", $prefill_file) {
+        local $/ = undef;
+        $default{data} = <$fh>;
+        close $fh;
+    }
 } else {
     $default{data} = $query->param('data');
 }

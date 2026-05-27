@@ -12,6 +12,7 @@ require "cgi-lib.pl";
 
 
 require "RSA.lib.pl";
+require "RSA2.cgi.lib";
 $form_file = "$HTML/neighbour-orfs.html";
 
 MAIN:
@@ -19,7 +20,15 @@ MAIN:
     ### Read the content of the form 
     &ReadParse(*input);
 
-    $query = `cat $input{'query_file'}`;
+    my $query = "";
+    my $query_file = &rsat_resolve_job_id_file($input{'job_id'});
+    if ($query_file && open(my $qfh, "<", $query_file)) {
+        local $/ = undef;
+        $query = <$qfh>;
+        close $qfh;
+    } elsif (defined $input{'query'} && $input{'query'} ne '') {
+        $query = $input{'query'};
+    }
 
     ### Print the header
     print &PrintHeader;
