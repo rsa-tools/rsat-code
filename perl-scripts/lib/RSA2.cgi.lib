@@ -291,6 +291,28 @@ sub rsat_safe_local_file_param {
   return undef;
 }
 
+## Resolve a client-provided job identifier to a readable file under public temp.
+## This emergency guard rejects absolute/relative paths and only accepts simple IDs.
+sub rsat_resolve_job_id_file {
+  my ($job_id) = @_;
+  return undef unless defined $job_id;
+  $job_id =~ s/^\s+//;
+  $job_id =~ s/\s+$//;
+  return undef unless $job_id =~ /^[A-Za-z0-9._-]{1,200}$/;
+
+  my $tmp_root = &RSAT::util::get_pub_temp();
+  return undef unless defined $tmp_root && length $tmp_root;
+  my $root_abs = abs_path($tmp_root);
+  return undef unless defined $root_abs;
+
+  my $candidate = File::Spec->catfile($root_abs, $job_id);
+  my $candidate_abs = abs_path($candidate);
+  return undef unless defined $candidate_abs;
+  return undef unless -f $candidate_abs && -r $candidate_abs;
+  return undef unless index($candidate_abs, $root_abs . '/') == 0;
+  return $candidate_abs;
+}
+
 ## Quote one shell argument for POSIX shells after minimal validation.
 ## This protects a single argument, but building full shell command strings is still risky.
 sub rsat_shell_quote {
@@ -3292,6 +3314,48 @@ sub CheckWebInput {
       $tag =~ s/</&lt;/g;
       $tag =~ s/>/&gt;/g;
       &RSAT::error::FatalError("Invalid content for field \"$field\"", "<pre>$tag</pre>", "HTML tags are not allowed.");
+    }
+  }
+
+  ## Critical allow-list checks for parameters with known injection exposure.
+  my $origin = $cgi->param('origin');
+  if (defined $origin && $origin ne '' && $origin !~ /^(genomic|sequence)$/i) {
+    &RSAT::error::FatalError("Invalid value for parameter \"origin\".");
+  }
+
+  my $db_id = $cgi->param('db_id');
+  if (defined $db_id && $db_id ne '' && $db_id !~ /^[A-Za-z0-9_.-]{1,128}$/) {
+    &RSAT::error::FatalError("Invalid value for parameter \"db_id\".");
+  }
+
+  my $feattype = $cgi->param('feattype');
+  if (defined $feattype && $feattype ne '' && $feattype !~ /^[A-Za-z0-9_.-]{1,64}$/) {
+    &RSAT::error::FatalError("Invalid value for parameter \"feattype\".");
+  }
+
+  my $seq_type = $cgi->param('sequence_type');
+  if (defined $seq_type && $seq_type ne '' && $seq_type !~ /^[A-Za-z0-9_.-]{1,64}$/) {
+    &RSAT::error::FatalError("Invalid value for parameter \"sequence_type\".");
+  }
+
+  my $org_bg = $cgi->param('organism_bg');
+  if (defined $org_bg && $org_bg ne '') {
+    my $checked_org = &CheckOrganismAvail($org_bg);
+    if (!defined $checked_org || $checked_org eq '') {
+      &RSAT::error::FatalError("Invalid value for parameter \"organism_bg\".");
+    }
+  }
+
+  my $bg_format = $cgi->param('bg_format');
+  if (defined $bg_format && $bg_format ne '' && $bg_format !~ /^(oligo-analysis|tab|markov|transitions|counts|freq|frequency)$/i) {
+    &RSAT::error::FatalError("Invalid value for parameter \"bg_format\".");
+  }
+
+  foreach my $path_field (qw(feature_file XYgraph_file query_file)) {
+    my $value = $cgi->param($path_field);
+    next unless defined $value && $value ne '';
+    if ($value =~ m{[\\/]} || $value !~ /^[A-Za-z0-9._-]{1,200}$/) {
+      &RSAT::error::FatalError("Invalid value for parameter \"$path_field\".");
     }
   }
 }
