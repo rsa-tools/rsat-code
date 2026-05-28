@@ -17,6 +17,8 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
+&CheckWebInput($query);
+my $mode = $query->param("mode") || "";
 
 if($mode eq 'retrieveweb'){
     print "Content-type:application/json; charset=iso-8859-1\n\n";
@@ -26,7 +28,6 @@ if($mode eq 'retrieveweb'){
 
 my @dbs_choice = split(",", $query->param("dbs_choice"));
 my $db_choice = $query->param("db_choice") || "";
-my $mode = $query->param("mode") || "";
 
 my $motif_folder = "/public_html/motif_databases/";
 
@@ -100,8 +101,13 @@ if($mode eq "db"){
     }
     ##### execute la commande retrieve-matrix
     $file_name = $ENV{RSAT} . $motif_folder . $file;
-    $id = $query->param("db_id");
-    $command = "$SCRIPTS/retrieve-matrix -i $file_name -id $id 2> /dev/null";
+    my $id = $query->param("db_id") || "";
+    if ($id !~ /^[A-Za-z0-9_.-]{1,128}$/) {
+        die "Invalid db_id";
+    }
+    my $quoted_file_name = &rsat_shell_quote($file_name);
+    my $quoted_id = &rsat_shell_quote($id);
+    $command = "$SCRIPTS/retrieve-matrix -i $quoted_file_name -id $quoted_id 2> /dev/null";
     open RESULT, "$command |";
     
     ######## return json array of all information

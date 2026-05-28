@@ -82,12 +82,20 @@ if ($query->param('single_multi_org') eq 'multi') {
 ### feature type
 if ($query->param('feattype')) {
     my ($feattype) = split " ", $query->param('feattype'); ### take the first word
+    my %allowed_feattype = map { $_ => 1 } qw(CDS gene mRNA tRNA rRNA ncRNA operon transcript exon intron);
+    unless ($allowed_feattype{$feattype}) {
+        &FatalError("Invalid feature type");
+    }
     $parameters .= " -feattype ".$feattype;
 }
 
 ### sequence type
 if ($query->param('sequence_type')) {
     ($seq_type) = split " ", $query->param('sequence_type'); ### take the first word
+    my %allowed_sequence_type = map { $_ => 1 } qw(dna protein);
+    unless ($allowed_sequence_type{$seq_type}) {
+        &FatalError("Invalid sequence type");
+    }
     $parameters .= " -type ".$seq_type;
 }
 

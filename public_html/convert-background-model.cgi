@@ -54,6 +54,8 @@ if ($bg_method eq "rsat") {
   #my $bg_taxo = $query->param('bg_taxo');
   #if ($bg_taxo eq "organism"){
   my $organism_name = $query->param("organism_bg");
+  $organism_name = &CheckOrganismAvail($organism_name);
+  &FatalError("Invalid organism for background model") if (!defined $organism_name || $organism_name eq "");
   $parameters .= " -org ".$organism_name;
   #}
 
@@ -106,7 +108,10 @@ if ($bg_method eq "rsat") {
     }
     close BGFILE;
     $parameters .= " -i $bgfile";
-    $parameters .= " -from ".$query->param('bg_format');
+    my $bg_format = lc($query->param('bg_format') || '');
+    my %allowed_bg_format = map { $_ => 1 } qw(tab oligo-analysis markov transitions counts freq frequency);
+    &FatalError("Invalid background format") unless $allowed_bg_format{$bg_format};
+    $parameters .= " -from ".$bg_format;
   } else {
     &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
