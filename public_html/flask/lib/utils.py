@@ -1,5 +1,6 @@
 import os,sys,re
 import json
+import shlex
 #from subprocess import check_output, Popen, PIPE
 import subprocess
 from tempfile import mkstemp, mkdtemp, NamedTemporaryFile
@@ -100,8 +101,14 @@ def get_backgroundfile(org, oligo_len, background="upstream-noorf"):
 	
 	:return: name of background file
 	"""
-	command = "perl -e 'use lib \"" + perl_scripts + "/lib/\"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile(\"" + org + "\","+ str(oligo_len) +",\""+ background+"\", str=>\"-1str\", noov=>\"ovlp\"); print $x;'"
-	p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	if not re.match(r'^[A-Za-z0-9_.:-]+$', org):
+		raise ValueError('Invalid org parameter')
+	if not re.match(r'^[A-Za-z0-9_-]+$', background):
+		raise ValueError('Invalid background parameter')
+	perl_code = 'use lib "{}"; use RSAT::OrganismManager; $x=&RSAT::OrganismManager::ExpectedFreqFile("{}",{},"{}", str=>"-1str", noov=>"ovlp"); print $x;'.format(
+		perl_scripts + '/lib/', org, int(oligo_len), background
+	)
+	p = subprocess.Popen(['perl', '-e', perl_code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	file = p.stdout.readline()
 	return file
 
@@ -354,8 +361,8 @@ def run_command_background(command, method_name, out_dir='', summary_page=''):
     response['result_path'] = hide_RSAT_path(result_dir)
     response['result_url'] = make_url(result_file)
     
-    command = 'nice -n 19 ' + command + ' &'
-    os.system(command)
+    argv = ['nice', '-n', '19'] + shlex.split(command)
+    subprocess.Popen(argv, close_fds=True)
     return response
     
 def run_command(command, output_choice, method_name, out_format, out_dir=''):          
@@ -371,7 +378,8 @@ def run_command(command, output_choice, method_name, out_format, out_dir=''):
     :return: a JSON object containing the full command, the result or the warning/error of the command and the link/path to it if the content-type is json. Or the result of the command if the content-type is text.
     
     """
-    p = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+    argv = shlex.split(command)
+    p = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
     result = ''
     for line in iter(child_stdout.readline, ''):

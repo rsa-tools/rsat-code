@@ -7,6 +7,7 @@ import os
 from time import localtime
 import datetime
 import pwd
+import shlex
 
 app = Flask(__name__, static_url_path = "")
 
@@ -214,7 +215,7 @@ def oligo_analysis_pipeline():
     logfile = tmp_path + '/snakemake.log'
 
     command = perl_scripts + '/snakemake --snakefile ' + perl_scripts + '/oligo_analysis_pipeline --configfile ' + tmp_path + '/config.json --core 5 --directory ' + tmp_path + ' oligo_all 2> ' + logfile
-    p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    p = Popen(shlex.split(command), stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
     result = ''
@@ -250,7 +251,7 @@ def oligo_analysis_pipeline():
 
 def run_command(command, output_choice, method_name, out_format):
     ### execute command
-    p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    p = Popen(shlex.split(command), stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
     result = ''
     for line in iter(child_stdout.readline, ''):
