@@ -31,9 +31,6 @@ echo
 #sudo cat /etc/apt/sources.list.rcran   /etc/apt/sources.list.bk >  /etc/apt/sources.list
 #sudo grep -i "cran" /etc/apt/sources.list # Check
 
-# Get code to allow using cran as apt-get source
-#sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-## Not working on the IFB cloud, so I comment it and use the option --force-yes
 
 ################################################################
 ## NOTE: THIS IS FOR UBUNTU ONLY ###
@@ -53,6 +50,7 @@ ${OS_INSTALLER} install -y --no-install-recommends software-properties-common di
 sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 # add the R 4.0 repo from CRAN -- adjust 'focal' to 'groovy' or 'bionic' as needed
 sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+#sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/"
 
 ${OS_INSTALLER} update -y
 

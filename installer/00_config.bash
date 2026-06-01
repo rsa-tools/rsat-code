@@ -50,9 +50,9 @@ echo "    RSAT_SERVER_NAME=${RSAT_SERVER_NAME}"
 # export RSAT_DISTRIB_URL=http://pedagogix-tagc.univ-mrs.fr/download_rsat/${RSAT_ARCHIVE}
 
 ## Configuration for the installation
-if [[ $PACKAGE_MANAGER == "apt-get" ]]; then
+if [[ $PACKAGE_MANAGER == "apt" ]]; then
 
-  export OS_INSTALLER="sudo DEBIAN_FRONTEND=noninteractive apt-get"
+  export OS_INSTALLER="sudo DEBIAN_FRONTEND=noninteractive apt"
   echo "    OS_INSTALLER=${OS_INSTALLER}"
   export INSTALLER_OPT="--quiet --assume-yes"
   echo "    INSTALLER_OPT=${INSTALLER_OPT}"

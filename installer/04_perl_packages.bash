@@ -24,9 +24,9 @@ cd ${RSAT}
 ##	 MCRAWFOR/REST-Client-291.tar.gz              : make_test FAILED but failure ignored because 'force' in effect
 ##	 NANIS/Crypt-SSLeay-0.64.tar.gz               : make NO
 ## To solve it I found this
-## 	apt-get install libnet-ssleay-perl
-##	apt-get install libcrypt-ssleay-perl
-##	apt-get install libssl-dev
+## 	apt install libnet-ssleay-perl
+##	apt install libcrypt-ssleay-perl
+##	apt install libssl-dev
 
 
 yes yes | cpan YAML ## Type "yes" on request !!!

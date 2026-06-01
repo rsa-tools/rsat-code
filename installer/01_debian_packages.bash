@@ -34,7 +34,7 @@ then
 fi
 
 ################################################################
-## Required apt-get packages
+## Required apt packages
 PACKAGES_REQUIRED="
 time
 apt-utils
@@ -130,7 +130,7 @@ finger
 "
 
 ################################################################
-## apt-get packages to install Perl modules (not properly speaking
+## apt packages to install Perl modules (not properly speaking
 ## necessary, could be done with cpan, but ensure consistency with
 ## ubuntu OS)
 PACKAGES_PERL="
@@ -169,7 +169,7 @@ perl-doc
 pmtools
 "
 
-## We did not find apt-get packages for some required Perl
+## We did not find apt packages for some required Perl
 ## libraries. These will have to be installed with cpan.
 PACKAGES_PERL_MISSING="
 libalgorithm-cluster-perl
@@ -177,19 +177,19 @@ libutil-properties-perl
 "
 
 
-## Install the apt-get libraries
+## Install the apt libraries
 PACKAGES="${PACKAGES_REQUIRED} ${PACKAGES_PERL}"
 echo "Packages to be installed with ${OS_INSTALLER} ${INSTALLER_OPT}"
 echo "${PACKAGES}"
 for LIB in ${PACKAGES}; do \
-    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt-get library ${LIB}" ; \
+    echo "`date '+%Y/%m/%d %H:%M:%S'`  installing apt library ${LIB}" ; \
     ${OS_INSTALLER} install ${INSTALLER_OPT} ${LIB} > ${RSAT}/install_logs/install_${LIB}_log.txt ; \
     df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${LIB}_installed.txt ; \
 done
 echo "Log files are in folder ${RSAT}/install_logs"
 
 ################################################################
-## To free space, remove apt-get packages that are no longer required.a
+## To free space, remove apt packages that are no longer required.a
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
 ${OS_INSTALLER} ${INSTALLER_OPT}  autoremove
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_autoremoved.txt

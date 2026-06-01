@@ -6,7 +6,7 @@ source $(dirname $0)/00_config.bash
 ## Install some python libraries with pip
 ##
 ## Note: numpy, scipy and matplotlib are supposed to have previously
-## been installed with apt-get under Ubuntu. For other OS, they should
+## been installed with apt under Ubuntu. For other OS, they should
 ## be added to the pip installation.
 
 echo
@@ -21,9 +21,9 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
-sudo apt-get update
+sudo apt update
 
-    PACKAGES_REQUIRED="
+PACKAGES_REQUIRED="
 python3-numpy
 python3-scipy
 python3-matplotlib 
@@ -39,7 +39,7 @@ python3-pygraphviz
 python3-requests
 "
 
-sudo apt-get install -y ${PACKAGES_REQUIRED}
+sudo apt install -y ${PACKAGES_REQUIRED}
 
 # python3-fisher ## 2025-12-29: unable to install
 >>>>>>> 08b7bb821ac938c3e14ca0efdc45ab8233947c68

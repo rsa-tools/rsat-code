@@ -18,8 +18,6 @@ echo
 
 ################################################################
 ## Required brew packages
-################################################################
-## Required apt-get packages
 PACKAGES_REQUIRED="
 make
 cvs
