@@ -37,9 +37,9 @@ ARCHITECTURE=x64
 ## Examples:
 ##   PACKAGE_MANAGER=brew
 ##   PACKAGE_MANAGER=yum
-##   PACKAGE_MANAGER=apt-get
+##   PACKAGE_MANAGER=apt
 ##   PACKAGE_MANAGER=aptitude
-PACKAGE_MANAGER=apt-get
+PACKAGE_MANAGER=apt
 
 
 ################################################################
