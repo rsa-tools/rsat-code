@@ -20,15 +20,7 @@ cd ${RSAT}
 ################################################################
 ## Installation of Perl modules required for RSAT
 ################################################################
-## Notes
-##
-## 1) limxml2-dev is required to compile the Perl module XML::LibXML
-# apt-get install limxml2-dev
-## 2) For some modules, installation failed until I used "force"
-##	 force install SOAP::WSDL
-##	 force install SOAP::Lite
-##
-## 3) Problem of dependency when installint REST::Client, even with "force".
+## Notes : Problem of dependency when installint REST::Client, even with "force".
 ##	 MCRAWFOR/REST-Client-291.tar.gz              : make_test FAILED but failure ignored because 'force' in effect
 ##	 NANIS/Crypt-SSLeay-0.64.tar.gz               : make NO
 ## To solve it I found this

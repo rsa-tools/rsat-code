@@ -94,8 +94,6 @@ ncbi-blast+
 diamond-aligner
 "
 
-## Suppressed for Ubuntu 22.04
-# libapache2-mod-wsgi
 
 
 ################################################################
@@ -183,15 +181,6 @@ pmtools
 "
 #libemail-sender-transport-smtp-tls-perl
 
-
-## SOAP support deprecated and disabled
-PACKAGES_NOT_REQUIRED_ANYMORE="
-libsoap-lite-perl
-libsoap-wsdl-perl
-libxml-compile-soap-perl
-libxml-compile-wsdl11-perl
-libapache2-mod-wsgi-py3
-"
 
 ## We did not find apt-get packages for some required Perl
 ## libraries. These will have to be installed with cpan.

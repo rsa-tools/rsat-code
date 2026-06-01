@@ -7,7 +7,6 @@ source $(dirname $0)/00_config.bash
 ## of the Regulatory Sequence Analysis Tools (RSAT; http://rsat.eu/).
 ##
 ## Note: as of Debian 11 bullseye, there are packages that require enabling the non-free repositores
-NONFREE_PACKAGES="libxml-compile-soap-perl"
 
 echo
 echo "Debian packages that require enabling non-free repos: ${NONFREE_PACKAGES}"
@@ -65,7 +64,6 @@ python3-scipy
 python3-matplotlib
 python3-rpy2
 snakemake 
-python3-pysimplesoap 
 python3-requests 
 python3-yaml
 emacs
@@ -169,13 +167,6 @@ libxml-simple-perl
 libyaml-perl
 perl-doc
 pmtools
-"
-
-PACKAGES_NOT_REQUIRED_ANYMORE="
-libsoap-lite-perl
-libsoap-wsdl-perl
-libxml-compile-soap-perl
-libxml-compile-wsdl11-perl
 "
 
 ## We did not find apt-get packages for some required Perl
