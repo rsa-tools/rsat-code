@@ -38,42 +38,7 @@ fi
 
 ## We need to update apt-get, to avoid trouble with python
 ## See http://askubuntu.com/questions/350312/i-am-not-able-to-install-easy-install-in-my-ubuntu
-
-## We can then check the increase of disk usage during the different
-## steps of the installation
-# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
-
-################################################################
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Still required for Ubuntu 16.04 ? TO BE CHECKED
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## Fix a problem with rabbitmq in the Ubuntu 14.04 distrib
-## wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | apt-key add -
-
-## Install aptitude, more efficient than apt-get to treat dependencies
-## when installing and uninstalling packages.
-## TO SAVE SPACE, I SUPPRESS aptitude
-## apt-get install aptitude
-
-## For the IFB cloud, it is recommended to start with a apt-get update
-#apt-get update
-#df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_apt-get_updated.txt
-
-################################################################
-## I tried to run dist-upgrade because it 'can "intelligently" handle
-## changes in the dependencies system. This includes removing packages
-## that are no longer necessary or resolve conflicts between packages
-## that arose because of changes in the dependencies.'
-## http://askubuntu.com/questions/194651/why-use-apt-get-upgrade-instead-of-apt-get-dist-upgrade
-## HOWEVER, THE PERL UPDATE DOES NOT WORK ANYMORE AFTER THAT !!!
-##
-## I thus use apt-get upgrade. However this cannot be part of the
-## default installation since not everyone wants to upgrade apt-get.
-## I thus comment the following instructions.
-##
-# ${OS_INSTALLER} ${INSTALLER_OPT} upgrade
-# df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_${OS_INSTALLER}_upgrade.txt
-# grep ${DEVICE} ${RSAT}/install_logs/df_*.txt
+sudo apt-get update
 
 
 ################################################################

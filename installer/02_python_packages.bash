@@ -17,26 +17,32 @@ echo "!!!!!!!     BEWARE: INSTALLATION REQUIRES SUDO RIGHTS       !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo
 
-apt install python3-numpy
-apt install python3-scipy
-apt install python3-matplotlib 
-apt install snakemake 
-apt install python3-rpy2 
-apt install python3-requests 
-apt install python3-yaml
-apt install python3-suds
-apt install python3-venv
-apt install python3-pip
-# apt install python3-fisher ## 2025-12-29: unable to install
-apt install python3-pygraphviz
-apt install python3-requests   # required for downloading GO terms from biomart
-apt install python3-weblogo
+set -euo pipefail
 
-# SOAP/WSDL support deprecated and disabled
-# apt install python3-pysimplesoap 
-# apt install python3-wsdl
-# apt install python3-wstools
+export DEBIAN_FRONTEND=noninteractive
 
+sudo apt-get update
+
+    PACKAGES_REQUIRED="
+python3-numpy
+python3-scipy
+python3-matplotlib 
+snakemake 
+python3-rpy2 
+python3-pysimplesoap 
+python3-requests 
+python3-yaml
+python3-suds
+python3-venv
+python3-pip
+python3-pygraphviz
+python3-requests
+"
+
+sudo apt-get install -y ${PACKAGES_REQUIRED}
+
+# python3-fisher ## 2025-12-29: unable to install
+>>>>>>> 08b7bb821ac938c3e14ca0efdc45ab8233947c68
 
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
