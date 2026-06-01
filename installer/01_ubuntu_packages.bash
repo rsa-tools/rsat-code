@@ -109,7 +109,6 @@ python3-rpy2
 emacs
 x11-apps
 eog
-ntp
 curl
 libcurl4-openssl-dev
 libcurl4-gnutls-dev
