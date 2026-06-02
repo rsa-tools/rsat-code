@@ -5,6 +5,7 @@ install_logs/
 *.o
 *~
 .#*
+\#*
 .DS_Store
 .Rhistory
 CVS
@@ -88,3 +89,4 @@ motif_databases
 sample_outputs
 .ipynb_checkpoints
 *.dSYM/
+
