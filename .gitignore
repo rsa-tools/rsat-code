@@ -90,3 +90,4 @@ sample_outputs
 .ipynb_checkpoints
 *.dSYM/
 
+install_tests
