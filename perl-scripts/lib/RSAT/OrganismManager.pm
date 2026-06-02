@@ -44,7 +44,7 @@ our @supported_org_fields = qw(ID
 			       variant_available
 			       variant_source
 			       path_to_variant_files
-                   blast_available
+			       blast_available
 			      );
 
 #			       selected_taxon
@@ -394,11 +394,14 @@ sub supported_organism_table {
       }
       push @values, $value;
     }
-      if(($with_variant == 0 && $with_blast == 0) || ($with_variant == 1 && $main::supported_organism{$org}->{'variant_available'} eq "1") || ($with_blast == 1 && $main::supported_organism{$org}->{'blast_available'} eq "1")){
-          my $row = join ("\t", @values);
-          #    &RSAT::message::Debug($org, $row) if ($main::verbose >= 3);
-          $table .= $row."\n";
-      }
+    
+    if(($with_variant == 0 && $with_blast == 0) || 
+	    ($with_variant == 1 && $main::supported_organism{$org}->{'variant_available'} eq "1") || 
+	    ($with_blast == 1 && $main::supported_organism{$org}->{'blast_available'} eq "1")){
+      my $row = join ("\t", @values);
+      #    &RSAT::message::Debug($org, $row) if ($main::verbose >= 3);
+      $table .= $row."\n";
+    }
   }
   return($table);
 }
@@ -532,7 +535,11 @@ sub get_demo_organisms {
 	}
     }
     unless (($group_specificity{"Bacteria"}) || ($group_specificity{"Prokaryotes"})) {
-	if (&is_supported("Escherichia_coli_GCF_000005845.2_ASM584v2")){
+        if (&is_supported("Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2")){
+            # Escherichia coli (K12 mg1655) as installed from NCBI,
+	    # see https://rsa-tools.github.io/managing-RSAT/genome_installation/install_organisms_from_ncbi.html
+            push(@selected_organisms, "Escherichia_coli_str._K-12_substr._MG1655_GCF_000005845.2_ASM584v2");
+        } elsif (&is_supported("Escherichia_coli_GCF_000005845.2_ASM584v2")){
 	    # This corresponds to the first sequenced strain of
 	    # Escherichia coli (K12 mg1655), which is the reference
 	    # for many publications.
@@ -541,12 +548,12 @@ sub get_demo_organisms {
 	    ## This is the previous file naming for the reference
 	    ## strain (before NIH changed their naming rules)
 	    push @selected_organisms, "Escherichia_coli_K_12_substr__MG1655_uid57779";
-	} else {
+        } else {
 	    ## If not found, take any available strain of Escherichia
 	    push @selected_organisms, &GetOrganismsForTaxon("Escherichia");
 	}
-	
     }
+
     return (@selected_organisms);
 }
 
@@ -711,7 +718,6 @@ sub GetOrganismsForGroup {
   my @selected_organisms = ();
   my @specific_taxa = ();
 
-  
   my @supported_groups  = qw(Fungi
                              Prokaryotes
                              Bacteria
@@ -768,7 +774,10 @@ sub GetOrganismsForGroup {
       }
 
     } elsif ($group_specificity eq "Plants") {
-      push @specific_taxa, "Viridiplantae";
+      push(@specific_taxa, "Viridiplantae");
+
+      # add also user-requested taxa which not be plants
+      push(@specific_taxa, "Request");
 
     } elsif ($group_specificity eq "Teaching") {
 
