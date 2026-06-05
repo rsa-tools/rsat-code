@@ -69,8 +69,8 @@ WORKDIR /packages
 
 
 ## <----  Actually clone RSAT repository into your working dir and rename to rsat
-RUN git clone https://github.com/rsat-tools/rsat-code.git  --branch master --single-branch
-mv rsat-code rsat
+RUN git clone https://github.com/rsa-tools/rsat-code.git  --branch master --single-branch
+RUN mv rsat-code rsat
 
 # Repositories 'demo_files' and 'sample_ouput' are skipped to save space
 # git clone https://github.com/rsa-tools/demo_files.git
