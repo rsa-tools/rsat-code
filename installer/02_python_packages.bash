@@ -41,9 +41,6 @@ python3-requests
 
 sudo apt install -y ${PACKAGES_REQUIRED}
 
-# python3-fisher ## 2025-12-29: unable to install
->>>>>>> 08b7bb821ac938c3e14ca0efdc45ab8233947c68
-
 ## Check disk usage
 df -m > ${RSAT}/install_logs/df_$(date +%Y-%m-%d_%H-%M-%S)_pip_libraries_installed.txt
 # grep ${DEVICE} ${RSAT}/install_logs/df_*.txt

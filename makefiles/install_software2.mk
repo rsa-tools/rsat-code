@@ -173,8 +173,8 @@ _compile_logol:
 
 ################################################################
 ## Get and install the program seqlogo
-SEQLOGO_URL=http://weblogo.berkeley.edu/release
-SEQLOGO_TAR=weblogo.2.8.2.tar.gz
+SEQLOGO_URL=https://github.com/gecrooks/weblogo/archive/refs/tags/
+SEQLOGO_TAR=3.9.0.tar.gz
 SEQLOGO_DIR=${SRC_DIR}/seqlogo
 install_seqlogo: _download_seqlogo _compile_seqlogo
 

@@ -69,8 +69,8 @@ WORKDIR /packages
 
 
 ## <----  Actually clone RSAT repository into your working dir and rename to rsat
-RUN git clone https://github.com/rsa-tools/rsat-code.git  --branch 2025-03-26 --single-branch
-RUN mv rsat-code rsat
+RUN git clone https://github.com/rsat-tools/rsat-code.git  --branch master --single-branch
+mv rsat-code rsat
 
 # Repositories 'demo_files' and 'sample_ouput' are skipped to save space
 # git clone https://github.com/rsa-tools/demo_files.git
@@ -131,9 +131,8 @@ WORKDIR ${RSAT}
 
 
 ## <---- Read config and run bash installation scripts
-RUN  source /packages/rsat/RSAT_config.bashrc \
-	&& bash installer/01_ubuntu_packages.bash \
-	&& bash installer/02_python_packages.bash
+RUN  source /packages/rsat/RSAT_config.bashrc && bash -x installer/01_ubuntu_packages.bash 
+RUN  source /packages/rsat/RSAT_config.bashrc && bash -x installer/02_python_packages.bash
 
 ########################################################       Notes       ########################################################
 # When installinng python dependencies you might error with rpy2-3.5.12.tar.gz or PySimpleSOAP-1.16.2.tar.gz

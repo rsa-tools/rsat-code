@@ -51,8 +51,11 @@ EXT_APP_TARGETS=\
 	install_d3 \
 	install_ensembl_api \
 	install_ensembl_bioperl
-
-# Suppresed 2026-05-17
+	install_python \
+	install_weblogo3_pip 
+	install_ensembl_bioperl 
+  
+# Suppresed 2026-05-17. Note: Weblogo3_pip allows for correct installation of container with python
 #	install_bedtools
 #	install_ghostscript
 #	install_gnuplot
@@ -61,6 +64,7 @@ EXT_APP_TARGETS=\
 #	install_mcl 
 #	install_rnsc 
 #	install_blast
+
 
 
 list_ext_apps:
@@ -175,16 +179,15 @@ _compile_logol:
 
 ################################################################
 ## Get and install the program seqlogo
-SEQLOGO_URL=http://weblogo.berkeley.edu/release
-SEQLOGO_TAR=weblogo.2.8.2.tar.gz
+SEQLOGO_URL=https://github.com/gecrooks/weblogo/archive/refs/tags/
+SEQLOGO_TAR=3.9.0.tar.gz
 SEQLOGO_DIR=${SRC_DIR}/seqlogo
-install_seqlogo: _download_seqlogo _compile_seqlogo
+#install_seqlogo: _download_seqlogo _compile_seqlogo
 
 _download_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
-	@echo
 	@echo "Downloading seqlogo	${SEQLOGO_URL}"
-	(cd ${SEQLOGO_DIR}; wget --timestamping --no-verbose --no-directories  ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	(cd ${SEQLOGO_DIR}; wget --timestamping --no-verbose --no-directories  ${SEQLOGO_URL}/${SEQLOGO_TAR}; ls ${SEQLOGO_DIR}; echo ${SEQLOGO_DIR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 _compile_seqlogo:
@@ -201,29 +204,29 @@ _compile_seqlogo:
 ## Source: http://weblogo.threeplusone.com/
 
 # ## Manual installation of Weblogo in ${RSAT_BIN}
-# WEBLOGO3_VERSION=3.3
-# WEBLOGO3_TAR=weblogo-${WEBLOGO3_VERSION}.tar.gz
-# WEBLOGO3_URL=https://weblogo.googlecode.com/files/${WEBLOGO3_TAR}
-# WEBLOGO3_DIR=${SRC_DIR}/weblogo3
-# install_weblogo3: _download_weblogo3 _compile_weblogo3
+WEBLOGO3_VERSION=3.9.0
+WEBLOGO3_TAR=3.9.0.tar.gz
+WEBLOGO3_URL=https://github.com/gecrooks/weblogo/archive/refs/tags/${WEBLOGO3_TAR}
+WEBLOGO3_DIR=${SRC_DIR}/weblogo3
+install_weblogo3: _download_weblogo3 _compile_weblogo3
 
-# _download_weblogo3:
-# 	@mkdir -p ${WEBLOGO3_DIR}
-# 	@echo "Getting weblogo3 using wget"
-# 	(cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
-# 	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
+_download_weblogo3:
+	@mkdir -p ${WEBLOGO3_DIR}
+	@echo "Getting weblogo3 using wget"
+	(mkdir -p ${WEBLOGO3_DIR}; cd ${WEBLOGO3_DIR}; wget --no-clobber -nv -nd ${WEBLOGO3_URL}; tar -xpzf ${WEBLOGO3_TAR})
+	@echo "weblogo3 dir	${WEBLOGO3_DIR}"
 
-# _compile_weblogo3:
-# 	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
-# 	(cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
-# 	${SUDO} ${PYTHON} setup.py install --prefix ${RSAT})
-# 	@echo "weblogo installed in ${RSAT_BIN}"
+ _compile_weblogo3:
+	@echo "Building weblogo vesion ${WEBLOGO3_VERSION} and installing in ${RSAT_BIN}"
+	(ls; cd ${WEBLOGO3_DIR}/weblogo-${WEBLOGO3_VERSION}; \
+	${SUDO} ${PIP} install . --prefix ${RSAT})
+	@echo "weblogo installed in ${RSAT_BIN}"
 
 
 
 ################################################################
 ## Install weblogo3
-install_weblogo3: weblogo3_from_githhub
+#install_weblogo3: weblogo3_from_githhub
 
 
 ################################################################
