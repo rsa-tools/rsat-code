@@ -93,17 +93,30 @@ package main;
 
     open(SUPORGS,'<', \$urldata) ||
       RSAT::error::FatalError("Cannot read $server_url$def_supported_orgs_file, please contact rsat-contact\@list01.biologie.ens.fr");
-    while ($line = <SUPORGS>) { print;
+    while ($line = <SUPORGS>) { 
+
       if($line =~ m/^#/) {
         chomp $line;
 	$line =~ s/^#//;
-	$ncol = 0;
-	foreach $col (split(/\s+/,$line)) {
-          if(!$args{return} || grep(/$col/,@return_fields)) {
+
+        if(!$args{return}) {
+          $ncol = 0;		
+	  foreach $col (split(/\s+/,$line)) {
             push(@return_cols, $ncol);
-          }  
-          $ncol++;
-        } 
+            $ncol++;
+          }
+        } else { # conserve user-defined field order
+          foreach my $field (@return_fields) {
+	    $ncol = 0;
+            foreach $col (split(/\s+/,$line)) {
+              if($col eq $field) {
+                push(@return_cols, $ncol);
+		last;
+	      } 
+	      $ncol++;
+            }		    
+	  }
+	}
 
       } else {	      
 
