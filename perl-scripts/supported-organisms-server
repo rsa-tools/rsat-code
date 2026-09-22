@@ -20,7 +20,7 @@ package main;
   our $out = STDOUT;
 
   my $def_supported_orgs_file = 'supported_organisms.tab.bk';
-  my $def_genomes_path = 'public_html/data/genomes/';
+  my $def_genomes_path = 'data/genomes/';
 
   # read-only genome data precomputed for RSAT,
   # require $def_supported_orgs_file in place for taxon operations
@@ -87,11 +87,13 @@ package main;
 
     my $line, $col, $ncol, $outstring;
     my @return_cols = ();
+ 
+    my $urldata = get($server_url.$def_supported_orgs_file) ||
+      RSAT::error::FatalError("Cannot access/find $server_url$def_supported_orgs_file, please contact rsat-contact\@list01.biologie.ens.fr");
 
-    my $urldata = get($server_url.$def_supported_orgs_file);
     open(SUPORGS,'<', \$urldata) ||
-      RSAT::error::FatalError("Server $server_url does not have $def_supported_orgs_file");
-    while ($line = <SUPORGS>) {
+      RSAT::error::FatalError("Cannot read $server_url$def_supported_orgs_file, please contact rsat-contact\@list01.biologie.ens.fr");
+    while ($line = <SUPORGS>) { print;
       if($line =~ m/^#/) {
         chomp $line;
 	$line =~ s/^#//;
