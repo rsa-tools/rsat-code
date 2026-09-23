@@ -77,9 +77,14 @@ package main;
   $out = &OpenOutputFile($outfile{output});
 
   if($args{'servers'} == 1) {
-    foreach my $s (@rsat_repos,@rsat_servers) {
-      print "$s\n";
+    foreach my $s (@rsat_repos) {
+      print "$s\t#repo\n";
     }
+    foreach my $s (@rsat_servers) {
+      print "$s\t#server\n";
+    }
+
+
   } else {
 
     RSAT::message::TimeWarn("Querying server", $server_url) if ($main::verbose >= 2);
