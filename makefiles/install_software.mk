@@ -49,11 +49,11 @@ list_versions:
 EXT_APP_TARGETS=\
 	install_vmatch \
 	install_d3 \
-	install_ensembl_api \
-	install_ensembl_bioperl
 	install_python \
-	install_weblogo3_pip 
-	install_ensembl_bioperl 
+	install_weblogo3_pip \
+	install_ncbi_datasets \
+	install_ensembl_bioperl \
+	install_ensembl_api #to be deprecated after 2026 
   
 # Suppresed 2026-05-17. Note: Weblogo3_pip allows for correct installation of container with python
 #	install_bedtools
@@ -86,6 +86,29 @@ EXT_APP_TARGETS_OPTIONAL=install_gibbs \
 
 install_ext_apps_optional:
 	@${MAKE} ${EXT_APP_TARGETS_OPTIONAL}
+
+################################################################
+## Download NCBI Datasets
+##
+## IMPORTANT: this program is required to retrieve taxonomies 
+## during genome installation. Replaces calls to (to be deprecated)
+## Ensembl REST API.
+NCBIDS_URL="https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/"
+NCBIDS_VERSION="v2"
+NCBIDS_LINUX=${NCBIDS_URL}${NCBIDS_VERSION}/linux-amd64/datasets
+NCBIDS_MACOSX=${NCBIDS_URL}${NCBIDS_VERSION}/mac/datasets
+install_ncbi_datasets:
+	@echo
+	@echo "Installing NCBI datasets for operating system ${OS}"
+	${MAKE} _install_ncbi_datasets_${OS}
+
+_install_ncbi_datasets_macosx:
+	wget --directory-prefix ${RSAT_BIN} ${NCBIDS_MACOSX}
+	chmod +x ${RSAT_BIN}/datasets       	
+
+_install_ncbi_datasets_linux:
+	wget --directory-prefix ${RSAT_BIN} ${NCBIDS_LINUX}
+	chmod +x ${RSAT_BIN}/datasets	
 
 ################################################################
 ## Download the vmatch program
