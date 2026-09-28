@@ -3,7 +3,7 @@
 
 use strict;
 use warnings;
-use JSON::PP;
+use JSON;
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
         push (@INC, "$`lib/");
