@@ -84,7 +84,7 @@ package main;
       all
       );
 
-  ## Tasks to handle download and parsing of genomes from NCBI ftp/rsync site.
+  ## Tasks to handle download and parsing of genomes from NCBI ftp site.
   our @species_tasks = qw(
       available
       download
@@ -1970,9 +1970,8 @@ DESCRIPTION
 	selected tasks) manages different steps necessary for the
 	installation of an organism from the NCBI flat files:
 
-	- Downloading genomes from the NCBI/Refseq ftp site via the
-          rsync protocol
-          (rsync://ftp.ncbi.nlm.nih.gov/genomes/refseq).
+	- Downloading genomes from the NCBI/Refseq ftp site
+          (https://ftp.ncbi.nlm.nih.gov).
 
 	- Parsing the .gbff files (Genbank-formatted flat files).
 
