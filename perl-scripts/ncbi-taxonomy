@@ -1,0 +1,129 @@
+#!/usr/bin/env perl
+# Written with Claude (https://claude.ai/share/ffd2d4a0-e023-4eb5-8849-6d1808fa939a)
+
+use strict;
+use warnings;
+use JSON::PP;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+        push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::server;
+
+=head1 NAME
+
+ncbi-taxonomy runs NCBI Datasets to retrieve the taxonomy of
+a taxon name or taxonID, returning a comma-separated taxonomy string.
+It talks to NCBI through the network.
+
+=head1 USAGE
+
+    ncbi-taxonomy "Zea mays"
+    ncbi-taxonomy 4577
+
+=cut
+
+my @order = qw(
+  superkingdom domain kingdom subkingdom phylum subphylum
+  superclass class subclass infraclass superorder order
+  suborder infraorder parvorder superfamily family subfamily
+  tribe subtribe genus subgenus species subspecies
+);
+
+my $intaxon = join(" ",@ARGV) ||
+  die "# usage: ncbi-taxonomy 'taxon name'\n# usage: ncbi-taxonomy taxonID\n\n";
+
+# run NCBI datasets binary and collect JSON output
+my $datasets_cmd = &RSAT::server::GetProgramPath("datasets");
+my $json = '';
+open(NCBI,"$datasets_cmd summary taxonomy taxon '$intaxon' --report taxonomy |") ||
+  die "# ERROR: cannot run $datasets_cmd\n";
+while(<NCBI>) {
+  $json .= $_;
+}
+close(NCBI);
+
+# parse JSON data
+my $data = decode_json($json);
+my @reports = norm_json($data);
+
+# trace back taxonomy
+for my $entry (@reports) {
+  my $taxon_string = '';
+  my ($tax_id, $list) = extract_taxonomy($entry);
+  for my $par (@$list) {
+    my ($rank, $name) = @$par;
+    $taxon_string .= "$name;";
+  }
+  chop($taxon_string);
+  print "$taxon_string";
+}
+
+sub norm_json {
+  my ($data) = @_;
+
+  if (ref($data) eq 'ARRAY') {
+    return @$data;
+
+  } elsif (ref($data) eq 'HASH') {
+    return @{ $data->{'reports'} } if exists($data->{'reports'});
+    return @{ $data->{'taxonomy_nodes'} } if exists($data->{'taxonomy_nodes'});
+    return ($data);
+  } else {
+    return ()
+  }  
+}
+
+sub extract_taxonomy {
+    my ($register) = @_;
+    my $tax = exists $register->{'taxonomy'} ? $register->{'taxonomy'} : $register;
+
+    my $tax_id = $tax->{'tax_id'};
+    my $binomial = $tax->{'current_scientific_name'}{'name'}
+        // $tax->{'organism_name'}
+        // $tax->{'sci_name'};
+
+    my ($rank, $name, $info, $elem, @list);
+
+    if (my $clasif = $tax->{'classification'}) {
+        my %seen;
+        for $rank (@order) {
+            next unless exists $clasif->{$rank};
+            $info = $clasif->{$rank};
+            $name = ref($info) eq 'HASH' ? $info->{'name'} : $info;
+            if (defined $name) {
+                push @list, [$rank, $name];
+                $seen{$rank} = 1;
+            }
+        }
+
+        # any rank not in standard order (p.ej. "clade")
+        for $rank (sort keys %$clasif) {
+            next if $seen{$rank};
+            $info = $clasif->{$rank};
+            $name = ref($info) eq 'HASH' ? $info->{'name'} : $info;
+            push @list, [$rank, $name] if defined($name);
+        }
+
+    } else {
+        # Fallback: only lineage/parents, no classification
+        my $lin = $tax->{'lineage'} // $tax->{'parents'} // [];
+        for $elem (@$lin) {
+            if (ref($elem) eq 'HASH') {
+                push(@list, [$elem->{'rank'} // '?', $elem->{'name'} // $elem->{'tax_id'}]);
+            } else {
+                push(@list, ['?', "$elem"]);
+            }
+        }
+    }
+
+    # add binomial name if needed
+    if (defined $binomial && (!@list || $list[-1][1] ne $binomial)) {
+        my $rank_final = $tax->{'rank'} // 'taxon';
+        push @list, [$rank_final, $binomial];
+    }
+
+    return ($tax_id, \@list);
+}
