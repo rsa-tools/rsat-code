@@ -58,6 +58,7 @@ install_ubuntu14_packages:
 	sudo apt-get install libnet-ssleay-perl
 	sudo apt-get install libcrypt-ssleay-perl
 	sudo apt-get install libssl-dev
+	sudo apt-get install libhtml-parser-perl 
 	sudo apt-get install ghostscript
 	sudo apt-get install gnuplot
 	sudo apt-get install graphviz
