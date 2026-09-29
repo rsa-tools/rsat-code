@@ -1,0 +1,392 @@
+#!/usr/bin/env perl
+use JSON;
+use HTTP::Tiny;
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use RSAT::server;
+
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialize parameters
+  our $start_time = RSAT::util::StartScript();
+  our $verbose = 0;
+
+  our $ensembl_ftp_server = 'http://ftp.ebi.ac.uk';
+  our $ensembl_ftp_path = 'pub/ensemblorganisms';
+  our $ensembl_ftp_url = "$ensembl_ftp_server/$ensembl_ftp_path";
+  our $ensembl_ftp_jsonfile = "$ensembl_ftp_url/species.json";
+  our $ensembl_ftp_local_jsonfile = $ENV{RSAT}."/downloads/species.json";
+
+  # local folder for genome data
+  our $local_dir = $ENV{RSAT}."/public_html/data/genomes/";
+
+  ## Tasks to handle download and parsing of genomes from Ensembl.
+  our @tasks = qw(
+      available
+      download
+      parse
+      config
+      default);
+
+  our @default_tasks = qw(download parse config);
+  our $supported_tasks = join(",", @tasks);
+
+  my $null = "<NA>";
+  my ($source,$taxonomy,$taxid) = ($null,$null,$null);
+  our (%infile, %dir, %task, %downloads, %taxon);
+
+  ## File containing a list of organisms to install from Ensembl
+  $infile{organisms} = "";
+
+  ReadArguments();
+
+  ################################################################
+  ## Check parameter values
+
+  if(scalar(@tasks) == 0) {
+    RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
+
+  } elsif ($task{'default'}) {
+    foreach my $t (@default_tasks) {
+      $task{$t} = 1;
+    }
+    RSAT::message::Info("Default tasks selected: ", join(",", @default_tasks)) if ($main::verbose >= 2);
+  }
+
+  RSAT::util::CheckOutDir($local_dir);
+  
+  our %remaining_task = %task;
+
+  ################################################################
+  ## Carry out tasks
+
+  my ($genomeID);
+
+  if ($task{available} || $task{download}) {
+
+    my ($data,$response,$json_string);
+    my ($species_name,$species,$taxid,$assembly_id,$assembly,$assembly_name);
+    my ($strain,$provider,$provider_data,$release,$release_node,$paths);
+    my ($hardmasked,$unmasked,$genes_gtf,$pep);
+
+    # make sure local Ensembl species file is up to date
+    $response = HTTP::Tiny->new->mirror($ensembl_ftp_jsonfile, $ensembl_ftp_local_jsonfile);
+
+    open(JSON,'<',$ensembl_ftp_local_jsonfile) ||
+      RSAT::error::FatalError("Failed downloading $ensembl_ftp_url_jsonfile\n");
+    $/ = undef;
+    $json_string = <JSON>;
+    close(JSON);
+
+    $data = decode_json($json_string);
+    $json_string = '';
+
+    # loop across current species
+    foreach $species_name (sort keys %{ $data->{species} }) {
+
+      $species = $data->{species}{$species_name};
+      $taxid = $species->{taxid} // '';
+      $strain = $species->{strain} // '';
+
+      foreach $assembly_id (sort keys %{ $species->{assemblies} }) {
+
+        $assembly = $species->{assemblies}{$assembly_id};
+        $assembly_name = $assembly->{name} // '';
+
+        foreach $provider (sort keys %{ $assembly->{genebuild_providers} }) {
+          $provider_data = $assembly->{genebuild_providers}{$provider};
+
+          foreach $release (sort keys %{$provider_data}) {
+            $release_node = $provider_data->{$release};
+            $genomeID = "$species_name.$assembly_id.$release";
+
+	    if($task{'download'}) {
+
+              # TODO ver si este genoma fue elegido por usuario
+
+              $paths = $release_node->{paths};
+              $hardmasked =
+                $assembly->{assembly}{files}{genome_sequences}{'hardmasked.fa.bgz'} // '';
+              $unmasked = 
+                $assembly->{assembly}{files}{genome_sequences}{'unmasked.fa.bgz'} // '';
+              $genes_gtf =  
+	        $paths->{genebuild}{files}{annotations}{'genes.gtf.bgz'} // '';
+              $pep =
+                $paths->{genebuild}{files}{annotations}{'pep.fa.bgz'} // '';
+
+              $downloads{$genomeID} = ($hardmasked,$unmasked,$genes_gtf,$pep);
+	      $taxon{$genomeID} = $taxid;
+            }
+
+            print "$genomeID\t[$provider, $assembly_name, $strain]\n"
+          }
+        }
+      }
+    }
+
+  } else {
+
+    foreach $genomeID (keys(%downloads)) {
+
+      # Download the required files 
+      if ($task{download}) {
+
+          print "$genomeID\n";	
+
+	  #my $command = "wget -r -l1 -np -nd -e robots=off "
+	  #."--accept '*.gz,*.txt,*.md5' "
+	  #."--reject 'index.html*' "
+	  #."-P ".$strain_info{$strain}->{"downloads"}." ".$URL;
+
+
+	  ## Download data from NCBI
+	  #doit($command, $dry, $die_on_error, $main::verbose);
+	  #RSAT::message::TimeWarn("Downloaded genome in dir", $strain_info{$strain}->{"downloads"}) if ($main::verbose >= 3);
+
+	  ## Store download date in strain_info
+	  #$download_date = &AlphaDate();
+	  #$strain_info{$strain}->{"download_date"} = $download_date;
+      }  
+
+      # Parse 
+      if ($task{parse}) {
+
+      }
+
+      # Config
+      if ($task{config}) {
+
+      }
+    }
+  }
+
+  Finish($start_time);
+}
+
+
+################################################################
+##################  SUBROUTINE DEFINITIONS  ####################
+################################################################
+
+sub Finish {
+  my $start_time = (@_);	
+  my $exec_time = RSAT::util::ReportExecutionTime($start_time);
+  print $exec_time if ($main::verbose >= 1);
+  exit(0);
+}
+
+################################################################
+## Display full help message
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	install-organism
+
+AUTHOR
+        Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
+	Bruno Contreras Moreira (bcontreras\@eead.csic.es)
+
+USAGE
+        install-organism-ensembl -org Arabidopsis_thaliana
+
+DESCRIPTION
+	Install one or several organisms from Ensembl on the local RSAT instance.
+
+	This script is a task manager, which (depending on the
+	selected tasks) manages different steps necessary for the
+	installation of an organism from flat files:
+
+	- Downloading genome files from Ensembl
+          ($ensembl_ftp_url).
+
+	- Parsing files and calculating oligonucleotide and dyad frequencies, which will
+          be used as background models for motif discovery.
+
+	- Adding the organism in the config file.
+
+CATEGORY
+	Data management.
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+
+    MANDATORY ARGUMENTS
+
+    	The only mandatory option is to specify one or more
+    	organism(s) to be installed. This can be done with any of the
+    	following options: -org, -org_file.
+
+	-org	organism binomial name without spaces (e.g. Saccharomyces_cerevisiae)
+
+		The option -org can be used iteratively on the same
+		command line to iterate the installation over multiple
+		organisms.
+
+        -org_file organism_file_name
+		Text file containing a list of organisms to install.
+		The first word of each row is taken as a query
+		organism; optional 2nd an 3rd words are taken as
+		assembly and geneset versions.
+
+    SPECIFIC ARGUMENTS FOR THE DOWNLOAD AND PARSE TASK
+
+        -assembly ENA/NCBI accession to download, by default most recent
+
+	       Example: GCA_000001405.14
+
+	-geneset or annotation version, by default most recent
+
+               Example: 2013_09 
+
+    OPTIONAL ARGUMENTS
+
+	-dir dir{install}
+		Absolute path of the installation directory. 
+		BEWARE : you should provide the absolute path of the
+		installation directory, not the relative path.
+
+	-task	specification of a single installation task
+		    e.g.
+			install-organism-ensembl -task available
+		supported tasks: $supported_tasks
+
+		Description of the tasks
+		------------------------
+
+		available    list available species on the Ensembl FTP site,
+		             parses large JSON file. This task cannot be combined 
+                             with any other task.
+
+		download     download genome from the Ensembl FTP site with wget
+		             ($ensembl_ftp_url)
+
+		parse        parse genome data (sequence, features).
+		             Parsing is done by the program parse-gtf.
+
+		config	     update configuration file.
+
+		default      same as download,parse,config
+
+SEE ALSO
+
+    download-organisms
+
+	The program I<download-organism> copues RSAT-formatted
+	genomes from a RSAT server or repository. 
+
+ 	If a genome is available on the RSAT server, it is recommended
+	to use download-genomes in order to obtain it immediately in
+	the RSAT format, rather than install-genomes.
+
+End_of_help
+    close HELP;
+    exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+install_organism options
+------------------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-v		verbose
+-n		dry run (print commands without executing them)
+-org		organism name without spaces (e.g. Saccharomyces_cerevisiae); can be used iteratively
+-org_file	organism_file_name
+-dir		absolute path of the installation directory
+-task		installation task ($supported_tasks)
+
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    #    foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($arg eq "-v") {
+      if (IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+      ## dry run
+    } elsif ($arg eq "-n") {
+      $dry = 1;
+      $main::verbose = 1;
+
+      ## detailed help
+    } elsif ($arg eq "-h") {
+      PrintHelp();
+
+      ## list of options
+    } elsif ($arg eq "-help") {
+      PrintOptions();
+
+      ## Organism name in one word (spaces replaced  by underscores)
+    } elsif ($arg eq "-org") {
+      my $organism_short_name = shift(@arguments);
+      RSAT::error::FatalError( $organism_short_name, "Invalid organism name: cannot contain spaces") if ($organism_short_name =~ /\s/);
+      RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should not be empty.") unless ($organism_short_name =~ /\S/);
+      RSAT::error::FatalError( $organism_short_name, "Invalid organism name: should contain at least one underscore.") unless ($organism_short_name =~ /_/);
+      push(@organisms, $organism_short_name);
+
+      ## Input file with organism list
+    } elsif ($arg eq "-org_file") {
+      $infile{organisms} = shift(@arguments);
+
+      ## installation dir
+    } elsif ($arg eq "-dir") {
+      $local_dir = shift(@arguments);
+
+      ## task selection
+    } elsif ($arg eq "-task") {
+	my @requested_tasks = split ",", shift(@arguments);
+	foreach my $t (@requested_tasks) {
+	    next unless $t;
+	    if ($main::supported_tasks =~ m/$t/) {
+		$main::task{$t} = 1;
+		push(@main::tasks, $t);
+	    } else {
+		RSAT::error::FatalError("Unsupported task '$t'. \n\tSupported: $main::supported_tasks");
+	    }
+      }
+
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them.
+
+=cut
+    } elsif ($arg eq "-dry") {
+	$main::dry = 1;
+
+=pod
+
+=cut
+
+    } 
+  }
+}
