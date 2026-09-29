@@ -2264,12 +2264,7 @@ OPTIONS
 		as the server, rather than using the date of download
 		as update date.
 
-	-ensembl
-		ENSEMBL directory. Directory containing the ENSEMBL
-		flat files in Genbank format (ext .dat)
-
-		Example: 
-		ftp.ensembl.org/pub/current_worm/data/flatfiles/genbank
+	-ensembl (obselete, see install-organism-ensembl)
 
 	-task	specification of a single installation task
 		    e.g.
@@ -2506,7 +2501,6 @@ install_organism options
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
 -refseq	        refseq directory
--ensembl	ensembl directory
 -task		installation task ($supported_tasks)
 -rm		calibrate oligo and dyad frequncies on repeat masked sequences
 -syn		synonym table
@@ -2668,9 +2662,9 @@ sub ReadArguments {
     } elsif ($arg =~ /^-genbank/) {
       &RSAT::error::FatalError("Option -genbank is obsolete, use -refseq instead.");
 
-      ## ENSEMBL dir
-    } elsif ($arg =~ /^-ensembl/) {
-      $dir{ensembl} = shift(@arguments);
+      #  ## ENSEMBL dir
+      #} elsif ($arg =~ /^-ensembl/) {
+      #$dir{ensembl} = shift(@arguments);
 
       ## data source
     } elsif ($arg eq "-source") {
