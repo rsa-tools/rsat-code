@@ -28,7 +28,7 @@ package main;
   # local folder for genome data
   our $local_dir = $ENV{RSAT}."/public_html/data/genomes/";
 
-  ## Tasks to handle download and parsing of genomes from Ensembl.
+  ## Tasks to handle download and parsing of genomes from Ensembl
   our @tasks = qw(
       available
       download
@@ -41,7 +41,7 @@ package main;
 
   my $null = "<NA>";
   my ($source,$taxonomy,$taxid) = ($null,$null,$null);
-  our (%infile, %dir, %task, %downloads, %taxon);
+  our (%infile, %dir, %task, %downloads, %taxon, @user_tasks);
 
   ## File containing a list of organisms to install from Ensembl
   $infile{organisms} = "";
@@ -51,8 +51,11 @@ package main;
   ################################################################
   ## Check parameter values
 
-  if(scalar(@tasks) == 0) {
+  if(scalar(@user_tasks) == 0) {
     RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
+
+  } elsif(!$task{available} && (scalar(@organisms)==0 && !$infile{organisms})) {
+    RSAT::error::FatalError("You should choose at least one organism to install (-org, -org_file)\n");
 
   } elsif ($task{'default'}) {
     foreach my $t (@default_tasks) {
@@ -64,6 +67,17 @@ package main;
   RSAT::util::CheckOutDir($local_dir);
   
   our %remaining_task = %task;
+
+  if ($infile{organisms}) {
+      ## If an organism file has been specified, read organism list
+      my ($orgs) = &OpenInputFile($infile{organisms});
+      while (<$orgs>) {
+          next if (/^;/ || /^#/); ## Skip comment/header
+          if(/^(\S+)/){  
+            push(@organisms, $1)
+	  }
+      }
+  }
 
   ################################################################
   ## Carry out tasks
@@ -124,9 +138,10 @@ package main;
 
               $downloads{$genomeID} = ($hardmasked,$unmasked,$genes_gtf,$pep);
 	      $taxon{$genomeID} = $taxid;
-            }
 
-            print "$genomeID\t[$provider, $assembly_name, $strain]\n"
+            } else {
+              print "$genomeID\t[$provider, $assembly_name, $strain]\n"
+            }
           }
         }
       }
@@ -189,17 +204,21 @@ sub PrintHelp {
     open HELP, "| more";
     print HELP <<End_of_help;
 NAME
-	install-organism
+	install-organism-ensembl
 
 AUTHOR
         Jacques van Helden (Jacques.van-Helden\@univ-amu.fr)
 	Bruno Contreras Moreira (bcontreras\@eead.csic.es)
 
 USAGE
-        install-organism-ensembl -org Arabidopsis_thaliana
+     
+        install-organism-ensembl -org Arabidopsis_thaliana.GCA_000001735.1.2010_09
+
+	install-organism-ensembl -task available | grep Arabidopsis_thaliana > mylist.txt
+	install-organism-ensembl -org_file mylist.txt
 
 DESCRIPTION
-	Install one or several organisms from Ensembl on the local RSAT instance.
+	Install organisms from Ensembl on the local RSAT instance.
 
 	This script is a task manager, which (depending on the
 	selected tasks) manages different steps necessary for the
@@ -221,58 +240,41 @@ OPTIONS
 	-help	(must be first argument) display options
 	-v	verbose
 
-    MANDATORY ARGUMENTS
+    ARGUMENTS
 
-    	The only mandatory option is to specify one or more
-    	organism(s) to be installed. This can be done with any of the
-    	following options: -org, -org_file.
+        -org    genomeID as provided by -task available, without spaces.
+                The option -org can be repeated on the same command line 
+                to iterate the installation over multiple organisms. Example:
+                
+		-org Arabidopsis_thaliana.GCA_000001735.1.2010_09
 
-	-org	organism binomial name without spaces (e.g. Saccharomyces_cerevisiae)
-
-		The option -org can be used iteratively on the same
-		command line to iterate the installation over multiple
-		organisms.
-
+                which corresponds to 'Arabidopsis_thaliana',
+		ENA/NCBI assembly 'GCA_000001735.1' and
+		annotated geneset '2010_09'
+                
         -org_file organism_file_name
-		Text file containing a list of organisms to install.
-		The first word of each row is taken as a query
-		organism; optional 2nd an 3rd words are taken as
-		assembly and geneset versions.
+                Text file containing a list of genomeIDs to install.
+                Only the first word of each row is considered.
 
-    SPECIFIC ARGUMENTS FOR THE DOWNLOAD AND PARSE TASK
+	-dir    Absolute path of the installation directory, 
+                default: $local_dir 
 
-        -assembly ENA/NCBI accession to download, by default most recent
+	-task	specification of a single installation task e.g.
+			
+                install-organism-ensembl -task available
 
-	       Example: GCA_000001405.14
-
-	-geneset or annotation version, by default most recent
-
-               Example: 2013_09 
-
-    OPTIONAL ARGUMENTS
-
-	-dir dir{install}
-		Absolute path of the installation directory. 
-		BEWARE : you should provide the absolute path of the
-		installation directory, not the relative path.
-
-	-task	specification of a single installation task
-		    e.g.
-			install-organism-ensembl -task available
 		supported tasks: $supported_tasks
 
 		Description of the tasks
 		------------------------
 
-		available    list available species on the Ensembl FTP site,
-		             parses large JSON file. This task cannot be combined 
-                             with any other task.
+		available    list available Ensembl species, parses large JSON file.
+		             This task cannot be combined with any others.
 
 		download     download genome from the Ensembl FTP site with wget
 		             ($ensembl_ftp_url)
 
-		parse        parse genome data (sequence, features).
-		             Parsing is done by the program parse-gtf.
+		parse        parse genome data (sequence, features) with parse-gtf.
 
 		config	     update configuration file.
 
@@ -282,7 +284,7 @@ SEE ALSO
 
     download-organisms
 
-	The program I<download-organism> copues RSAT-formatted
+	The program I<download-organism> copies RSAT-formatted
 	genomes from a RSAT server or repository. 
 
  	If a genome is available on the RSAT server, it is recommended
@@ -304,7 +306,6 @@ install_organism options
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
 -v		verbose
--n		dry run (print commands without executing them)
 -org		organism name without spaces (e.g. Saccharomyces_cerevisiae); can be used iteratively
 -org_file	organism_file_name
 -dir		absolute path of the installation directory
@@ -367,21 +368,11 @@ sub ReadArguments {
 	    next unless $t;
 	    if ($main::supported_tasks =~ m/$t/) {
 		$main::task{$t} = 1;
-		push(@main::tasks, $t);
+		push(@main::user_tasks, $t);
 	    } else {
 		RSAT::error::FatalError("Unsupported task '$t'. \n\tSupported: $main::supported_tasks");
 	    }
       }
-
-=pod
-
-=item B<-dry>
-
-Dry run: print the commands but do not execute them.
-
-=cut
-    } elsif ($arg eq "-dry") {
-	$main::dry = 1;
 
 =pod
 
