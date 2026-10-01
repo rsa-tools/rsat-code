@@ -1613,7 +1613,7 @@ sub load_and_serialize {
   $self->LoadSynonyms() if ($synonyms);
   my $serial_file = $self->serial_file_name($imp_pos, $synonyms);
   nstore $self, $serial_file;
-  system ("chmod 777 $serial_file");
+  system ("chmod 644 $serial_file");
   &RSAT::message::TimeWarn("Serialized organism", $organism, $serial_file)
     if ($main::verbose >= 4);
 }
