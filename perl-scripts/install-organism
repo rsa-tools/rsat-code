@@ -140,7 +140,7 @@ package main;
   $parse_options = "";
 
   $null = "<NA>";		## NULL value
-  $source = $null;
+  $source = 'NCBI';
   $taxonomy = $null;
   $taxid = $null;
   @taxa = ();
@@ -296,8 +296,6 @@ package main;
   
   ################################################################
   ## Define the local download directory for NCBI Refseq files
-  #$source = "NCBI-Refseq";
-  our $source = "NCBI"; ## 2019 this format works better for the newest formating in NCBI
   
   ## Check the directory containing the Genbank-formatted organisms
   ## (which can be downloaded from NCBI/refseq).
