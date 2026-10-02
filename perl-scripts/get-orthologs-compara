@@ -8,6 +8,9 @@ get-orthologs-compara
 
 =head1 DESCRIPTION
 
+WARNING: The primary TSV file with precomputed homologies was deprecated 
+at Ensembl Plants in Jul2026, this script should be considered obsolete from then.
+
 Returns orthologues, plus optionally paralogues and homeologues, for
 a set of genes in one or more organisms. Relies on primary data from
 Ensembl Compara.
