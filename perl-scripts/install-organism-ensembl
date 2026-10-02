@@ -298,6 +298,7 @@ AUTHOR
 REQUIREMENTS
 
 This program relies on wget to download genome files to the local machine.
+It down
 
 USAGE
      
@@ -313,13 +314,16 @@ DESCRIPTION
 	selected tasks) manages different steps necessary for the
 	installation of an organism from flat files:
 
-	- Downloading genome files from Ensembl
+	- Downloading genome files from Ensembl, including vcf files when available.
           ($ensembl_ftp_url).
 
 	- Parsing files and calculating oligonucleotide and dyad frequencies, which will
           be used as background models for motif discovery.
 
 	- Adding the organism in the config file.
+
+	TODO: variations not installed yet, will need code from
+        see perl-scripts/purgatory/download-ensembl-variations -fromvcf
 
 CATEGORY
 	Data management.
