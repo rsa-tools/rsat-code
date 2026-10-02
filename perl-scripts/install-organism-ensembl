@@ -369,7 +369,8 @@ OPTIONS
 
 		parse        parse genome data (sequence, features) with parse-gtf.
 
-		install	     computes upstream freqs and install organism.
+		install	     computes upstream freqs and install organism. 
+                             Caveat: variations are not installed yet.
 
 		default      same as download,parse,install
 
