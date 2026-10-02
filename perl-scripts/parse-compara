@@ -36,6 +36,9 @@ parse-compara [-i inputfile] [-list listfile] [-o outputfile] [-log logfile] [-v
 
 =head1 INPUT FORMATS
 
+WARNING: The TSV file required to run this script was deprecated at Ensembl Plants in Jul2026, 
+this script should be considered obsolete from then.
+
 A single Compara.homologies TSV file in the Ensembl Genomes format, as documented
 in ftp.ensemblgenomes.org/pub/plants/release-46/tsv/ensembl-compara/homologies/README.gene_trees.tsv_dumps.txt
 
