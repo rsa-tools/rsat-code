@@ -1,10 +1,5 @@
 #!/usr/bin/env perl
-############################################################
-#
-# $Id: install-organism,v 1.129 2013/10/13 12:24:00 jvanheld Exp $
-#
-# Time-stamp: <2017-03-17 10:53:06 eda>
-#
+
 ############################################################
 
 ## TO DEBUG: with option -org_list all organisms get the same name
@@ -2262,8 +2257,6 @@ OPTIONS
 		as the server, rather than using the date of download
 		as update date.
 
-	-ensembl (obselete, see install-organism-ensembl)
-
 	-task	specification of a single installation task
 		    e.g.
 			install-organism -task dyads
@@ -2348,6 +2341,13 @@ OPTIONS
 			     of blast used by genome-blast)
 
 		clean	     remove unnecessary sequence files
+
+                uninstall    remove organism by deleting its row from 
+                             the configuration file. This does not clean 
+                             the organism directory on the hard drive
+			     (see task 'erase')
+
+	        erase        erase an organism by deleting its data folder		     
 
 	-rm	calibrate oligo and dyad frequncies on repeat masked
 		sequences, in addition to the non-masked sequences.
