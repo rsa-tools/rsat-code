@@ -1,18 +1,11 @@
 #!/usr/bin/perl -w
-
-############################################################
-#
-# $Id: convert-variations,v 1.1 2013/07/18 12:23:07 jeremy Exp $
-#
-############################################################
-
 use warnings;
 
 =pod
 
 =head1 NAME
 
-convert-variation
+convert-variations
 
 =head1 VERSION
 
@@ -28,7 +21,7 @@ variations.
 
 =head1 AUTHORS
 
-Jeremy.Delerce@univ-amu.fr
+Jeremy.Delerce@univ-amu.fr, Bruno Contreras
 
 =head1 CATEGORY
 
@@ -122,16 +115,6 @@ the format (we could as well have used chromosome-separated GVF files,
 or whole-genomes RSAT variant files), but it speeds up the search for
 variants.
 
-=item Combined variations
-
-When several variants are mutually overlapping,
-I<install-ensembl-variations> enables to compute all possible
-combinations of variations. However, this option may require
-considerable computer resources (computing time, storage), so we
-inactivate it by default. To support combinatory variants,
-I<install-ensembl-variations> must be called with the option I<-task
-combine>.
-
 =back
 
 =head1 OUTPUT FORMAT
@@ -161,7 +144,7 @@ BEGIN {
 }
 
 require "RSA.lib";
-require "RSAT_to_ensembl.lib.pl";
+#require "RSAT_to_ensembl.lib.pl";
 
 ################################################################
 ## Main package
@@ -171,7 +154,7 @@ package	main;
   ###############################################################
   ## Initialise parameters
   our $start_time = &RSAT::util::StartScript();
-  our $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf"%d."."%02d" x $#r, @r };
+  our $program_version = 2.0;
 
   our %infile	= ();
   our %outfile = ();
