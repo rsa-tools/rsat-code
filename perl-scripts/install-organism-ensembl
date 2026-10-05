@@ -166,7 +166,7 @@ package main;
                   $genomeID.'.pep.all.fa.gz',
                   $genomeID.'.gtf.gz',
 		  $genomeID.'.vcf.gz',
-	          'md5sum.txt', # checksums for assembly files
+	          'md5sum.txt',
 		  $genomeID.'.dna_rm.genome.fa.gz.fai',
                   $genomeID.'.dna.genome.fa.gz.fai',
                   $genomeID.'.pep.all.fa.gz.fai' 
@@ -186,7 +186,7 @@ package main;
   } 
 
   # any other remaining tasks
-  my ($org_dir, $var_dir, $cmd, $f, $file, $localfile);
+  my ($org_dir, $var_dir, $cmd, $cmd2, $f, $file, $localfile);
   foreach $genomeID (@organisms) {
 
     if ($task{download}) {
@@ -211,19 +211,18 @@ package main;
           next if($downloads{$genomeID}->[$f] eq '');
 
           $file = $downloads{$genomeID}->[$f];
-	  $localfile = $filenames{$genomeID}->[$f];
+	  $localfile = $filenames{$genomeID}->[$f]; 
 
-          if($localfile =~ /.vcf.gz/) {
+          if($localfile =~ /\.vcf\.gz$/) {
             doit("$cmd $ensembl_ftp_url/$file -O $var_dir$localfile", 0, $die_on_error, $main::verbose);
-            RSAT::message::TimeWarn("$cmd $ensembl_ftp_url/$file -O $var_dir$localfile") if ($main::verbose >= 3);
-  
-            $cmd = "convert-variations -i $var_dir$localfile -from vcf -to varBed -o $var_dir$genomeID\.varBed";
-	    doit($cmd, 0, $die_on_error, $main::verbose);
-            RSAT::message::TimeWarn($cmd) if ($main::verbose >= 3);
+
+	    if(!-e "$var_dir$genomeID\.varBed") { 
+	      $cmd2 = "convert-variations -i $var_dir$localfile -from vcf -to varBed -o $var_dir$genomeID\.varBed";
+	      doit($cmd2, 0, $die_on_error, $main::verbose);
+	    }
 
           } else {		  
             doit("$cmd $ensembl_ftp_url/$file -O $org_dir$localfile", 0, $die_on_error, $main::verbose);
-	    RSAT::message::TimeWarn("$cmd $ensembl_ftp_url/$file -O $org_dir$localfile") if ($main::verbose >= 3);
           }  
         }
       }
