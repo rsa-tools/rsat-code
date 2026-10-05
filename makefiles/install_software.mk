@@ -45,16 +45,15 @@ list_versions:
 
 ################################################################
 ## Install the applications developed by third-parties and which are required
-## or useful for RSAT.
+## or useful for RSAT. install_ensembl_api deprecated oct2026 
 EXT_APP_TARGETS=\
 	install_vmatch \
 	install_d3 \
 	install_python \
 	install_weblogo3_pip \
 	install_ncbi_datasets \
-	install_ensembl_bioperl \
-	install_ensembl_api #to be deprecated after 2026 
-  
+	install_ensembl_bioperl
+
 # Suppresed 2026-05-17. Note: Weblogo3_pip allows for correct installation of container with python
 #	install_bedtools
 #	install_ghostscript
