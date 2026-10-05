@@ -315,7 +315,9 @@ DESCRIPTION
 	- Parsing files and calculating oligonucleotide and dyad frequencies, which will
           be used as background models for motif discovery.
 
-	- Adding the organism in the config file.
+	- Adding the organism to local config file.
+
+	- Installing the organism.
 
 	TODO: variations not installed yet, will need code from
         see perl-scripts/purgatory/download-ensembl-variations -fromvcf
