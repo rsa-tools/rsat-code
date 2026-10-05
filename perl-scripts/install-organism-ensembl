@@ -216,6 +216,10 @@ package main;
           if($localfile =~ /.vcf.gz/) {
             doit("$cmd $ensembl_ftp_url/$file -O $var_dir$localfile", 0, $die_on_error, $main::verbose);
             RSAT::message::TimeWarn("$cmd $ensembl_ftp_url/$file -O $var_dir$localfile") if ($main::verbose >= 3);
+  
+            $cmd = "convert-variations -i $var_dir$localfile -from vcf -to varBed -o $var_dir$genomeID\.varBed";
+	    doit($cmd, 0, $die_on_error, $main::verbose);
+            RSAT::message::TimeWarn($cmd) if ($main::verbose >= 3);
 
           } else {		  
             doit("$cmd $ensembl_ftp_url/$file -O $org_dir$localfile", 0, $die_on_error, $main::verbose);
@@ -319,9 +323,6 @@ DESCRIPTION
 
 	- Installing the organism.
 
-	TODO: variations not installed yet, will need code from
-        see perl-scripts/purgatory/download-ensembl-variations -fromvcf
-
 CATEGORY
 	Data management.
 
@@ -358,16 +359,15 @@ OPTIONS
 		Description of the tasks
 		------------------------
 
-		available    list available Ensembl species, parses large JSON file.
-		             This task cannot be combined with any others.
+		available    list available Ensembl species, parses large JSON file;
+		             this task cannot be combined with any others.
 
 		download     download genome from the Ensembl FTP site with wget
 		             ($ensembl_ftp_url)
 
-		parse        parse genome data (sequence, features) with parse-gtf.
+		parse        parse genome data (sequence, features) with parse-gtf
 
-		install	     computes upstream freqs and install organism. 
-                             Caveat: variations are not installed yet.
+		install	     compute upstream freqs and install organism
 
 		default      same as download,parse,install
 
