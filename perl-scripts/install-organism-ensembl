@@ -190,8 +190,8 @@ package main;
   } 
 
   # any other remaining tasks
-  my ($org_dir, $var_dir, $cmd, $cmd2, $f, $file, $rfile);
-  my ($localfile, $md5sum, %checksums);
+  my ($org_dir, $var_dir, $cmd, $cmd2, $f, $file, $rfile, $chrn);
+  my ($localfile, $md5sum, %checksums, %chrnum);
 
   foreach $genomeID (@organisms) {
 
@@ -248,14 +248,28 @@ package main;
               }
 	      close($md5h);
   
-            } elsif($file =~ m/masked\.fa\.bgz/) { # checksums of large genome files
+            } elsif($file =~ m/masked\.fa\.bgz/) { 
+	
+	      # checksums and chr number of genome sequence files
 	      $md5sum = (split(/\s+/,`md5sum $org_dir$localfile`))[0];
-              chomp $md5sum;
-	      if($md5sum ne $checksums{basename($file)}) {
-                print "# $genomeID task: download failed\n\n"; 
+	      $chrn = `zgrep -c "^>" $org_dir$localfile`; chomp $chrn;
+	      
+	      if(!$chrnum{$genomeID}) {
+                $chrnum{$genomeID} = $chrn
+
+              } else {
+                if($chrn != $chrnum{$genomeID}) {
+                  print "# $genomeID task: download failed (chr number)\n\n"; 
                 die "# $ensembl_ftp_url/$file\n" .
-		  "# declared checksum: ".$checksums{basename($file)}. "# download checksum: $md5sum>\n";
+                  "# expected chr number: $chrnum{$genomeID}\n# download chr number: $chrn\n";
+                }
               }
+	      
+	      if($md5sum ne $checksums{basename($file)}) {
+                print "# $genomeID task: download failed (checksum)\n\n";
+                die "# $ensembl_ftp_url/$file\n" .
+		  "# declared checksum: ".$checksums{basename($file)}. "\n# download checksum: $md5sum\n";
+              } 
             }
           }  
         }
@@ -329,7 +343,7 @@ AUTHOR
 
 REQUIREMENTS
 
-This program relies on several system tools: wget, md5sum
+This program relies on several system tools: wget, md5sum, grep
 
 USAGE
      
