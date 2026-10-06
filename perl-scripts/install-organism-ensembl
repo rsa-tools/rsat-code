@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 use JSON;
 use HTTP::Tiny;
+use File::Basename;
 
 BEGIN {
   if ($0 =~ /([^(\/)]+)$/) {
@@ -105,6 +106,7 @@ package main;
     $/ = undef;
     $json_string = <JSON>;
     close(JSON);
+    $/="\n";
 
     $data = decode_json($json_string);
     $json_string = '';
@@ -156,17 +158,19 @@ package main;
 		$pep_idx      = $paths->{genebuild}{files}{annotations}{'pep.fa.bgz'} . '.fai';
 
                 $downloads{$genomeID} = [
-		  $unmasked,$hmasked,$pep,$genes_gtf,$vcf,
-                  $md5file,$hmasked_idx,$unmasked_idx,$pep_idx
+		  $md5file,
+		  $unmasked,$hmasked,$pep,$genes_gtf,
+		  $vcf,
+                  $hmasked_idx,$unmasked_idx,$pep_idx
 	        ];
 
 		$filenames{$genomeID} = [
+                  'md5sum.txt',			
                   $genomeID.'.dna.genome.fa.gz',
                   $genomeID.'.dna_rm.genome.fa.gz',
                   $genomeID.'.pep.all.fa.gz',
                   $genomeID.'.gtf.gz',
 		  $genomeID.'.vcf.gz',
-	          'md5sum.txt',
 		  $genomeID.'.dna_rm.genome.fa.gz.fai',
                   $genomeID.'.dna.genome.fa.gz.fai',
                   $genomeID.'.pep.all.fa.gz.fai' 
@@ -186,7 +190,9 @@ package main;
   } 
 
   # any other remaining tasks
-  my ($org_dir, $var_dir, $cmd, $cmd2, $f, $file, $localfile);
+  my ($org_dir, $var_dir, $cmd, $cmd2, $f, $file, $rfile);
+  my ($localfile, $md5sum, %checksums);
+
   foreach $genomeID (@organisms) {
 
     if ($task{download}) {
@@ -195,7 +201,7 @@ package main;
       $org_dir = "$local_dir/$genomeID/genome/";
       RSAT::util::CheckOutDir($org_dir);
       RSAT::message::Info("downloading $genomeID to $org_dir") if ($main::verbose >= 2);
-   
+
       $var_dir = "$local_dir/$genomeID/variations/";
       RSAT::util::CheckOutDir($var_dir);
 
@@ -213,16 +219,44 @@ package main;
           $file = $downloads{$genomeID}->[$f];
 	  $localfile = $filenames{$genomeID}->[$f]; 
 
-          if($localfile =~ /\.vcf\.gz$/) {
+          if($localfile =~ m/\.vcf\.gz$/) { 
+		  
+            # VCF file is stored in a var_dir
             doit("$cmd $ensembl_ftp_url/$file -O $var_dir$localfile", 0, $die_on_error, $main::verbose);
+            sleep(1);
 
 	    if(!-e "$var_dir$genomeID\.varBed") { 
 	      $cmd2 = "convert-variations -i $var_dir$localfile -from vcf -to varBed -o $var_dir$genomeID\.varBed";
 	      doit($cmd2, 0, $die_on_error, $main::verbose);
 	    }
 
-          } else {		  
+          } else { 
+		  
+            # other files in org_dir		  
             doit("$cmd $ensembl_ftp_url/$file -O $org_dir$localfile", 0, $die_on_error, $main::verbose);
+            sleep(1);
+
+	    if($localfile eq 'md5sum.txt') {
+
+              my ($md5h) = RSAT::util::OpenInputFile($org_dir.$localfile);
+              while(my $line = <$md5h>) { 
+                if($line =~ m/^(\S+)\s+(\S+)/) {		      
+                  ($md5sum,$rfile) = ($1,$2);
+		  $rfile = basename($rfile);
+                  $checksums{ $rfile } = $md5sum;
+	        }
+              }
+	      close($md5h);
+  
+            } elsif($file =~ m/masked\.fa\.bgz/) { # checksums of large genome files
+	      $md5sum = (split(/\s+/,`md5sum $org_dir$localfile`))[0];
+              chomp $md5sum;
+	      if($md5sum ne $checksums{basename($file)}) {
+                print "# $genomeID task: download failed\n\n"; 
+                die "# $ensembl_ftp_url/$file\n" .
+		  "# declared checksum: ".$checksums{basename($file)}. "# download checksum: $md5sum>\n";
+              }
+            }
           }  
         }
       }
@@ -295,8 +329,7 @@ AUTHOR
 
 REQUIREMENTS
 
-This program relies on wget to download genome files to the local machine.
-It down
+This program relies on several system tools: wget, md5sum
 
 USAGE
      
