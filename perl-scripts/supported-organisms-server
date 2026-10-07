@@ -90,18 +90,15 @@ package main;
     RSAT::message::TimeWarn("Querying server", $server_url) if ($main::verbose >= 2);
     RSAT::message::TimeWarn("Taxon", $args{'taxon'}) if ($main::verbose >= 2);
 
-    my $line, $col, $ncol, $outstring;
+    my ($line, $col, $ncol, $outstring);
     my @return_cols = ();
  
     my $urldata = get($server_url.$def_supported_orgs_file) ||
       RSAT::error::FatalError("Cannot access/find $server_url$def_supported_orgs_file, please contact rsat-contact\@list01.biologie.ens.fr");
-
-    open(SUPORGS,'<', \$urldata) ||
-      RSAT::error::FatalError("Cannot read $server_url$def_supported_orgs_file, please contact rsat-contact\@list01.biologie.ens.fr");
-    while ($line = <SUPORGS>) { 
-
+     
+    foreach $line (split(/\n/,$urldata)) {  
+       
       if($line =~ m/^#/) {
-        chomp $line;
 	$line =~ s/^#//;
 
         if(!$args{return}) {
@@ -127,7 +124,6 @@ package main;
 
 	next if($args{'taxon'} && $line !~ m/$args{'taxon'}/);
 
-	chomp $line;
 	@cols = split(/\t/,$line);
  
         $outstring = '';	
