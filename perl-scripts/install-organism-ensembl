@@ -14,7 +14,6 @@ use RSAT::server;
 ## Main package
 package main;
 {
-
   ################################################################
   ## Initialize parameters
   our $start_time = RSAT::util::StartScript();
@@ -47,7 +46,7 @@ package main;
 
   my $null = "<NA>";
   my ($source,$taxonomy,$taxid) = ($null,$null,$null);
-  our (%infile, %dir, %task, %downloads, %taxon, @user_tasks);
+  our (%infile, %dir, %task, %downloads, %taxon, %found, @user_tasks);
 
   ## File containing a list of organisms to install from Ensembl
   $infile{organisms} = "";
@@ -95,7 +94,7 @@ package main;
     my ($data,$response,$json_string);
     my ($species_name,$species,$taxid,$assembly_id,$assembly,$assembly_name);
     my ($strain,$provider,$provider_data,$release,$release_node,$paths);
-    my ($hmasked,$unmasked,$genes_gtf,$pep,$vcf,%found);
+    my ($hmasked,$unmasked,$genes_gtf,$pep,$vcf);
     my ($md5file,$hmasked_idx,$unmasked_idx,$pep_idx);
 
     # make sure local Ensembl species file is up to date
@@ -187,7 +186,6 @@ package main;
         }
       }
     }
-
   } 
 
   # any other remaining tasks
