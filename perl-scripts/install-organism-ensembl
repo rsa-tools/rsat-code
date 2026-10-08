@@ -95,7 +95,7 @@ package main;
     my ($data,$response,$json_string);
     my ($species_name,$species,$taxid,$assembly_id,$assembly,$assembly_name);
     my ($strain,$provider,$provider_data,$release,$release_node,$paths);
-    my ($hmasked,$unmasked,$genes_gtf,$pep,$vcf);
+    my ($hmasked,$unmasked,$genes_gtf,$pep,$vcf,%found);
     my ($md5file,$hmasked_idx,$unmasked_idx,$pep_idx);
 
     # make sure local Ensembl species file is up to date
@@ -135,6 +135,7 @@ package main;
               if(grep(/^$genomeID$/, @organisms)) {
 
                 RSAT::message::Info("Found genomeID $genomeID") if ($main::verbose >= 2);
+                $found{$genomeID} = 1;		
 
                 $paths = $release_node->{paths};
 
@@ -177,8 +178,8 @@ package main;
 	        ];
 
 	        $taxon{$genomeID} = $taxid; 
-              }	   
 
+              }	
             } else {
               print "$genomeID\t[$assembly_name, $strain]\n"
             }
@@ -194,6 +195,11 @@ package main;
   my ($localfile, $md5sum, %checksums, %chrnum);
 
   foreach $genomeID (@organisms) {
+
+    if(!$found{$genomeID}) {
+      print "# $genomeID not found, please check/correct genomeID\n"; 	    
+      next;
+    }
 
     if ($task{download}) {
 
