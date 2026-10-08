@@ -197,13 +197,10 @@ package main;
 
     if ($task{download}) {
 
-      # create/check destination folders
+      # create/check destination folder
       $org_dir = "$local_dir/$genomeID/genome/";
       RSAT::util::CheckOutDir($org_dir);
       RSAT::message::Info("downloading $genomeID to $org_dir") if ($main::verbose >= 2);
-
-      $var_dir = "$local_dir/$genomeID/variations/";
-      RSAT::util::CheckOutDir($var_dir);
 
       if ($get_command eq "wget") {
         if ($main::verbose < 1) {
@@ -220,7 +217,11 @@ package main;
 	  $localfile = $filenames{$genomeID}->[$f]; 
 
           if($localfile =~ m/\.vcf\.gz$/) { 
-		  
+ 
+            # create variations/ only if needed
+            $var_dir = "$local_dir/$genomeID/variations/";
+            RSAT::util::CheckOutDir($var_dir); 
+
             # VCF file is stored in a var_dir
             doit("$cmd $ensembl_ftp_url/$file -O $var_dir$localfile", 0, $die_on_error, $main::verbose);
             sleep(1);
@@ -228,6 +229,11 @@ package main;
 	    if(!-e "$var_dir$genomeID\.varBed") { 
 	      $cmd2 = "convert-variations -i $var_dir$localfile -from vcf -to varBed -o $var_dir$genomeID\.varBed";
 	      doit($cmd2, 0, $die_on_error, $main::verbose);
+
+	      open(SOURCE,">$var_dir/source.txt") ||
+                RSAT::error::FatalError("Cannot write $var_dir/source.txt\n");
+              print SOURCE "Ensembl\n";
+              close(SOURCE);	      
 	    }
 
           } else { 
