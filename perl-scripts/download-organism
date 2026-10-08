@@ -212,26 +212,27 @@ package main;
 
   ################################################################
   ## Get list of all organisms available in remote servers and genome repos
-  RSAT::message::TimeWarn("Listing all orgs available in remote servers/repos") if ($main::verbose >= 2);
-  foreach $server (@rsat_repos,@rsat_servers) {
-    $cmd = RSAT::server::GetProgramPath("supported-organisms-server");
-    $cmd .= " -url $server -return ID,source,taxonomy";
-    RSAT::message::TimeWarn("Querying remote server\n; ", $cmd) if ($main::verbose >= 2);
-    open(SUPORGS,"$cmd |") ||
-     RSAT::error::FatalError("Failed $cmd");
-    while(<SUPORGS>) {
-      print $main::out "$server\t$_";
+  if($listall == 1) {
+    RSAT::message::TimeWarn("Listing all orgs available in remote servers/repos") if ($main::verbose >= 2);
+    foreach $server (@rsat_repos,@rsat_servers) {
+      $cmd = RSAT::server::GetProgramPath("supported-organisms-server");
+      $cmd .= " -url $server -return ID,source,taxonomy";
+      RSAT::message::TimeWarn("Querying remote server\n; ", $cmd) if ($main::verbose >= 2);
+      open(SUPORGS,"$cmd |") ||
+       RSAT::error::FatalError("Failed $cmd");
+      while(<SUPORGS>) {
+        print $main::out "$server\t$_" if($listall == 1);
+      }
+      close(SUPORGS);
     }
-    close(SUPORGS);
-  }
 
-  exit if($listall == 1);
-
+    exit(0);
+  }  
 
   ################################################################
   ## Obtain the lists of organisms for selected taxa
   foreach my $taxon (@taxa) {
-    RSAT::message::TimeWarn("Getting list of organisms from RSAT server for taxon", $taxon);
+    RSAT::message::TimeWarn("Getting list of organisms for taxon", $taxon," in server ",$RSAT_SERVER);
     my $orgs_for_taxa;
     RSAT::message::Info("Getting list of organisms to download for taxon", $taxon);
     $cmd = &RSAT::server::GetProgramPath("supported-organisms-server");
