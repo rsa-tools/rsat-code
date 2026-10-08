@@ -248,7 +248,7 @@ package main;
               }
 	      close($md5h);
   
-            } elsif($file =~ m/masked\.fa\.bgz/) { 
+            } elsif($file =~ m/masked\.fa\.bgz$/) { 
 	
 	      # checksums and chr number of genome sequence files
 	      $md5sum = (split(/\s+/,`md5sum $org_dir$localfile`))[0];
