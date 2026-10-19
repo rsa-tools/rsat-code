@@ -47,7 +47,7 @@ list_versions:
 ## Install the applications developed by third-parties and which are required
 ## or useful for RSAT. install_ensembl_api deprecated oct2026 
 EXT_APP_TARGETS=\
-	install_vmatch \
+	#install_vmatch \ # DEPRECATED: Now is installed via conda
 	install_d3 \
 	install_python \
 	install_weblogo3_pip \
@@ -116,6 +116,9 @@ _install_ncbi_datasets_linux:
 ## discovery tools in RSAT. If is used to purge sequences from
 ## redundant fragments. The program requires a license, which can be
 ## obtained (free of charge for academics) at http://www.vmatch.de/
+##
+## NOTE: This instalation method is DEPRECATED as now the website is
+## no longer available. Now is insalled via conda in the bash scripts
 VMATCH_VERSION=2.3.0
 VMATCH_VERSION_MACOSX=vmatch-${VMATCH_VERSION}-Darwin_i386-64bit
 VMATCH_VERSION_LINUX=vmatch-${VMATCH_VERSION}-Linux_x86_64-64bit
