@@ -36,6 +36,23 @@ cd ${RSAT}
 ## Initialise RSAT folders
 make -f makefiles/init_rsat.mk init
 
+## Installation of VMATCH dependency moved from makefile to here so 
+## It can be installed regardless of the underlying Linux Distro/Mac OS system
+## The original URL to download VMATCH is no longer available, so
+## Installation is changed to Conda
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+        && chmod +x Miniconda3-latest-Linux-x86_64.sh \
+        && ./Miniconda3-latest-Linux-x86_64.sh -b -p "/.miniconda/" \
+        && ls /.miniconda/ \
+        && /.miniconda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+        && /.miniconda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
+        && /.miniconda/bin/conda init bash \
+        && /.miniconda/bin/conda create -y -n vmatch_venv bioconda::vmatch \
+        && ln -s /.miniconda/envs/vmatch_venv/bin/vmatch /bin/vmatch
+
+
+
 ################################################################
 ## Next steps require to be done as rsat administrator user
 
