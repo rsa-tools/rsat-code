@@ -1,5 +1,7 @@
 ## <---- Create a clone of Ubuntu image
-FROM ubuntu:focal
+
+## Updated to 24.04 as python3 weblogo is only available in 24.04 or higher
+FROM ubuntu:24.04
 
 LABEL org.opencontainers.image.authors="rsat-developers@list01.bio.ens.psl.eu"
 
