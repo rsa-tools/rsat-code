@@ -96,6 +96,7 @@ chown root.root /usr/lib/cgi-bin
 a2enmod cgi ## this is apparently required to enable cgi
 a2dismod mpm_event
 a2enmod mpm_prefork
+apt install libapache2-mod-wsgi-py3
 a2enmod wsgi   ## Required for REST web services
 
 
