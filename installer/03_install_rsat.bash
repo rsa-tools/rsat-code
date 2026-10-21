@@ -49,7 +49,7 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
         && /.miniconda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
         && /.miniconda/bin/conda init bash \
         && /.miniconda/bin/conda create -y -n vmatch_venv bioconda::vmatch \
-        && ln -s /.miniconda/envs/vmatch_venv/bin/vmatch /bin/vmatch
+        && ln -s /.miniconda/envs/vmatch_venv/bin/vmatch ${RSAT}/bin/vmatch
 
 
 
